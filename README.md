@@ -1,9 +1,8 @@
 # About
  X11 protocol client for node.js
 
-# Links
+# Protocol documentation
 
- Protocol documentation:
   - http://www.x.org/releases/X11R7.6/doc/
   - http://www.x.org/releases/X11R7.6/doc/xproto/x11protocol.pdf
 
