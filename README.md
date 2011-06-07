@@ -1,6 +1,25 @@
 # About
  X11 protocol client for node.js
 
+# example
+
+    var x = require('x11');
+
+    var s = x.createConnection().defaultScreen();
+    var wnd = s.createWindow(10, 10, 100, 100); // RootWindow as parent by default
+    wnd.selectInput(x.ExposureMask | x.KeyPressMask); // optional, all input by default
+    wnd
+      .on('expose', function(exposeevent)
+      {
+          this.drawString(10, 50, 'Hello');
+      })
+      .on('keypress', function(keyevent) 
+      {
+          process.exit(0);
+      });
+
+
+
 # Protocol documentation
 
   - http://www.x.org/releases/X11R7.6/doc/
