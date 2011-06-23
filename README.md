@@ -6,8 +6,8 @@
     var x = require('x11');
 
     var s = x.createConnection().defaultScreen();
-    var wnd = s.createWindow(10, 10, 100, 100); // RootWindow as parent by default
-    wnd.selectInput(x.ExposureMask | x.KeyPressMask); // optional, all input by default
+    var wnd = s.createWindow(10, 10, 100, 100); 
+    // adding event callback also selects event on server
     wnd
       .on('expose', function(exposeevent)
       {
