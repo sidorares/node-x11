@@ -3,7 +3,7 @@
 
 # status
 
-soon to be released at stage 2) ( see [roadmap.txt](./roadmap.txt) )
+soon to be released at stage 2) ( see [roadmap.txt](node-x11/blob/master/roadmap.txt) )
 
 # example
 
