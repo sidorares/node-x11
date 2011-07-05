@@ -1,6 +1,10 @@
 # About
  X11 protocol client for node.js
 
+# status
+
+soon to be released at stage 2) ( see [roadmap.txt](./roadmap.txt) )
+
 # example
 
     var x = require('x11');
