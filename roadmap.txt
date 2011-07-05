@@ -1,0 +1,15 @@
+0) $DISPLAY parser, basic connection setup, tcp/unix socket, unix/win
+1) x11 core protocol parser: handshake (no auth), request, reply, events, errors. Requests, replies and events queues.
+2) handwritten basic requests: CreateWindow, MapWindow, basic GC, simple examples
+3) extensions support
+4) tool to automatically generate requests from xcb xml description http://xcb.freedesktop.org/XmlXcb/ http://cgit.freedesktop.org/xcb/proto/tree/src?id=HEAD
+5) authorisation
+6) examples: js implementation for basic X utilities: xev, xeyes, xclock, xclip, xauth, xkill, xlsatoms, glxgears etc.
+7) vnc client using https://github.com/substack/node-rfb
+8) rdesktop client using https://github.com/substack/node-rdesktop
+9) widget implementing basic subset of html5 canvas api
+10) pdf viewer using https://github.com/andreasgal/pdf.js/
+12) ICCCM library http://www.x.org/docs/ICCCM/icccm.pdf http://tronche.com/gui/x/icccm/
+11) pure js window manager
+12) general purpose widgets set, layout managers, box model
+13) pure js web browser :)
