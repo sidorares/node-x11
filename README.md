@@ -3,25 +3,18 @@
 
 # status
 
-soon to be released at stage 2) ( see [roadmap.txt](node-x11/blob/master/roadmap.txt) )
+stage 2) ( see [roadmap.txt](node-x11/blob/master/roadmap.txt) )
+next todo: dispatch replies and errors, decode all evnt types
 
 # example
 
-    var x = require('x11');
-
-    var s = x.createConnection().defaultScreen();
-    var wnd = s.createWindow(10, 10, 100, 100); 
-    // adding event callback also selects event on server
-    wnd
-      .on('expose', function(exposeevent)
-      {
-          this.drawString(10, 50, 'Hello');
-      })
-      .on('keypress', function(keyevent) 
-      {
-          process.exit(0);
-      });
-
+    var X = require('x11').createClient();
+    X.on('connect', function(display) {
+        var root = display.screen[0].root;
+        var wid = X.AllocID();
+        X.CreateWindow(wid, root, 10, 10, 400, 300, 1, 1, 0, { backgroundPixel: 0, eventMask: 0x00000040 });
+        X.MapWindow(wid);
+    });
 
 
 # Protocol documentation
