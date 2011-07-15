@@ -33,7 +33,7 @@ function Window(parent, x, y, w, h, bg)
         this.id, this.parent.id, this.x, this.y, this.w, this.h, 1, 1, 0, { backgroundPixel: this.bg, eventMask: 0x00000040 }
     );
     this.map();
-    // very ineffitient this way! :)
+    // very ineffitient this way!!!
     var wnd = this;
     this.xclient.on('event', function(ev) 
     {
@@ -42,6 +42,20 @@ function Window(parent, x, y, w, h, bg)
              wnd.emit('mousemove', ev);
          }
     });
+    /*
+    // TODO: right way to handle events
+    // need to modify xcore to dispatch events to event_consumers
+    // 
+    eventType2eventName = {
+        6: 'mousemove'
+    };
+
+    this.xclient.event_consumers[wnd.id] = function( ev )
+    {      
+        wnd.emit(eventType2eventName, ev); // convert to mousemove? (ev already event-spacific)               
+    };    
+
+    */
 }
 util.inherits(Window, EventEmitter);
 
