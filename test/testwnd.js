@@ -6,16 +6,18 @@ var height = 500;
 
 var xclient = x11.createClient();
 xclient.on('connect', function(display) {
-    console.log(xclient.display.white_pixel);
-    var mainwnd = new Window(xclient, 0, 0, width, height, xclient.display.white_pixel);
-    /*
-    for (var x = 0; x < width; x += 10) {
-        for (var y = 0; y < width; y += 10) {
-            var ch = new Window(mainwnd, x, y, 10, 10, 0);
+    var white = xclient.display.screen[0].white_pixel;
+    var black = xclient.display.screen[0].black_pixel;
+
+    var mainwnd = new Window(xclient, 0, 0, width, height, black);
+    for (var x = 0; x < width; x += 20) {
+        for (var y = 0; y < width; y += 20) {
+            // TODO: wnd.createChild() ?
+            var ch = new Window(xclient, x + 1, y + 1, 18, 18, 0, white);
+            ch.on('mousemove', function(ev) {
+                ch.unmap();
+                setTimeout( function() { ch.map() }, 500);
+            });
         }
     }
-    */
-    //mainwnd.on('mousemove', function(ev) {
-    //    console.log(ev.x, ev.y);
-    //});
 });
