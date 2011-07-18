@@ -1,6 +1,6 @@
-// WinServ2008R2, Intel(R) Core(TM) i7 CPU 870  @ 2.93GHz   
-// 0.4.3: 12000 +/-1000  InternAtom/sec
-// 0.5.1: 12000 +/-1000 
+// WinServ2008R2 64bit, Intel(R) Core(TM) i7 CPU 870  @ 2.93GHz + Xming 6.9.0.31
+// 0.4.3/cygwin 32bit: 12000 +/-1000  InternAtom/sec
+// 0.5.1/win32       : 12000 +/-1000 
 
 var x11 = require('../lib/x11');
 
