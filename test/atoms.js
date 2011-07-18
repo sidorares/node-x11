@@ -6,9 +6,8 @@ xclient.on('connect', function(display) {
     var X = this;
     var hello = 'Hello, node.js';
     X.InternAtom(false, hello, function(atomId) {
-        console.log(atomId);
-    });
-    X.InternAtom(true, 'test', function(atomId) {
-        console.log(atomId);
+        X.GetAtomName(atomId, function(str) {
+            console.log('Value for atom ' + atomId + ' is \"' + str + '\"');
+        });
     });
 });
