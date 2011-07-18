@@ -11,6 +11,7 @@ xclient.on('connect', function(display) {
     var black = display.screen[0].black_pixel;
 
     var wid = X.AllocID();
+    console.log('wid: ' + wid);
     X.CreateWindow(
        wid, root, 
        10, 10, 400, 300, 
@@ -22,13 +23,23 @@ xclient.on('connect', function(display) {
     X.MapWindow(wid);
   
     var gc = X.AllocID();
+    console.log('GC: ' + gc);
     X.CreateGC(gc, wid, { foreground: black, background: white } );
+
     X.on('event', function(ev) {
         if (ev.type == 12)
         {
             X.PolyFillRectangle(wid, gc, [20, 30, 50, 90]); 
-        } else if (ev.type == 6) {
-            console.log(ev.x, ev.y);
+            X.PolyFillRectangle(wid, gc, [40, 50, 90, 10]); 
+            X.PolyFillRectangle(wid, gc, [20, 80, 50, 30]); 
+
+         } else if (ev.type == 6) {
+            //console.log(ev.x, ev.y);
+            //console.log(X.replies);
         }
+    });
+
+    X.on('error', function(e) {
+        console.log(e);
     });
 });
