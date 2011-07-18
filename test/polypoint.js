@@ -3,6 +3,8 @@ var x11 = require('../lib/x11');
 var xclient = x11.createClient();
 var Exposure = x11.eventMask.Exposure;
 var PointerMotion = x11.eventMask.PointerMotion;
+var pts = [];
+
 
 xclient.on('connect', function(display) {
     var X = this;
@@ -23,13 +25,18 @@ xclient.on('connect', function(display) {
   
     var gc = X.AllocID();
     X.CreateGC(gc, wid, { foreground: black, background: white } );
-
+    
     X.on('event', function(ev) {
         if (ev.type == 12)
         {
-            X.PolyText8(wid, gc, 50, 50, ['Hello, Node.JS!', ' Hello, world!']); 
-        } 
+            X.PolyPoint(0, wid, gc, pts);
+        } else if (ev.type == 6) {
+            pts.push(ev.x);
+            pts.push(ev.y);
+            X.PolyPoint(0, wid, gc, [ev.x, ev.y]);
+        }
     });
+
     X.on('error', function(e) {
         console.log(e);
     });
