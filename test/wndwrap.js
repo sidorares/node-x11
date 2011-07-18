@@ -29,33 +29,33 @@ function Window(parent, x, y, w, h, bg)
     this.h = h;
     this.bg = bg;
     this.id = this.xclient.AllocID();
+
+    var borderWidth = 1;
+    var _class = 1; // InputOutput
+    var visual = 0; // CopyFromParent
     this.xclient.CreateWindow(
-        this.id, this.parent.id, this.x, this.y, this.w, this.h, 1, 1, 0, { backgroundPixel: this.bg, eventMask: 0x00000040 }
+        this.id, this.parent.id, this.x, this.y, this.w, this.h, 
+        borderWidth, _class, visual, 
+        { 
+          backgroundPixel: this.bg, 
+          eventMask: 0x00000040 
+        }
     );
-    this.map();
-    // very ineffitient this way!!!
+    //this.map();
+
     var wnd = this;
-    this.xclient.on('event', function(ev) 
-    {
-         if (ev.type == 6 && ev.wid == wnd.id)
-         {
-             wnd.emit('mousemove', ev);
-         }
-    });
-    /*
-    // TODO: right way to handle events
-    // need to modify xcore to dispatch events to event_consumers
-    // 
     eventType2eventName = {
         6: 'mousemove'
     };
 
-    this.xclient.event_consumers[wnd.id] = function( ev )
-    {      
-        wnd.emit(eventType2eventName, ev); // convert to mousemove? (ev already event-spacific)               
-    };    
-
-    */
+    var ee = new EventEmitter();
+    this.xclient.event_consumers[wnd.id] = ee;
+    // TODO: do we need to have wnd as EventEmitter AND EventEmitter stored in event_consumers ?
+    ee.on('event', function( ev )
+    {   
+        wnd.emit(eventType2eventName[ev.type], ev); // convert to mousemove? (ev is already event-spacific)               
+    });    
+    // TODO: track delete events and remove wmd from consumers list
 }
 util.inherits(Window, EventEmitter);
 
@@ -64,7 +64,7 @@ Window.prototype.map = function() {
 }
 
 Window.prototype.unmap = function() {
-    this.xclient.UnapWindow(this.id);
+    this.xclient.UnmapWindow(this.id);
 }
 
 module.exports = Window;
