@@ -5,7 +5,6 @@ var Exposure = x11.eventMask.Exposure;
 var PointerMotion = x11.eventMask.PointerMotion;
 var pts = [];
 
-
 xclient.on('connect', function(display) {
     var X = this;
     var root = display.screen[0].root;
