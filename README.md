@@ -3,7 +3,7 @@
 
 # status
 
-[implemented requests documentation](https://github.com/sidorares/node-x11/wiki/CoreRequests)
+[implemented requests documentation](https://github.com/sidorares/node-x11/wiki/Core-requests)
 
 # example
 
