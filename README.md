@@ -3,17 +3,61 @@
 
 # status
 
-stage 2) ( see [roadmap.txt](node-x11/blob/master/roadmap.txt) )
-next todo: dispatch replies and errors, decode all evnt types
+[implemented requests documentation](https://github.com/sidorares/node-x11/wiki/Core-requests)
 
 # example
 
-    var X = require('x11').createClient();
-    X.on('connect', function(display) {
+Core requsests usage:
+
+    var x11 = require('../lib/x11');
+
+    var xclient = x11.createClient();
+    var Exposure = x11.eventMask.Exposure;
+    var PointerMotion = x11.eventMask.PointerMotion;
+
+    xclient.on('connect', function(display) {
+        var X = this;
         var root = display.screen[0].root;
+        var white = display.screen[0].white_pixel;
+        var black = display.screen[0].black_pixel;
+
         var wid = X.AllocID();
-        X.CreateWindow(wid, root, 10, 10, 400, 300, 1, 1, 0, { backgroundPixel: 0, eventMask: 0x00000040 });
+        X.CreateWindow(
+           wid, root, 
+           0, 0, 100, 100, 
+           1, 1, 0,
+           { 
+               backgroundPixel: white, eventMask: Exposure|PointerMotion  
+           }
+        );
         X.MapWindow(wid);
+      
+        var gc = X.AllocID();
+        X.CreateGC(gc, wid, { foreground: black, background: white } );
+
+        X.on('event', function(ev) {
+            if (ev.type == 12)
+            {
+                X.PolyText8(wid, gc, 50, 50, ['Hello, Node.JS!']); 
+            } 
+        });
+        X.on('error', function(e) {
+            console.log(e);
+        });
+    });
+
+
+Simple core requests Window wrapper:
+
+    var x11 = require('x11');
+    var Window = require('./wndwrap');
+    var xclient = x11.createClient();
+    xclient.on('connect', function(display) {
+        var mainwnd = new Window(xclient, 0, 0, 100, 100);
+        mainwnd.on('expose', function(ev) {        
+            ev.gc.drawText(50, 50, 'Hello, NodeJS!');
+        });
+        mainwnd.map();
     });
 
 

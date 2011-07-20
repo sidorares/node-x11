@@ -8,7 +8,7 @@
 7) vnc client using https://github.com/substack/node-rfb
 8) rdesktop client using https://github.com/substack/node-rdesktop
 9) widget implementing basic subset of html5 canvas api using https://github.com/learnboost/node-canvas or https://github.com/ajaxorg/node-o3-canvas
-10) pdf viewer using https://github.com/andreasgal/pdf.js/
+10) pdf viewer using https://github.com/andreasgal/pdf.js/, (ODF viewer? - http://webodf.org/demo/)
 12) ICCCM library http://www.x.org/docs/ICCCM/icccm.pdf http://tronche.com/gui/x/icccm/
 11) pure js window manager
 12) general purpose widgets set, layout managers, box model
