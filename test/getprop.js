@@ -1,7 +1,7 @@
 var x11 = require('../lib/x11');
 
 var xclient = x11.createClient();
-var PointerMotion = x11.eventMask.PointerMotion;
+var PropertyChange = x11.eventMask.PropertyChange;
 
 xclient.on('connect', function(display) {
     var X = this;
@@ -10,7 +10,7 @@ xclient.on('connect', function(display) {
     var white = display.screen[0].white_pixel;
     var black = display.screen[0].black_pixel;
 
-    X.CreateWindow(wid, root, 10, 10, 400, 300, 1, 1, 0, { backgroundPixel: white, eventMask: PointerMotion });
+    X.CreateWindow(wid, root, 10, 10, 400, 300, 1, 1, 0, { backgroundPixel: white, eventMask: PropertyChange });
     X.MapWindow(wid);
 
     // mode: 0 replace, 1 prepend, 2 append
@@ -18,5 +18,13 @@ xclient.on('connect', function(display) {
     X.ChangeProperty(0, wid, xclient.atoms.WM_NAME, xclient.atoms.STRING, 8, 'Hello, NodeJS');
     setInterval(function() {
            X.ChangeProperty(0, wid, xclient.atoms.WM_NAME, xclient.atoms.STRING, 8, 'Hello, NodeJS ' + new Date());
-    }, 100);
+    }, 1000);
+
+    xclient.on('event', function(ev) {
+        X.GetProperty(0, wid, xclient.atoms.WM_NAME, xclient.atoms.STRING, 0, 10000000, function(prop) {
+            if (prop.type == xclient.atoms.STRING)
+               prop.data = prop.data.toString();
+            console.log(prop.data);
+        }); 
+    });
 });
