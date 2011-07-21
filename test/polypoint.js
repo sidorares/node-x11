@@ -28,10 +28,10 @@ xclient.on('connect', function(display) {
     X.on('event', function(ev) {
         if (ev.type == 12)
         {
-            X.PolyPoint(0, wid, gc, pts);
+            //X.PolyPoint(0, wid, gc, pts);
         } else if (ev.type == 6) {
-            pts.push(ev.x);
-            pts.push(ev.y);
+            //pts.push(ev.x);
+            //pts.push(ev.y);
             X.PolyPoint(0, wid, gc, [ev.x, ev.y]);
         }
     });
