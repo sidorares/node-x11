@@ -15,6 +15,7 @@ xclient.on('connect', function(display) {
         pts.push(ev.x); 
         pts.push(ev.y);
         this.gc.drawText(ev.x, ev.y, 'Hello, NodeJS!');
+        mainwnd.title = ev.x + ' ' + ev.y;    
     });
     mainwnd.on('expose', function(ev) {        
         for (var i=0; i < pts.length/2 ; ++i)

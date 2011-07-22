@@ -89,6 +89,15 @@ function Window(parent, x, y, w, h)
         wnd.emit(eventType2eventName[ev.type], ev); // convert to mousemove? (ev is already event-spacific)               
     });    
     // TODO: track delete events and remove wmd from consumers list
+
+    this.__defineSetter__('title', function(title) {
+        this._title = title;
+        this.xclient.ChangeProperty(0, this.id, this.xclient.atoms.WM_NAME, this.xclient.atoms.STRING, 8, title);
+    });
+
+    this.__defineGetter__('title', function() {
+        return this._title;
+    });
    
     this.__defineGetter__('gc', function()
     {
