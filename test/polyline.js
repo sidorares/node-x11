@@ -30,19 +30,13 @@ xclient.on('connect', function(display) {
     X.on('event', function(ev) {
         if (ev.type == 12)
         {
-            if (pts.length > 2)
+            if (pts.length > 4)
                 X.PolyLine(0, wid, gc, pts);
         } else if (ev.type == 6) {
-            //pts.push(ev.x);
-            //pts.push(ev.y);
-
-            //if (prevPoint)
-            //    X.PolyLine(0, wid, gc, [prevPoint.x, prevPoint.y, ev.x, ev.y]);
-            //
-            //prevPoint = { x: ev.x, y: ev.y };
-       
-            //if (pts.length > 2)
-            //    X.PolyLine(0, wid, gc, pts);
+            pts.push(ev.x);
+            pts.push(ev.y);
+            if (pts.length > 4)
+                X.PolyLine(0, wid, gc, pts.slice(-4));
         }
     });
 
