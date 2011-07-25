@@ -133,10 +133,12 @@ util.inherits(Window, EventEmitter);
 
 Window.prototype.map = function() {
     this.xclient.MapWindow(this.id);
+    return this;
 }
 
 Window.prototype.unmap = function() {
     this.xclient.UnmapWindow(this.id);
+    return this;
 }
 
 Window.prototype.handle = function(handlers) {
@@ -151,6 +153,7 @@ Window.prototype.getProperty = function(name, cb) {
             cb(prop);
         });
     });
+    return this;
 }
 
 module.exports = Window;
