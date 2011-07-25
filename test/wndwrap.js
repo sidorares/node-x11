@@ -23,10 +23,30 @@ GraphicContext.prototype.noop = function()
     //testing triggering gc creation
 }
 
-GraphicContext.prototype.drawText = function(x, y, text)
+GraphicContext.prototype.rectangles = function(x, y, xyWHpoints)
 {
-    //console.log([0, this.win.id, this.id, x, y, [text]]);
+    this.xclient.PolyFillRectangle(this.win.id, this.id, xyWHpoints);
+}
+
+GraphicContext.prototype.text = function(x, y, text)
+{
     this.xclient.PolyText8(this.win.id, this.id, x, y, [text]);    
+}
+
+GraphicContext.prototype.polyLine = function(points, opts)
+{
+    var coordinateMode = 0;
+    if (opts && opts.coordinateMode === 'previous')
+        coordinateMode = 1;                         
+    this.xclient.PolyLine(coordinateMode, this.win.id, this.id, points);
+}
+
+GraphicContext.prototype.points = function(points, opts)
+{
+    var coordinateMode = 0;
+    if (opts && opts.coordinateMode === 'previous')
+        coordinateMode = 1;                         
+    this.xclient.PolyPoint(coordinateMode, this.win.id, this.id, points);
 }
 
 function Window(parent, x, y, w, h)
@@ -116,6 +136,12 @@ Window.prototype.map = function() {
 
 Window.prototype.unmap = function() {
     this.xclient.UnmapWindow(this.id);
+}
+
+Window.prototype.handle = function(handlers) {
+    for (var eventName in handlers) {
+        this.on(eventName, handlers[eventName]);
+    }
 }
 
 module.exports = Window;
