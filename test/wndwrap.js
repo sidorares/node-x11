@@ -127,6 +127,7 @@ function Window(parent, x, y, w, h)
        } 
        return this._gc;
     });
+
 }
 util.inherits(Window, EventEmitter);
 
@@ -142,6 +143,14 @@ Window.prototype.handle = function(handlers) {
     for (var eventName in handlers) {
         this.on(eventName, handlers[eventName]);
     }
+}
+
+Window.prototype.getProperty = function(name, cb) {
+    this.xclient.InternAtom(true, nam, function(nameAtom) {
+        this.xclient.GetProperty(0, this.id, nameAtom, 0, 1000000000, function(prop) {
+            cb(prop);
+        });
+    });
 }
 
 module.exports = Window;
