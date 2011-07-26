@@ -3,6 +3,8 @@ var Exposure = x11.eventMask.Exposure;
 var PointerMotion = x11.eventMask.PointerMotion;
 var ButtonPress = x11.eventMask.ButtonPress;
 var ButtonRelease = x11.eventMask.ButtonRelease;
+var SubstructureNotify = x11.eventMask.SubstructureNotify;
+var StructureNotify = x11.eventMask.StructureNotify;
 
 var EventEmitter = require('events').EventEmitter;
 var util = require('util'); // util.inherits
@@ -12,7 +14,8 @@ function GraphicContext(win)
     this.win = win;
     this.xclient = win.xclient;
     this.id = this.xclient.AllocID();
-    win.xclient.CreateGC(this.id, win.id);
+    var screen = this.xclient.display.screen[0];
+    win.xclient.CreateGC(this.id, win.id, { foreground: screen.black_pixel, background: screen.white_pixel});
 }
 
 GraphicContext.prototype.polyLine = function(points)
@@ -49,6 +52,12 @@ GraphicContext.prototype.points = function(points, opts)
     if (opts && opts.coordinateMode === 'previous')
         coordinateMode = 1;                         
     this.xclient.PolyPoint(coordinateMode, this.win.id, this.id, points);
+}
+
+GraphicContext.prototype.copy = function(srcDrawable, srcX, srcY, dstX, dstY, width, height)
+{
+    // CopyArea: srcDrawable, dstDrawable, gc, srcX, srcY, dstX, dstY, width, height
+    this.xclient.CopyArea(srcDrawable.id, this.win.id, this.id, srcX, srcY, dstX, dstY, width, height);
 }
 
 function Window(parent, x, y, w, h)
@@ -89,7 +98,7 @@ function Window(parent, x, y, w, h)
         borderWidth, _class, visual, 
         { 
             backgroundPixel: this.white, 
-            eventMask: Exposure|PointerMotion|ButtonPress|ButtonRelease
+            eventMask: Exposure|PointerMotion|ButtonPress|ButtonRelease|SubstructureNotify|StructureNotify
         }
     );
 
@@ -98,8 +107,10 @@ function Window(parent, x, y, w, h)
     eventType2eventName = {
         4: 'mousedown',
         5: 'mouseup',
-        6: 'mousemove',
-       12: 'expose'
+        6: 'mousemove',        
+       12: 'expose',       
+       16: 'create',
+       19: 'map'
     };
 
     var ee = new EventEmitter();
@@ -160,6 +171,25 @@ Window.prototype.getProperty = function(name, cb) {
         });
     });
     return this;
+}
+
+Window.prototype.createPixmap = function(width, height)
+{
+    var pid = this.xclient.AllocID();
+    //  function(depth, pid, drawable, width, height) {
+    this.xclient.CreatePixmap( this.xclient.display.screen[0].root_depth, pid, this.id, width, height);
+    var pixmap = {};
+    pixmap.id = pid;
+    pixmap.__defineGetter__('gc', function()
+    {
+       if (!this._gc)
+       {
+           this._gc = new GraphicContext(this);
+       } 
+       return this._gc;
+    });
+    pixmap.xclient = this.xclient;
+    return pixmap;
 }
 
 module.exports = Window;
