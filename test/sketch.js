@@ -1,22 +1,42 @@
 var x11 = require('../lib/x11');
 var Window = require('./wndwrap');
 
-var width = 700;
-var height = 500;
+x11.createClient(function(display) {
 
-var xclient = x11.createClient(function(display) {
-
-    new Window(xclient, 0, 0, width, height)
+    var pts = [];
+    new Window(display.client, 0, 0, 700, 500)
         .handle({
+
             mousemove: function(ev) {
-                pts.push(ev.x); 
-                pts.push(ev.y);
+                if (this.pressed)
+                {
+                    var lastpoly = pts[pts.length - 1];
+                    lastpoly.push(ev.x); 
+                    lastpoly.push(ev.y);
+                    if (lastpoly.length > 3)
+                        this.gc.polyLine(lastpoly.slice(-4));
+                }
+            },
+
+            mousedown: function(ev) {
+                if (ev.keycode == 1) // left button
+                {
+                    this.pressed = true;
+                    pts.push([]);
+		}            
+            },
+
+            mouseup: function(ev) {
+                if (ev.keycode == 1) // left button
+                   this.pressed = false;
             },
 
             expose: function(ev) {        
-                for (var i=0; i < pts.length/2 ; ++i)
-                   ev.gc.drawText(pts[i], pts[i+1], 'Hello, NodeJS!');
+                for (var i=0; i < pts.length ; ++i) {
+                    this.gc.polyLine(pts[i]);
+                }
             }
+
         })
        .map()
        .title = 'Hello, world!';

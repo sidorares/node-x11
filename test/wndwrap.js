@@ -1,6 +1,8 @@
 var x11 = require('../lib/x11');
 var Exposure = x11.eventMask.Exposure;
 var PointerMotion = x11.eventMask.PointerMotion;
+var ButtonPress = x11.eventMask.ButtonPress;
+var ButtonRelease = x11.eventMask.ButtonRelease;
 
 var EventEmitter = require('events').EventEmitter;
 var util = require('util'); // util.inherits
@@ -87,13 +89,15 @@ function Window(parent, x, y, w, h)
         borderWidth, _class, visual, 
         { 
             backgroundPixel: this.white, 
-            eventMask: Exposure|PointerMotion
+            eventMask: Exposure|PointerMotion|ButtonPress|ButtonRelease
         }
     );
 
     //this.map();
     var wnd = this;
     eventType2eventName = {
+        4: 'mousedown',
+        5: 'mouseup',
         6: 'mousemove',
        12: 'expose'
     };
@@ -105,7 +109,6 @@ function Window(parent, x, y, w, h)
     {
         if (ev.type == 12) //Expose
             ev.gc = wnd.gc;
-
         wnd.emit(eventType2eventName[ev.type], ev); // convert to mousemove? (ev is already event-spacific)               
     });    
     // TODO: track delete events and remove wmd from consumers list
@@ -142,9 +145,12 @@ Window.prototype.unmap = function() {
 }
 
 Window.prototype.handle = function(handlers) {
+    // TODO: compare event mask with events names and issue 
+    // one ChangeWindowAttributes request adding missing events
     for (var eventName in handlers) {
         this.on(eventName, handlers[eventName]);
     }
+    return this;
 }
 
 Window.prototype.getProperty = function(name, cb) {
