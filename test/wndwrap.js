@@ -15,7 +15,8 @@ function GraphicContext(win)
     this.xclient = win.xclient;
     this.id = this.xclient.AllocID();
     var screen = this.xclient.display.screen[0];
-    win.xclient.CreateGC(this.id, win.id, { foreground: screen.black_pixel, background: screen.white_pixel});
+    //win.xclient.CreateGC(this.id, win.id, { foreground: screen.black_pixel, background: screen.white_pixel});
+    this.xclient.CreateGC(this.id, win.id, { foreground: screen.white_pixel, background: screen.black_pixel});
 }
 
 GraphicContext.prototype.polyLine = function(points)
@@ -60,7 +61,7 @@ GraphicContext.prototype.copy = function(srcDrawable, srcX, srcY, dstX, dstY, wi
     this.xclient.CopyArea(srcDrawable.id, this.win.id, this.id, srcX, srcY, dstX, dstY, width, height);
 }
 
-function Window(parent, x, y, w, h)
+function Window(parent, x, y, w, h, bg)
 {
     if (parent.constructor && parent.constructor.name == 'XClient')
     {
@@ -90,6 +91,9 @@ function Window(parent, x, y, w, h)
     this.white = this.xclient.display.screen[0].white_pixel;
     this.id = this.xclient.AllocID();
 
+    if (!bg)
+       bg = this.white;
+
     var borderWidth = 1;
     var _class = 1; // InputOutput
     var visual = 0; // CopyFromParent
@@ -97,7 +101,7 @@ function Window(parent, x, y, w, h)
         this.id, this.parent.id, this.x, this.y, this.w, this.h, 
         borderWidth, _class, visual, 
         { 
-            backgroundPixel: this.white, 
+            backgroundPixel: bg, 
             eventMask: Exposure|PointerMotion|ButtonPress|ButtonRelease|SubstructureNotify|StructureNotify
         }
     );
