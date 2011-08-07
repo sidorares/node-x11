@@ -18,12 +18,12 @@ $X->CreateWindow($win, $X->root, 'InputOutput', $X->root_depth,
 
 $X->MapWindow($win);
 my $picture = $X->new_rsrc;
-$X->RenderCreatePicture($picture, $win, $rgb24);#, 'poly_edge' => 'Smooth', 'poly_mode' => 'Precise');
+$X->RenderCreatePicture($picture, $win, $rgb24, 'poly_edge' => 'Smooth', 'poly_mode' => 'Precise');
 
 my $pixmap = $X->new_rsrc;
 $X->CreatePixmap($pixmap, $win, 32, 1000, 1000);
 my $pix_pict = $X->new_rsrc;
-$X->RenderCreatePicture($pix_pict, $pixmap, $rgba32);#, 'poly_edge' => 'Smooth', 'poly_mode' => 'Precise');
+$X->RenderCreatePicture($pix_pict, $pixmap, $rgba32, 'poly_edge' => 'Smooth', 'poly_mode' => 'Precise');
 $X->RenderFillRectangles('Src', $pix_pict, [0xffff, 0, 0, 0x8000], [0, 0, 1000, 1000]);
 
 $X->event_handler('queue');
@@ -31,7 +31,7 @@ $X->event_handler('queue');
 
 sub draw {
     $X->RenderFillRectangles('Src', $picture, [(0xffff)x4], [0, 0, 500, 500]);
-    $X->RenderTriangles('Over', $pix_pict, 500, 500, $picture, 0, [(250, 100), (100, 350), (400, 350)]);
+    $X->RenderTriangles('Over', $pix_pict, 500, 500, $picture, 0, [(250, 100), (100, 350), (400, 350), (175, 100), (185, 100), (180, 0)]);
     #$X->RenderFillRectangles('Src', $picture, [(0xffff, 0, 0, 0xffff)], [10, 10, 50, 50]);
 }
 
