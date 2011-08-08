@@ -135,6 +135,30 @@ x11.createClient(
                 return parseInt(f*65536);
             }
 
+            // see example of blur filter here: https://github.com/richoH/rxvt-unicode/blob/master/src/background.C
+            // TODO: not ready yet.
+            function RenderSetPictureFilter(pid, name, filterParams)
+            {
+                X.seq_num++;
+                var reqLen = 2;  //header + params + 1xStopfix+2xColors
+                var format = 'CCSLa';
+                var params = [ext.majorOpcode, 30, reqLen, pid];
+                /*
+                if (name == 'convolution')
+                {
+                    reqLen += 2;
+                    format += 'L';
+                    params.push(floatToFix(filterParams));
+                } else {
+                    throw 'Not implemented filter ' + name;
+                }
+                */
+                params[2] = reqLen;
+		console.log([format, params]);
+                X.pack_stream.pack(format, params);
+                X.pack_stream.flush();                
+            }
+
             function RenderRadialGradient(pid, p1, p2, r1, r2, stops)
             {
                 // TODO: merge with linear gradient
@@ -372,7 +396,7 @@ x11.createClient(
                     //RenderTriangles(3, pic_grad, 0, 0, picture, 0, [0, 500, 500, 500, 500, 0]);
                     //RenderTrapezoids(3, pic_grad, 0, 0, picture, 0, [100, 500, 240, 0, 0, 500, 500, 500, 260, 0]);
                     //RenderTrapezoids(3, pic_grad, 0, 0, picture, 0, [0, 500, 0, 0, 0, 500, 500, 500, 500, 0]);
-
+		    //RenderSetPictureFilter(pix_pict, 'convolution', [3, 3, 0, 0, 0, 0, 9, 0, 0, 0, 0]);
                     RenderComposite(3, pix_pict, 0, picture, 0, 0, 0, 0, 0, 0, 500, 500);
                     //RenderComposite(3, pic_grad, 0, picture, 0, 0, 0, 0, 0, 0, 500, 500);
 

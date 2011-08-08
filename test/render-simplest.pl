@@ -31,6 +31,8 @@ $X->event_handler('queue');
 
 sub draw {
     $X->RenderFillRectangles('Src', $picture, [(0xffff)x4], [0, 0, 500, 500]);
+    
+    $X->RenderSetPictureFilter($pix_pict, "nearest");
     $X->RenderTriangles('Over', $pix_pict, 500, 500, $picture, 0, [(250, 100), (100, 350), (400, 350), (175, 100), (185, 100), (180, 0)]);
     #$X->RenderFillRectangles('Src', $picture, [(0xffff, 0, 0, 0xffff)], [10, 10, 50, 50]);
 }
