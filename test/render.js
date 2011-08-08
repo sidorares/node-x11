@@ -148,7 +148,6 @@ x11.createClient(
                 params.push(floatToFix(p2[1])); // L
                 params.push(floatToFix(r1)); // L
                 params.push(floatToFix(r2)); // L
-
                 params.push(stops.length);
 
                 // [ [float stopDist, [float r, g, b, a] ], ...]
@@ -233,6 +232,7 @@ x11.createClient(
                 }
 		console.log([format, params]);
                 X.pack_stream.pack(format, params);
+                X.pack_stream.flush();                
             }
 
             function RenderFillRectangles(op, pid, color, rects)
@@ -261,9 +261,11 @@ x11.createClient(
                 X.seq_num++;
                 X.pack_stream.pack(
                     'CCSCxxxLLLssssssSS', 
-                    [ext.majorOpcode, 8, 9, op, mask, dst, srcX, srcY, maskX, maskY, dstX, dstY, width, height]
+                    [ext.majorOpcode, 8, 9, op, src, mask, dst, srcX, srcY, maskX, maskY, dstX, dstY, width, height]
                 )
                 .flush();
+                console.log([ 'CCSCxxxLLLssssssSS', 
+                    [ext.majorOpcode, 8, 9, op, src, mask, dst, srcX, srcY, maskX, maskY, dstX, dstY, width, height]]);
             }
 
             function RenderTrapezoids(op, src, srcX, srcY, dst, maskFormat, trapz)
@@ -271,11 +273,11 @@ x11.createClient(
                 X.seq_num++;
                 var format = 'CCSCxxxLLLss';
                 var params = [ext.majorOpcode, 10, 6+trapz.length, op, src, dst, maskFormat, srcX, srcY];
-                for (var i=0; i < trapz.length; i+=8)                                   	
+                for (var i=0; i < trapz.length; i+=10)                                   	
                 {
-                    format += 'llllllll';
-                    for (var j=0; j < 8; ++j)
-                        params.push(floatToFix(trapz[i*8 + j]));
+                    format += 'llllllllll';
+                    for (var j=0; j < 10; ++j)
+                        params.push(floatToFix(trapz[i*10 + j]));
                 }
 		console.log([format, params]);
                 X.pack_stream.pack(format, params);
@@ -310,26 +312,56 @@ x11.createClient(
             X.MapWindow(win);
 
             //rgb24: 42 32: 38  rd: 24
+
+            //var rgb24 = 42;
+            //var rgba32 = 38;
+
+            var rgb24 = 71;
+            var rgba32 = 69;
             
             var picture = X.AllocID();
-            RenderCreatePicture(picture, win, 42, { polyEdge: 1, polyMode: 0 } ); 
-            //var pixmap = X.AllocID();
-            //X.CreatePixmap(pixmap, win, 32, 1000, 1000);
-            //var pix_pict = X.AllocID();
-            //RenderCreatePicture(pix_pict, pixmap, 38, { polyEdge: 1, polyMode: 0 });
-            //RenderFillRectangles(1, pix_pict, [0xffff, 0, 0, 0x8000], [0, 0, 1000, 1000]);
+            RenderCreatePicture(picture, win, rgb24, { polyEdge: 1, polyMode: 0 } ); 
+            var pixmap = X.AllocID();
+            X.CreatePixmap(pixmap, win, 32, 500, 500);
+            var pix_pict = X.AllocID();
+            RenderCreatePicture(pix_pict, pixmap, rgba32, { polyEdge: 1, polyMode: 0 });
+            RenderFillRectangles(1, pix_pict, [0xffff, 0xffff, 0xffff, 0xffff], [0, 0, 500, 500]);
 
             var pic_grad = X.AllocID();
-            //RenderLinearGradient(pic_grad, [0,0], [1000,100],
+            RenderLinearGradient(pic_grad, [0,0], [1000,100],
             //RenderRadialGradient(pic_grad, [0,0], [1000,100], 10, 1000,
-            RenderConicalGradient(pic_grad, [250,250], 360,
+            //RenderConicalGradient(pic_grad, [250,250], 360,
                 [
-                  [0,   [0,0,0,0xffff ] ], 
-                  [0.1, [0xfff, 0, 0xffff, 0x8000] ] , 
-                  [0.25, [0xffff, 0, 0xfff, 0x8000] ] , 
-                  [0.5, [0xffff, 0, 0xffff, 0x8000] ] , 
+                  [0,   [0,0,0,0x3000 ] ], 
+                  [0.1, [0xfff, 0, 0xffff, 0x1000] ] , 
+                  [0.25, [0xffff, 0, 0xfff, 0x3000] ] , 
+                  [0.5, [0xffff, 0, 0xffff, 0x4000] ] , 
+                  [1,   [0xffff, 0xffff, 0, 0x8000] ] 
+                ]);
+
+            var pic_grad1 = X.AllocID();
+
+            RenderConicalGradient(pic_grad1, [250,250], 10,
+                [
+                  [0,   [0,0,0,0x5000 ] ], 
+                  [0.1, [0xfff, 0, 0xffff, 0x3000] ] , 
+                  [0.25, [0xffff, 0, 0xfff, 0x2000] ] , 
+                  [0.5, [0xffff, 0, 0xffff, 0x1000] ] , 
+                  [1,   [0xffff, 0xffff, 0, 0x8000] ] 
+                ]);
+
+            var pic_grad2 = X.AllocID();
+            RenderRadialGradient(pic_grad2, [250,250], [250,250], 0, 250,
+                [
+                  [0,   [0,0,0,0x5000 ] ], 
                   [1,   [0xffff, 0xffff, 0, 0xffff] ] 
                 ]);
+
+
+
+            RenderComposite(3, pic_grad, 0, pix_pict, 0, 0, 0, 0, 0, 0, 500, 500);
+            RenderComposite(3, pic_grad1, 0, pix_pict, 0, 0, 0, 0, 0, 0, 500, 500);
+            RenderComposite(3, pic_grad2, 0, pix_pict, 0, 0, 0, 0, 0, 0, 500, 500);
 
             X.on('event', function(ev) {
                 //console.log(ev);
@@ -338,7 +370,12 @@ x11.createClient(
                 
                     //RenderTriangles(3, pic_grad, 0, 0, picture, 0, [0, 0, 500, 0, 0, 500]);
                     //RenderTriangles(3, pic_grad, 0, 0, picture, 0, [0, 500, 500, 500, 500, 0]);
-                    RenderTrapezoids(3, pic_grad, 0, 0, picture, 0, [0, 0, 0, 500, 500, 500, 0, 500]);
+                    //RenderTrapezoids(3, pic_grad, 0, 0, picture, 0, [100, 500, 240, 0, 0, 500, 500, 500, 260, 0]);
+                    //RenderTrapezoids(3, pic_grad, 0, 0, picture, 0, [0, 500, 0, 0, 0, 500, 500, 500, 500, 0]);
+
+                    RenderComposite(3, pix_pict, 0, picture, 0, 0, 0, 0, 0, 0, 500, 500);
+                    //RenderComposite(3, pic_grad, 0, picture, 0, 0, 0, 0, 0, 0, 500, 500);
+
                   
                 /*
                 for(var i=0; i < 100; ++i)
