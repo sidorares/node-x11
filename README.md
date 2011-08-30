@@ -91,7 +91,11 @@ Core requsests usage:
            .title = 'Hello, world!';
     });
 
+# Screenshots
 
+  ![tetris game](https://lh6.googleusercontent.com/-RCRY9A7WwnA/Tlww0FHP7NI/AAAAAAAAAwo/nxfSxsw6xow/s400/tetris.png)
+  ![XRENDER gradients](https://lh4.googleusercontent.com/-VS0BMYYmq6M/Tlww0Y1ij0I/AAAAAAAAAws/pVWsPZ63Yeo/s400/render-gradients.png)
+  
 
 # Protocol documentation
 
