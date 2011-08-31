@@ -7,6 +7,8 @@
 3.5) XRender examples, FreeType or Xft wrapper (native module? ffi? https://github.com/rbranson/node-ffi/ http://www.freetype.org/freetype2/docs/tutorial/step1.html example)
 
 4) tool to automatically generate requests from xcb xml description http://xcb.freedesktop.org/XmlXcb/ http://cgit.freedesktop.org/xcb/proto/tree/src?id=HEAD
+( https://github.com/CrypticSwarm/XCBJS )
+
 + 5) authorisation
 6) examples: js implementation for basic X utilities: xev, xeyes, xclock, xclip, xauth, xkill, xlsatoms, glxgears etc.
 7) vnc client using https://github.com/substack/node-rfb
