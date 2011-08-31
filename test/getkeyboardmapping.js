@@ -1,23 +1,22 @@
 var x11 = require('../lib/x11');
 
-var xclient = x11.createClient();
 var ks = x11.keySyms;
 var ks2Name = {};
 for (var key in ks)
     ks2Name[ ks[key] ] = key;
 var kk2Name = {};
 
-xclient.on('connect', function(display) {
-    var X = this;
+x11.createClient(function(display) {
+    var X = display.client;
     var min = display.min_keycode;
     var max = display.max_keycode;
     X.GetKeyboardMapping(min, max-min, function(list) {
-	for (i in list)
+	for (var i=0; i < list.length; ++i)
         {
+            var name = kk2Name[i+min] = [];
             var sublist = list[i];
-            kk2Name[i] = [];
-            for (j in sublist)
-                kk2Name[i].push(ks2Name[sublist[j]]);
+            for (var j =0; j < sublist.length; ++j)
+		name.push(ks2Name[sublist[j]]);
         }
 
         var root = display.screen[0].root;
