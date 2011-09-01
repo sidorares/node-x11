@@ -33,11 +33,24 @@ x11.createClient(
                 X.pack_stream.pack('CCS', [ext.majorOpcode, 1, 1]);
                 X.replies[X.seq_num] = [
                     function (buf, opt) {
+                        var res = {};
                         var res1 = buf.unpack('LLLLL');
-                        // [ 28, 1, 7, 32, 0 ]
-                        
-                        //console.log(res1); 
-                        return res1;
+                        var num_formats = res1[0];
+                        var num_screens = res1[1];
+                        var num_depths = res1[2];
+                        var num_visuals = res1[3];
+	                var num_subpixel = res1[4];
+                        // formats list:
+                        var offset = 24;
+                        res.formats = [];                        
+                        for (var i=0; i < num_formats; ++i)
+                        {
+                            var format = {};
+                            var f = buf.unpack('LCCxxSSSSSSSSL', offset);                            
+                            res.formats.push(f);
+                            offset += 28;
+                        }
+                        return res;
                     },
                     callback
                 ];
@@ -343,17 +356,18 @@ x11.createClient(
             });
             X.MapWindow(win);
 
-            // this values need to be queried from server!
-            // quick hack until I have nessesary request
-            // TODO: bad bad bad fix asap :)
-            var rgb24 = 71;
-            var rgba32 = 69;
-            if (process.platform == 'linux')
-            {
-                rgb24 = 42;
-                rgba32 = 38;
-            }
-            
+            RenderQueryPictFormat(function(formats) {
+                var mono1, rgb24, rgba32;
+                for (var i=0; i < formats.formats.length; ++i) {
+                    var f = formats.formats[i];
+                    if (f[2] == 1 && f[10] == 1)
+                        mono1 = f[0] ;
+                    if (f[2] == 24 && f[3] == 16 && f[5] == 8 && f[7] == 0)
+                        rgb24 = f[0];
+                    if (f[2] == 32 && f[3] == 16 && f[5] == 8 && f[7] == 0 && f[9] == 24)
+                        rgba32 = f[0] ;
+                }                 
+           
             var picture = X.AllocID();
             RenderCreatePicture(picture, win, rgb24, { polyEdge: 1, polyMode: 0 } ); 
             var pixmap = X.AllocID();
@@ -418,14 +432,14 @@ x11.createClient(
                 RenderComposite(3, pix_pict1, 0, pix_pict, 0, 0, 0, 0, X.x2, X.y2, 500, 500);
             }
 
-            update();
-
             function draw()
             {
                 RenderComposite(3, pix_pict, 0, picture, 0, 0, 0, 0, 0, 0, 500, 500);
             }
 
             X.x1 = X.y1 = X.x2 = X.y2 = 0;
+            update();
+            draw();
 
             X.on('event', function(ev) {
                 if (ev.type == 4)
@@ -443,8 +457,8 @@ x11.createClient(
                    update();
                    draw();
                 } else {
-                     draw();
-                }
+                   draw();
+                }                  
                  
                 //RenderFillRectangles(1, picture, [0xffff, 0xffff, 0xffff, 0xffff], [0, 0, 500, 500]);
                 //RenderFillRectangles(1, picture, [0xffff, 0xffff, 0x0000, 0xffff], [10, 10, 50, 50]);
@@ -458,6 +472,9 @@ x11.createClient(
                 //RenderComposite(3, pic_grad, 0, picture, 0, 0, 0, 0, 0, 0, 500, 500);
             });
         });
+
+
+        }); // <- everything above is a body of callback to QueryPictFormats
      }
 
 ).on('error', function(err) {
