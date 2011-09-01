@@ -10,6 +10,8 @@ x11.createClient(
     function(display) {
         var X = display.client;
         X.QueryExtension('RENDER', function(ext) {  
+
+            console.log(ext);
         
             function RenderQueryVersion(clientMaj, clientMin, callback)
             {
@@ -341,13 +343,16 @@ x11.createClient(
             });
             X.MapWindow(win);
 
-            //rgb24: 42 32: 38  rd: 24
-
-            //var rgb24 = 42;
-            //var rgba32 = 38;
-
+            // this values need to be queried from server!
+            // quick hack until I have nessesary request
+            // TODO: bad bad bad fix asap :)
             var rgb24 = 71;
             var rgba32 = 69;
+            if (process.platform == 'linux')
+            {
+                rgb24 = 42;
+                rgba32 = 38;
+            }
             
             var picture = X.AllocID();
             RenderCreatePicture(picture, win, rgb24, { polyEdge: 1, polyMode: 0 } ); 
