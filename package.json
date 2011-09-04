@@ -1,5 +1,5 @@
 { "name" : "x11"
-, "author": "Andrey Sidorov <sidorares@yandex.ru>",
+, "author": "Andrey Sidorov <sidorares@yandex.ru>"
 , "description": "A pure node.js JavaScript client implementing X Window (X11) protocol."
 , "keywords": ["X Window", "ui", "gui", "widgets", "desktop", "XWindow", "X"]
 , "homepage": "https://github.com/sidorares/node-x11",
