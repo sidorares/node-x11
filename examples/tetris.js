@@ -108,7 +108,7 @@ function deleteLines()
 var x11 = require('../lib/x11');
 var Exposure = x11.eventMask.Exposure;
 var KeyPress = x11.eventMask.KeyPress;
-var sqsize = 20;
+var sqsize = 50;
 var wid, cidBlack, cidWhite;
 var angle = 0;
 var gamestate = 'stopped';
@@ -145,7 +145,7 @@ function startGame()
 {
     // start timers set up cirrent + next figure, clear cup
     clearCup();
-    setInterval(timerMove, 100);
+    setInterval(timerMove, 200);
 }
 
 function getTransformedFigure(num, angle, pos)
@@ -236,7 +236,12 @@ function moveRight()
 
 function drop()
 {
-   console.log('drop');
+    var newpos = [pos[0], pos[1]];
+    while (!intersects(fignum, newpos, angle))
+        newpos[1]--;
+    newpos[1]++;
+    pos = [newpos[0], newpos[1]];
+    draw();
 }
 
 
