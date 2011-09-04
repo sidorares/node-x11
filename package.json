@@ -1,0 +1,20 @@
+{ "name" : "node-x11"
+, "description" : "X Window (x11 protocol) client for Node.Js"
+, "version" : "0.0.1"
+, "maintainers" :
+  [ { "name": "Andrey Sidorov"
+    , "email": "sidoares@yandex.ru"
+    }
+  ]
+, "bugs" : { "web" : "http://github.com/sidorares/node-x11/issues" }
+, "licenses" : [ { "type" : "MIT" } ]
+, "repositories" :
+  [ { "type" : "git"
+    , "url" : "http://github.com/sidorares/node-x11"
+    }
+  ]
+, "main" : "./lib/x11"
+, "engines" : { "node" : ">=0.2.0" }
+}
+
+
