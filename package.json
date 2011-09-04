@@ -1,5 +1,8 @@
-{ "name" : "node-x11"
-, "description" : "X Window (x11 protocol) client for Node.Js"
+{ "name" : "x11":
+, "author": "Andrey Sidorov <sidorares@yandex.ru>",
+, "description": "A pure node.js JavaScript client implementing X Window (X11) protocol."
+, "keywords": ["X Window", "ui", "gui", "widgets", "desktop", "XWindow", "X"],
+, "homepage": "https://github.com/sidorares/node-x11",
 , "version" : "0.0.1"
 , "maintainers" :
   [ { "name": "Andrey Sidorov"
@@ -14,7 +17,7 @@
     }
   ]
 , "main" : "./lib/x11"
-, "engines" : { "node" : ">=0.2.0" }
+, "engines" : { "node" : "*" }
 }
 
 
