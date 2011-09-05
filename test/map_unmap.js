@@ -11,13 +11,14 @@ xclient.on('connect', function(display) {
     var white = display.screen[0].white_pixel;
     var black = display.screen[0].black_pixel;
 
-    X.CreateWindow(wid, root, 10, 10, 400, 300, 1, 1, 0, { backgroundPixel: white, eventMask: PointerMotion });
-    X.MapWindow(wid);
+    X.CreateWindow({ depth: 0, wid: wid, parent: root, x: 10, y: 10, width: 400, height: 300, border_width: 1, _class: 1, visual: 0, 
+                   value_mask: { BackPixel: white, EventMask: PointerMotion } });
+    X.MapWindow({ window: wid });
     setInterval(function() {
         if (!mapped) {
-            X.MapWindow(wid);
+            X.MapWindow({window: wid });
         } else {
-            X.UnmapWindow(wid);
+            X.UnmapWindow({ window: wid });
         }
         mapped = !mapped;
     }, 1000);
