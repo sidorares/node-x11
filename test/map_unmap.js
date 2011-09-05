@@ -22,5 +22,8 @@ xclient.on('connect', function(display) {
         }
         mapped = !mapped;
     }, 1000);
+    X.QueryTree({ window: root }, function(resp) {
+      console.log('QueryTree', resp)
+    })
     
 });
