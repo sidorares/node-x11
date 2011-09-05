@@ -40,6 +40,14 @@ function size(str) {
   return size / 4
 }
 
+function associate(arr1, arr2) {
+  var ret = {}
+  for(var i = 0, len = Math.min(arr1.length, arr2.length); i < len; ++i) {
+    ret[arr1[i]] = arr2[i]
+  }
+  return ret
+}
+
 module.exports = 
 {{each(i, reqName) Object.keys(requests)}}
 ${getDelim(i)} ${reqName}: 
@@ -78,7 +86,15 @@ ${getDelim(i)} ${reqName}:
     }
   {{if requests[reqName].reply}}
   , function(buf, format) {
-
+      var reply{{if firstType(requests[reqName].reply.field, 'field')}} =
+          {{each(j, field) requests[reqName].reply.field}}
+          {{if field.fieldType == 'field'}}
+          ${getDelim(realIndex(requests[reqName].reply, field), '[')} '${field.name}'
+          {{/if}}
+        {{/each}} ]
+        {{/if}}
+        , format = "{{each(j, field) requests[reqName].reply.field}}{{if field.fieldType == 'field' }}${getBufPack(field)}{{/if}}{{/each}}"
+      return associate(reply, buf.unpack(format))
     }
   {{/if}}
   ]

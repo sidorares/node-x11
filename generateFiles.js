@@ -16,6 +16,7 @@ var fs = require('fs')
            , bufPackType: bufPackType
            , requestLengthIndex: requestLengthIndex
            , listLenIndex: listLenIndex
+           , realIndex: realIndex
            }
 
 ;['requests'].forEach(function(name) {
@@ -28,7 +29,7 @@ function getValueMask(requestName) {
 }
 
 function getDelim(i, ch) {
-  return i == 0 ? (ch || '{') : ','
+  return i == 0 ? (ch != null ? ch : '{') : ','
 }
 
 function enumVal(val) {
@@ -104,3 +105,10 @@ function listLenIndex(request, field) {
   }
 }
 
+function realIndex(request, field) {
+  var index = 0
+  for (var i = 0, len = request.field.length; i < len; ++i) {
+    if (request.field[i] == field) return index
+    if (request.field[i].fieldType == 'field') index++;
+  }
+}
