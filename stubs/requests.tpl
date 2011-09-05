@@ -1,8 +1,8 @@
-var packMask = require('./valuemask')
-  ,  valueMask = {
-{{each(requestName, request) requests}}
+var packMask = require('../valuemask')
+  ,  valueMask =
+{{each(i, requestName) Object.keys(requests)}}
 {{if getValueMask(requestName) }}
-  ${requestName}:
+  ${getDelim(i)} ${requestName}:
     {{each(i, value) getValueMask(requestName)}}
     ${getDelim(i)} ${value.name}: ${enumVal(value)}
     {{/each}}
@@ -15,6 +15,29 @@ function parameterOrder(params, obj) {
   return params.map(function(name) {
     return name && obj[name]
   })
+}
+
+function size(str) {
+  var i = str.length
+    , size = 0
+  while(i--) {
+    switch(str[i]) {
+      case 'C':
+      case 'c':
+      case 'x':
+        size += 1
+        break;
+      case 'S':
+      case 's':
+        size += 2
+        break;
+      case 'L':
+      case 'l':
+        size += 4
+        break;
+    }
+  }
+  return size / 4
 }
 
 module.exports = 
@@ -36,7 +59,7 @@ ${getDelim(i)} ${reqName}:
       {{each(j, field) requests[reqName].field}}
       {{if isListType(field)}}
       {{if isValueMask(field)}}
-        , packed = packMask(valueMask[${reqName}], obj.${prepPropName(field['value-mask-name'])})
+        , packed = packMask(valueMask['${reqName}'], obj.${prepPropName(field['value-mask-name'])})
 
         {{if isListAccountedFor(requests[reqName], field)}}
       args[${listLenIndex(requests[reqName], field)}] = packed[0]
@@ -50,8 +73,7 @@ ${getDelim(i)} ${reqName}:
       {{/if}}
       {{/each}}
       args[0] = ${requests[reqName].opcode}
-      args[${requestLengthIndex(requests[reqName])}] = 123//get to this later
-
+      args[${requestLengthIndex(requests[reqName])}] = size(format)
       return [format, args]
     }
   {{if requests[reqName].reply}}
