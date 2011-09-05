@@ -11,6 +11,11 @@ var fs = require('fs')
            , prepPropName: prepPropName
            , firstType: firstType
            , prePackFirst: prePackFirst
+           , isValueMask: isValueMask
+           , isListAccountedFor: isListAccountedFor
+           , bufPackType: bufPackType
+           , requestLengthIndex: requestLengthIndex
+           , listLenIndex: listLenIndex
            }
 
 ;['requests'].forEach(function(name) {
@@ -43,6 +48,10 @@ function getBufPack(field) {
   : typeLookup.packTypes[field.type]
 }
 
+function bufPackType(type) {
+  return typeLookup.packTypes[type]
+}
+
 function prepPropName(short) {
   return short === 'new' ? '_new' 
   : short === 'class' ? '_class'
@@ -58,6 +67,40 @@ function firstType(field, type) {
   }) && f
 }
 
-function prePackFirst(request) {
+function prePackFirst(request, j) {
+  if (j != null) console.log(request.opcode < 128, j, request.field[0])
   return request.opcode < 128
 }
+
+function requestLengthIndex(request) {
+  return prePackFirst(request) && request.field && request.field[0].fieldType != 'pad' ? 2 : 1
+}
+
+function isValueMask(field) {
+  return field.fieldType == 'valueparam'
+}
+
+function listLenName(field) {
+    return field.fieldType == 'list' ? field.name + '_len'
+      : field['value-mask-name']
+}
+
+function isListAccountedFor(request, field) {
+  var name = listLenName(field)
+  return field.name == 'keysyms'
+  || field.name == 'keycodes'
+  || field.name == 'event'
+  || !request.field.every(function(f) {
+    return name != f.name
+  })
+}
+
+function listLenIndex(request, field) {
+  var index = 1
+    , name = listLenName(field)
+  for (var i = 0, len = request.field.length; i < len; ++i) {
+    if (request.field[i].name == name) return index
+    if (request.field[i].fieldType == 'field') index++;
+  }
+}
+
