@@ -76,21 +76,7 @@ ${getDelim(i)} ${reqName}:
         {{/each}}
           ]
         , addSize = 0
-      {{each(j, field) requests[reqName].field}}
-      {{if isListType(field)}}
-      {{if isValueMask(field)}}
-        , packed = packMask(valueMask['${reqName}'], obj.${prepPropName(field['value-mask-name'])})
-
-        obj.${field['value-mask-name']} = packed[0]
-        {{if !(isListAccountedFor(requests[reqName], field))}}
-      format += "${bufPackType(field['value-mask-type'])}"
-        {{/if}}
-      obj.${field['value-list-name']} = packed[1]
-      format += new Array(packed[1].length + 1).join("${bufPackType('CARD32')}")
-      {{/if}}
-      {{/if}}
-      {{/each}}
-      {{html packList("args", "format", requests[reqName].field, reqName)}}
+      {{html packList(3, "args", "format", requests[reqName].field, reqName)}}
       args = parameterOrder(args, obj)
       args[0] = ${requests[reqName].opcode}
       args[${requestLengthIndex(requests[reqName])}] = size(format) + addSize
@@ -113,7 +99,7 @@ ${getDelim(i)} ${reqName}:
       {{/if}}
       Object.defineProperty(reply, '_raw', { value: buf, enumerable: false })
       Object.defineProperty(reply, '_offset', { value: unpacked.offset, enumerable: false })
-      {{html unpackList("reply", "buf", "unpacked.offset", requests[reqName].reply.field, reqName)}}
+      {{html unpackList(3, "reply", "buf", "unpacked.offset", requests[reqName].reply.field, reqName)}}
       return reply
       
     }

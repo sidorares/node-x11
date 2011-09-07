@@ -122,7 +122,7 @@ function realIndex(request, field) {
   }
 }
 
-function unpackList(obj, buf, offset, list, name) {
+function unpackList(indents, obj, buf, offset, list, name) {
   var subData = {} //Object.create(data)
     , key
   for (key in data) subData[key] = data[key]
@@ -132,10 +132,10 @@ function unpackList(obj, buf, offset, list, name) {
   subData.list = list
   subData.theName = name
   var tplFile = fs.readFileSync('stubs/unpackList.tpl').toString().replace(/\n\s*{{/g, '{{').replace(/}}\s*$/g, '}}')
-  return jqtpl.tmpl(tplFile, subData)
+  return indent(indents, jqtpl.tmpl(tplFile, subData))
 }
 
-function packList(args, format, list, name) {
+function packList(indents, args, format, list, name) {
   var subData = {} //Object.create(data)
     , key
   for (key in data) subData[key] = data[key]
@@ -144,7 +144,14 @@ function packList(args, format, list, name) {
   subData.list = list
   subData.theName = name
   var tplFile = fs.readFileSync('stubs/packList.tpl').toString().replace(/\n\s*{{/g, '{{').replace(/}}\s*$/g, '}}')
-  return jqtpl.tmpl(tplFile, subData)
+  return indent(indents, jqtpl.tmpl(tplFile, subData))
+}
+
+function indent(num, lines) {
+  var indent = new Array(num + 1).join('  ')
+  return lines.split('\n').map(function(line) {
+    return line ? indent + line : ''
+  }).join('\n')
 }
 
 function getFieldRef(name, field, obj) { //todo read operators appropriately
