@@ -1,4 +1,5 @@
 var packMask = require('../valuemask')
+  , xutil = require('../xutil')
   ,  valueMask =
 {{each(i, requestName) Object.keys(requests)}}
 {{if getValueMask(requestName) }}
@@ -12,9 +13,12 @@ var packMask = require('../valuemask')
 }
 
 function parameterOrder(params, obj) {
-  return params.map(function(name) {
-    return name && obj[name]
+  var ret = []
+  params.forEach(function(name, i) {
+    if (Array.isArray(obj[name])) return ret = ret.concat(obj[name])
+    else ret[i] = name && obj[name]
   })
+  return ret;
 }
 
 function size(str) {
@@ -53,48 +57,65 @@ module.exports =
 ${getDelim(i)} ${reqName}: 
   [ function(obj, cb) {
       var format = '{{if prePackFirst(requests[reqName])}}C${getBufPack(requests[reqName].field && requests[reqName].field[0])}{{else}}S{{/if}}S{{each(j, field) requests[reqName].field}}{{if !(prePackFirst(requests[reqName]) && j === 0)}}${getBufPack(field)}{{/if}}{{/each}}'
-        , args   = parameterOrder([ null
+        , args   = [ null
         {{if prePackFirst(requests[reqName]) && requests[reqName].field && requests[reqName].field[0].name}}
           , '${prepPropName(requests[reqName].field[0].name)}'
         {{/if}}
           , null
         {{each(j, field) requests[reqName].field}}
-        {{if field.fieldType == 'field' && !(j === 0 && prePackFirst(requests[reqName]))}}
+        {{if (field.fieldType == 'field' || field.fieldType == 'valueparam' || field.type == 'char') && !(j === 0 && prePackFirst(requests[reqName]))}}
+          {{if field.fieldType == 'valueparam'}}
+            {{if !(isListAccountedFor(requests[reqName], field))}}
+          , '${listLengthName(field)}'
+            {{/if}}
+          , '${field['value-list-name']}'
+          {{else}}
           , '${prepPropName(field.name)}'
+          {{/if}}
         {{/if}}
         {{/each}}
-          ], obj)
+          ]
+        , addSize = 0
       {{each(j, field) requests[reqName].field}}
       {{if isListType(field)}}
       {{if isValueMask(field)}}
         , packed = packMask(valueMask['${reqName}'], obj.${prepPropName(field['value-mask-name'])})
 
-        {{if isListAccountedFor(requests[reqName], field)}}
-      args[${listLenIndex(requests[reqName], field)}] = packed[0]
-        {{else}}
+        obj.${field['value-mask-name']} = packed[0]
+        {{if !(isListAccountedFor(requests[reqName], field))}}
       format += "${bufPackType(field['value-mask-type'])}"
-      args.push(packed[0])
         {{/if}}
-      args = args.concat(packed[1])
+      obj.${field['value-list-name']} = packed[1]
       format += new Array(packed[1].length + 1).join("${bufPackType('CARD32')}")
       {{/if}}
       {{/if}}
       {{/each}}
+      {{html packList("args", "format", requests[reqName].field, reqName)}}
+      args = parameterOrder(args, obj)
       args[0] = ${requests[reqName].opcode}
-      args[${requestLengthIndex(requests[reqName])}] = size(format)
+      args[${requestLengthIndex(requests[reqName])}] = size(format) + addSize
       return [format, args]
     }
   {{if requests[reqName].reply}}
-  , function(buf, format) {
-      var reply{{if firstType(requests[reqName].reply.field, 'field')}} =
-          {{each(j, field) requests[reqName].reply.field}}
+  , function(buf, prop) {
+      var fields{{if shiftedFirstType(requests[reqName].reply.field, 'field')}} =
+          {{each(j, field) requests[reqName].reply.field.slice(1)}}
           {{if field.fieldType == 'field'}}
-          ${getDelim(realIndex(requests[reqName].reply, field), '[')} '${field.name}'
+          ${getDelim(realIndex(requests[reqName].reply.field.slice(1), field), '[')} '${field.name}'
           {{/if}}
         {{/each}} ]
         {{/if}}
-        , format = "{{each(j, field) requests[reqName].reply.field}}{{if field.fieldType == 'field' }}${getBufPack(field)}{{/if}}{{/each}}"
-      return associate(reply, buf.unpack(format))
+        , format = "{{each(j, field) requests[reqName].reply.field.slice(1)}}${getBufPack(field)}{{/each}}"
+        , unpacked = buf.unpack(format)
+        , reply  = associate(fields, unpacked)
+      {{if isFieldFirst(requests[reqName].reply.field)}}
+      reply.${requests[reqName].reply.field[0].name} = prop
+      {{/if}}
+      reply._raw = buf
+      reply._offset = unpacked.offset
+      {{html unpackList("reply", "buf", "unpacked.offset", requests[reqName].reply.field, reqName)}}
+      return reply
+      
     }
   {{/if}}
   ]

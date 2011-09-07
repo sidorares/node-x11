@@ -10,6 +10,7 @@ var fs = require('fs')
            , isListType: isListType
            , prepPropName: prepPropName
            , firstType: firstType
+           , shiftedFirstType: shiftedFirstType
            , prePackFirst: prePackFirst
            , isValueMask: isValueMask
            , isListAccountedFor: isListAccountedFor
@@ -17,6 +18,11 @@ var fs = require('fs')
            , requestLengthIndex: requestLengthIndex
            , listLenIndex: listLenIndex
            , realIndex: realIndex
+           , unpackList: unpackList
+           , packList: packList
+           , getFieldRef: getFieldRef
+           , isFieldFirst: isFieldFirst
+           , listLengthName: listLengthName
            }
 
 ;['requests'].forEach(function(name) {
@@ -68,8 +74,11 @@ function firstType(field, type) {
   }) && f
 }
 
-function prePackFirst(request, j) {
-  if (j != null) console.log(request.opcode < 128, j, request.field[0])
+function shiftedFirstType(field, type) {
+  return firstType(field.slice(1), 'field')
+}
+
+function prePackFirst(request) {
   return request.opcode < 128
 }
 
@@ -107,8 +116,53 @@ function listLenIndex(request, field) {
 
 function realIndex(request, field) {
   var index = 0
-  for (var i = 0, len = request.field.length; i < len; ++i) {
-    if (request.field[i] == field) return index
-    if (request.field[i].fieldType == 'field') index++;
+  for (var i = 0, len = request.length; i < len; ++i) {
+    if (request[i] == field) return index
+    if (request[i].fieldType == 'field') index++;
   }
+}
+
+function unpackList(obj, buf, offset, list, name) {
+  var subData = {} //Object.create(data)
+    , key
+  for (key in data) subData[key] = data[key]
+  subData.buf = buf
+  subData.offset = offset
+  subData.obj = obj
+  subData.list = list
+  subData.theName = name
+  var tplFile = fs.readFileSync('stubs/unpackList.tpl').toString().replace(/\n\s*{{/g, '{{').replace(/}}\s*$/g, '}}')
+  return jqtpl.tmpl(tplFile, subData)
+}
+
+function packList(args, format, list, name) {
+  var subData = {} //Object.create(data)
+    , key
+  for (key in data) subData[key] = data[key]
+  subData.args = args
+  subData.format = format
+  subData.list = list
+  subData.theName = name
+  var tplFile = fs.readFileSync('stubs/packList.tpl').toString().replace(/\n\s*{{/g, '{{').replace(/}}\s*$/g, '}}')
+  return jqtpl.tmpl(tplFile, subData)
+}
+
+function getFieldRef(name, field, obj) { //todo read operators appropriately
+  return field.fieldType == 'valueparam' ? field['value-mask-name']
+  : field.fieldref ? field.fieldref
+  : field.value ? field.value
+  : name == 'GetProperty' ? obj + ".format / 8 * " + obj  + ".value_len"
+  : name == 'GetModifierMapping' ? obj + ".keycodes_per_modifier * 8"
+  : "0"
+}
+
+function listLengthName(field) {
+  return field.fieldType == 'valueparam' ? field['value-mask-name']
+  : field.fieldref ? field.fieldref
+  : field.value ? field.value
+  : field.name + '_len'
+}
+
+function isFieldFirst(fields) {
+  return fields[0].fieldType == 'field'
 }
