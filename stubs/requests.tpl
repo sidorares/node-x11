@@ -111,8 +111,8 @@ ${getDelim(i)} ${reqName}:
       {{if isFieldFirst(requests[reqName].reply.field)}}
       reply.${requests[reqName].reply.field[0].name} = prop
       {{/if}}
-      reply._raw = buf
-      reply._offset = unpacked.offset
+      Object.defineProperty(reply, '_raw', { value: buf, enumerable: false })
+      Object.defineProperty(reply, '_offset', { value: unpacked.offset, enumerable: false })
       {{html unpackList("reply", "buf", "unpacked.offset", requests[reqName].reply.field, reqName)}}
       return reply
       
