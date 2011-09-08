@@ -1,5 +1,6 @@
 var packMask = require('../valuemask')
   , xutil = require('../xutil')
+  , structs = require('./structs')
   ,  valueMask =
 {{each(i, requestName) Object.keys(requests)}}
 {{if getValueMask(requestName) }}
