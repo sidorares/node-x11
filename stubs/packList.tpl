@@ -18,6 +18,28 @@ buf_name.write(obj.${field.name})
 obj.${field.name} = buf_name
 format += 'a'
 addSize += (len / 4)
+    {{else}}
+
+var buf_name = new Buffer(${field.value})
+buffer.write(obj.${field.name})
+addSize += ${field.value} / 4
+format += 'a'
+    {{/if}}
+  {{else}}
+    {{if bufPackType(field.type)}}
+var len = obj.${prepPropName(field.name)}.length
+format += new Array(len + 1).join("${bufPackType(field.type)}")
+obj.${listLengthName(field)} = len
+    {{else}}
+var i = 0
+  , len = obj.${prepPropName(field.name)}.length
+obj.${listLengthName(field)} = len
+for (; i < len; ++i) {
+  var result = structs.${field.type}.pack(obj.${prepPropName(field.name)}[i], format)
+  format = result[0]
+  obj.${prepPropName(field.name)}[i] = result[1]
+  addSize += result[2]
+}
     {{/if}}
   {{/if}}
 {{/if}}
