@@ -11,46 +11,10 @@ var packMask = require('../valuemask')
 {{/if}}
 {{/each}}
 }
+  , parameterOrder = xutil.parameterOrder
+  , size = xutil.formatSize
+  , associate = xutil.associate 
 
-function parameterOrder(params, obj) {
-  var ret = []
-  params.forEach(function(name, i) {
-    if (Array.isArray(obj[name])) return ret = ret.concat(obj[name])
-    else ret[i] = name && obj[name]
-  })
-  return ret;
-}
-
-function size(str) {
-  var i = str.length
-    , size = 0
-  while(i--) {
-    switch(str[i]) {
-      case 'C':
-      case 'c':
-      case 'x':
-        size += 1
-        break;
-      case 'S':
-      case 's':
-        size += 2
-        break;
-      case 'L':
-      case 'l':
-        size += 4
-        break;
-    }
-  }
-  return size / 4
-}
-
-function associate(arr1, arr2) {
-  var ret = {}
-  for(var i = 0, len = Math.min(arr1.length, arr2.length); i < len; ++i) {
-    ret[arr1[i]] = arr2[i]
-  }
-  return ret
-}
 
 module.exports = 
 {{each(i, reqName) Object.keys(requests)}}
