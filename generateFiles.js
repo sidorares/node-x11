@@ -3,6 +3,7 @@ var fs = require('fs')
   , typeLookup = JSON.parse(fs.readFileSync('protocols/xTypes.json'))
   , xProto = JSON.parse(fs.readFileSync('protocols/xProtocol.json'))
   , data = { requests: xProto.request
+           , structs: xProto.struct
            , getValueMask: getValueMask
            , getDelim: getDelim
            , enumVal: enumVal
@@ -23,9 +24,11 @@ var fs = require('fs')
            , getFieldRef: getFieldRef
            , isFieldFirst: isFieldFirst
            , listLengthName: listLengthName
+           , fieldName: fieldName
+           , nonPad: nonPad
            }
 
-;['requests'].forEach(function(name) {
+;['requests', 'structs'].forEach(function(name) {
   var tplFile = fs.readFileSync('stubs/' + name + '.tpl').toString().replace(/\n\s*{{/g, '{{').replace(/}}\s*$/g, '}}')
   fs.writeFileSync('lib/x11/autogen/' + name + '.js', jqtpl.tmpl(tplFile, data))
 })
@@ -34,8 +37,8 @@ function getValueMask(requestName) {
   return typeLookup.valuemaskEnum[requestName] && xProto.enum[typeLookup.valuemaskEnum[requestName]].field
 }
 
-function getDelim(i, ch) {
-  return i == 0 ? (ch != null ? ch : '{') : ','
+function getDelim(i, first, rest) {
+  return i == 0 ? (first != null ? first : '{') : (rest != null ? rest : ',')
 }
 
 function enumVal(val) {
@@ -172,4 +175,17 @@ function listLengthName(field) {
 
 function isFieldFirst(fields) {
   return fields[0].fieldType == 'field'
+}
+
+function fieldName(field) {
+  return prepPropName(
+    field.fieldType == 'valueparam' ? field['value-list-name']
+    : field.name
+  )
+}
+
+function nonPad(fields){
+  return fields.filter(function(field){
+    return field.fieldType != 'pad'
+  })
 }
