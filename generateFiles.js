@@ -26,6 +26,7 @@ var fs = require('fs')
            , listLengthName: listLengthName
            , fieldName: fieldName
            , nonPad: nonPad
+           , constructOp: constructOp
            }
 
 ;['requests', 'structs'].forEach(function(name) {
@@ -188,4 +189,23 @@ function nonPad(fields){
   return fields && fields.filter(function(field){
     return field.fieldType != 'pad'
   })
+}
+
+function constructOp(field, obj) {
+  function prependObj(item) {
+    return item == 'length' ? item : obj + '.' + item
+  }
+
+  function handleOp(op) {
+    var params = []
+    if (op.value) params.push(op.value)
+    if (op.fieldref) {
+      if (Array.isArray(op.fieldref)) params.concat(op.fieldref.map(prependObj))
+      else params.push(prependObj(op.fieldref))
+    }
+    if (op.op) params.push(handleOp(op.op))
+    return params.join(op.operation)
+  }
+
+  return handleOp(field.op)
 }

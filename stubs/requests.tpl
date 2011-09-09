@@ -49,7 +49,7 @@ ${getDelim(i)} ${reqName}:
       return padEnd([format, args], addSize, ${requestLengthIndex(requests[reqName])})
     }
   {{if requests[reqName].reply}}
-  , function(buf, prop) {
+  , function(buf, prop, length) {
       var fields{{if shiftedFirstType(requests[reqName].reply.field, 'field')}} =
           {{each(j, field) requests[reqName].reply.field.slice(1)}}
           {{if field.fieldType == 'field'}}

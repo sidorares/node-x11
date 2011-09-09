@@ -7,7 +7,9 @@ ${offset} += ${obj}.${listLengthName(field)}
     {{if field.value != null}}
     {{else bufPackType(field.type)}}
       {{if listLengthName(field) == 'length' }}
-var len = (${buf}.length - 24) / 4
+var len = length
+      {{else field.op}}
+var len = ${constructOp(field, obj)}
       {{else}}
 var len = ${obj}.${listLengthName(field)}
       {{/if}}
