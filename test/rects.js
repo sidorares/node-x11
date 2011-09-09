@@ -49,7 +49,7 @@ x11.createClient().on('connect', function(display) {
         if (rect.rect.x >= rect.range[1] || rect.rect.x <= rect.range[0]) rect.dir *= -1
       })
       var rectList = rects.map(function(r) { return r.rect })
-      X.PolyRectangle({ drawable: window, gc: draw[i], rectangles_len: rectList.length, rectangles: rectList })
+      X.PolyFillRectangle({ drawable: window, gc: draw[i], rectangles: rectList })
     })
     split += dir
     if (split > 500 || split < 300) dir *= -1
