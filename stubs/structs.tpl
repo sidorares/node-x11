@@ -12,7 +12,7 @@ structs.${structName}.pack = function pack${structName}(obj, format) {
   format = format || ""
   format += '{{each(j, field) structs[structName].field}}${getBufPack(field)}{{/each}}'
   var args = [ {{each(i, field) nonPad(attr.field)}}
-              {{if isListValue(field) && !(isListAccountedFor(structs[structName], field))}}
+              {{if field.fieldType == 'valueparam' && !(isListAccountedFor(structs[structName], field))}}
       ${getDelim(i, "  ", ", ")}'${listLengthName(field)}'
               {{/if}}
       ${getDelim(i, "  ", ", ")}'${fieldName(field)}'

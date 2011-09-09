@@ -29,7 +29,7 @@ ${getDelim(i)} ${reqName}:
           , null
         {{each(j, field) requests[reqName].field}}
         {{if field.fieldType != 'pad' && !(j === 0 && prePackFirst(requests[reqName]))}}
-          {{if isListType(field) && !(isListAccountedFor(requests[reqName], field))}}
+          {{if field.fieldType == 'valueparam' && !(isListAccountedFor(requests[reqName], field))}}
           , '${listLengthName(field)}'
           {{/if}}
           , '${fieldName(field)}'
