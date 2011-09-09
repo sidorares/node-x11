@@ -19,10 +19,10 @@ for (var i=0; i < bitmap.length; ++i)
 }
 
 xclient.on('connect', function(display) {
-    var X = this;
-    
-    X.QueryExtension('BIG-REQUESTS', function(BigReq) {
-        console.log(BigReq);
+
+    var X = display.client;   
+    X.require('big-requests', function(BigReq) {
+       
         BigReq.Enable(function(maxLen) { console.log( maxLen ); });
 
     var root = display.screen[0].root;
