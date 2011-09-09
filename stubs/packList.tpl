@@ -26,6 +26,8 @@ addSize += ${field.value} / 4
 format += 'a'
     {{/if}}
   {{else}}
+
+obj.${prepPropName(field.name)} = Array.isArray(obj.${prepPropName(field.name)}) ? obj.${prepPropName(field.name)} : [obj.${prepPropName(field.name)}]
     {{if bufPackType(field.type)}}
 var len = obj.${prepPropName(field.name)}.length
 format += new Array(len + 1).join("${bufPackType(field.type)}")
