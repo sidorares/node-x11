@@ -6,7 +6,11 @@ ${offset} += ${obj}.${listLengthName(field)}
   {{else}}
     {{if field.value != null}}
     {{else bufPackType(field.type)}}
+      {{if listLengthName(field) == 'length' }}
+var len = (${buf}.length - 24) / 4
+      {{else}}
 var len = ${obj}.${listLengthName(field)}
+      {{/if}}
 ${obj}.${prepPropName(field.name)} = ${buf}.unpack(new Array(len + 1).join("${bufPackType(field.type)}"), ${offset})
 ${offset} = ${obj}.${prepPropName(field.name)}.offset
     {{else}}

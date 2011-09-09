@@ -16,6 +16,12 @@ var packMask = require('../valuemask')
   , size = xutil.formatSize
   , associate = xutil.associate 
 
+function padEnd(form, addSize, index) {
+  var s = size(form[0]) + addSize
+  form[0] += new Array(s * 4 % 4 + 1).join('x')
+  form[1][index] = Math.ceil(s)
+  return form
+}
 
 module.exports = 
 {{each(i, reqName) Object.keys(requests)}}
@@ -40,8 +46,7 @@ ${getDelim(i)} ${reqName}:
       {{html packList(3, "args", "format", requests[reqName].field, reqName)}}
       args = parameterOrder(args, obj)
       args[0] = ${requests[reqName].opcode}
-      args[${requestLengthIndex(requests[reqName])}] = size(format) + addSize
-      return [format, args]
+      return padEnd([format, args], addSize, ${requestLengthIndex(requests[reqName])})
     }
   {{if requests[reqName].reply}}
   , function(buf, prop) {
@@ -51,6 +56,7 @@ ${getDelim(i)} ${reqName}:
           ${getDelim(realIndex(requests[reqName].reply.field.slice(1), field), '[')} '${field.name}'
           {{/if}}
         {{/each}} ]
+        {{else}} = []
         {{/if}}
         , format = "{{each(j, field) requests[reqName].reply.field.slice(1)}}${getBufPack(field)}{{/each}}"
         , unpacked = buf.unpack(format)
