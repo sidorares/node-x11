@@ -10,13 +10,14 @@ xclient.on('connect', function(display) {
     var white = display.screen[0].white_pixel;
     var black = display.screen[0].black_pixel;
 
-    X.CreateWindow(wid, root, 10, 10, 400, 300, 1, 1, 0, { backgroundPixel: white, eventMask: PointerMotion });
-    X.MapWindow(wid);
+    X.CreateWindow({ depth: 0, wid: wid, parent: root, x: 10, y: 10, width: 400, height: 300, border_width: 1, _class: 1, visual: 0, 
+                   value_mask: { BackPixel: white, EventMask: PointerMotion } });
+    X.MapWindow({ window: wid });
 
     // mode: 0 replace, 1 prepend, 2 append
     // mode, wid, name, type, format, data
-    X.ChangeProperty(0, wid, xclient.atoms.WM_NAME, xclient.atoms.STRING, 8, 'Hello, NodeJS');
+    X.ChangeProperty({ mode: 0, window: wid, property: xclient.atoms.WM_NAME, type: xclient.atoms.STRING, format: 8, data: 'Hello, NodeJS' });
     setInterval(function() {
-           X.ChangeProperty(0, wid, xclient.atoms.WM_NAME, xclient.atoms.STRING, 8, 'Hello, NodeJS ' + new Date());
+      X.ChangeProperty({ mode: 0, window: wid, property: xclient.atoms.WM_NAME, type: xclient.atoms.STRING, format: 8, data: 'Hello, NodeJS ' + new Date() });
     }, 100);
 });
