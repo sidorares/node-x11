@@ -12,27 +12,19 @@ xclient.on('connect', function(display) {
     var black = display.screen[0].black_pixel;
 
     var wid = X.AllocID();
-    X.CreateWindow(
-       wid, root, 
-       10, 10, 400, 300, 
-       1, 1, 0,
-       { 
-           backgroundPixel: white, eventMask: Exposure|PointerMotion  
-       }
-    );
-    X.MapWindow(wid);
+    X.CreateWindow({ depth: 0, wid: wid, parent: root, x: 10, y: 10, width: 400, height: 300, border_width: 1, _class: 1, visual: 0, 
+                   value_mask: { BackPixel: white, EventMask: Exposure|PointerMotion   } });
+    X.MapWindow({ window: wid });
   
     var gc = X.AllocID();
-    X.CreateGC(gc, wid, { foreground: black, background: white } );
+    X.CreateGC({ cid: gc, drawable: wid, value_mask: { Foreground: black, Background: white } });
     
     X.on('event', function(ev) {
         if (ev.type == 12)
         {
             //X.PolyPoint(0, wid, gc, pts);
         } else if (ev.type == 6) {
-            //pts.push(ev.x);
-            //pts.push(ev.y);
-            X.PolyPoint(0, wid, gc, [ev.x, ev.y]);
+          X.PolyPoint({ coordinate_mode: 0, drawable: wid, gc: gc, points: { x: ev.x, y: ev.y} });
         }
     });
 
