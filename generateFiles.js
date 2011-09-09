@@ -185,7 +185,7 @@ function fieldName(field) {
 }
 
 function nonPad(fields){
-  return fields.filter(function(field){
+  return fields && fields.filter(function(field){
     return field.fieldType != 'pad'
   })
 }

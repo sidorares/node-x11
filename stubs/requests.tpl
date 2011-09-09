@@ -28,15 +28,11 @@ ${getDelim(i)} ${reqName}:
         {{/if}}
           , null
         {{each(j, field) requests[reqName].field}}
-        {{if (field.fieldType == 'field' || field.fieldType == 'valueparam' || field.type == 'char') && !(j === 0 && prePackFirst(requests[reqName]))}}
-          {{if field.fieldType == 'valueparam'}}
-            {{if !(isListAccountedFor(requests[reqName], field))}}
+        {{if field.fieldType != 'pad' && !(j === 0 && prePackFirst(requests[reqName]))}}
+          {{if isListType(field) && !(isListAccountedFor(requests[reqName], field))}}
           , '${listLengthName(field)}'
-            {{/if}}
-          , '${field['value-list-name']}'
-          {{else}}
-          , '${prepPropName(field.name)}'
           {{/if}}
+          , '${fieldName(field)}'
         {{/if}}
         {{/each}}
           ]
