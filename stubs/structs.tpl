@@ -25,12 +25,13 @@ structs.${structName}.pack = function pack${structName}(obj, format) {
 
 structs.${structName}.unpack = function unpack${structName}(buf, offset) {
   offset = offset || 0
-  var fields{{if shiftedFirstType(structs[structName].field, 'field')}} =
+  var fields{{if structs[structName].field}} =
       {{each(j, field) structs[structName].field}}
       {{if field.fieldType == 'field'}}
       ${getDelim(realIndex(structs[structName].field, field), '[')} '${field.name}'
       {{/if}}
     {{/each}} ]
+    {{else}}
     {{/if}}
     , format = "{{each(j, field) structs[structName].field}}${getBufPack(field)}{{/each}}"
     , unpacked = buf.unpack(format, offset)
