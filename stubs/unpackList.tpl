@@ -1,6 +1,6 @@
 {{each(i, field) list}}
 {{if isListType(field)}}
-  {{if field.type == 'char' }}
+  {{if field.type == 'char' || field.type == 'void' }}
 ${obj}.${prepPropName(field.name)} = ${buf}.slice(${offset}, ${offset} + ${obj}.${listLengthName(field)}).toString()
 ${offset} += ${obj}.${listLengthName(field)}
   {{else}}

@@ -9,7 +9,7 @@ format += "${bufPackType(field['value-mask-type'])}"
 obj.${field['value-list-name']} = packed[1]
 format += new Array(packed[1].length + 1).join("${bufPackType('CARD32')}")
 
-  {{else field.type == 'char' }}
+  {{else field.type == 'char' || field.type == 'void' }}
     {{if field.value == null }}
 var len = xutil.padded_length(obj.${prepPropName(field.name)}.length)
   , buf_name = new Buffer(len)
