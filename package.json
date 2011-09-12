@@ -3,7 +3,7 @@
 , "description": "A pure node.js JavaScript client implementing X Window (X11) protocol."
 , "keywords": ["X Window", "ui", "gui", "widgets", "desktop", "XWindow", "X"]
 , "homepage": "https://github.com/sidorares/node-x11"
-, "version" : "0.0.1"
+, "version" : "0.0.2"
 , "maintainers" :
   [ { "name": "Andrey Sidorov"
     , "email": "sidoares@yandex.ru"
