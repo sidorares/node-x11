@@ -1,3 +1,8 @@
+process.on('uncaughtException', function (err) {
+    console.log(err);
+    console.log('Caught exception: ' + err);
+});
+
 var figs = [
     //[ 0, 0, 4, 0],
 
@@ -108,7 +113,7 @@ function deleteLines()
 var x11 = require('../lib/x11');
 var Exposure = x11.eventMask.Exposure;
 var KeyPress = x11.eventMask.KeyPress;
-var sqsize = 50;
+var sqsize = 15;
 var wid, cidBlack, cidWhite;
 var angle = 0;
 var gamestate = 'stopped';
@@ -246,7 +251,23 @@ function drop()
 
 
 x11.createClient(function(display) {
+    var ks = x11.keySyms;
+    var ks2Name = {};
+    for (var key in ks)
+        ks2Name[ ks[key] ] = key;
+    var kk2Name = {};
+    var min = display.min_keycode;
+    var max = display.max_keycode;
     X = display.client;
+    X.GetKeyboardMapping(min, max-min, function(list) {
+        for (var i=0; i < list.length; ++i)
+        {
+            var name = kk2Name[i+min] = [];
+            var sublist = list[i];
+            for (var j =0; j < sublist.length; ++j)
+                name.push(ks2Name[sublist[j]]);
+        }
+
     var root = display.screen[0].root;
     var white = display.screen[0].white_pixel;
     var black = display.screen[0].black_pixel; 
@@ -261,19 +282,6 @@ x11.createClient(function(display) {
     clearCup();
     startGame();
 
-
-    var up = 111;
-    var down = 116;
-    var left = 113;
-    var right = 114;
-
-//TODO keykode -> keysym
-/*
-    var up = 98;
-    var down = 104;
-    var left = 100;
-    var right = 102;
-*/
     X.on('event', function(ev) {
          switch(ev.type) {
          case 6:
@@ -281,19 +289,21 @@ x11.createClient(function(display) {
          case 12: // expose
               draw(); break;              
          case 2:
-              //console.log('keycode', ev);
-              //console.log(X.keymap[ev.keycode]);
-              // 111, 113, 114, 116, 65
-              switch(ev.keycode) {            
-                  case up: rotateUp(); break;
-                  case down: rotateDown(); break;
-                  case left: moveLeft(); break;
-                  case right: moveRight(); break;
-                  case 65: drop(); break;
+              var key = kk2Name[ev.keycode][0];
+              console.log(key);
+              switch(key) {            
+                  case 'XK_Up': rotateUp(); break;
+                  case 'XK_Down': rotateDown(); break;
+                  case 'XK_Left': moveLeft(); break;
+                  case 'XK_Right': moveRight(); break;
+                  case 'XK_space': drop(); break;
               }
               break;
          default:
               console.log('default event', ev);
          }
     });
+
+  });
+
 });
