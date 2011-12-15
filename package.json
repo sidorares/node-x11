@@ -9,7 +9,7 @@
     , "email": "sidoares@yandex.ru"
     }
   ]
-, "bugs" : { "web" : "http://github.com/sidorares/node-x11/issues" }
+, "bugs" : { "url" : "http://github.com/sidorares/node-x11/issues" }
 , "licenses" : [ { "type" : "MIT" } ]
 , "repositories" :
   [ { "type" : "git"
