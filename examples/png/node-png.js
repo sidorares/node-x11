@@ -758,6 +758,7 @@ var FlateStream = (function() {
       return decodingMap;
     };
     PNG.prototype.copyToImageData = function(imageData, pixels) {
+      //console.log(this);
       var alpha, byte, colors, data, i, palette, pixel, row, v, _i, _j, _k, _len, _len2, _len3, _ref;
       colors = this.colors;
       palette = null;
@@ -783,6 +784,8 @@ var FlateStream = (function() {
             data[i++] = v;
             data[i++] = pixel[1] || 255;
           } else {
+            if (pixel.length == 4 && pixel[3] != 0)
+                console.log(pixel);
             for (_k = 0, _len3 = pixel.length; _k < _len3; _k++) {
               byte = pixel[_k];
               data[i++] = byte;
