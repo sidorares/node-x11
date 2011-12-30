@@ -108,6 +108,7 @@ Core requsests usage:
 
   - http://www.x.org/releases/X11R7.6/doc/
   - http://www.x.org/releases/X11R7.6/doc/xproto/x11protocol.pdf
+  - C Xlib to X11 request mapping table http://tronche.com/gui/x/xlib/appendix/a.html
 
 # Other implementations
 
