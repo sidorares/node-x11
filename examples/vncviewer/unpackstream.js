@@ -17,19 +17,98 @@ function ReadFormatRequest(format, callback)
     this.callback = callback;
 }
 
+/*
+function ReadBuflist(length, callback)
+{
+    this.length = length
+    this.callback = callback;
+    
+}
+*/
+
 function ReadFixedRequest(length, callback)
 {
     this.length = length;
     this.callback = callback;
+    console.log(length);
     this.data = new Buffer(length);
     this.received_bytes = 0;
 }
 
 ReadFixedRequest.prototype.execute = function(bufferlist)
 {
+
     // TODO: this is a brute force version
     // replace with Buffer.slice calls
+    
+
+    // bufferlist:
+    // offset
+    // readlist:
+    // [ b1 b2 b3 b4 b5 ]
+    
+    
     var to_receive = this.length - this.received_bytes;
+    console.log([bufferlist.offset, bufferlist.length, to_receive]);
+    
+    var buffs = bufferlist.readlist;
+    var off = bufferlist.offset;
+    if (buffs.length == 0)
+        return false;
+
+    var curbuff = buffs[0];
+
+    // first buffer is bigger than request
+    if (curbuff.length - bufferlist.offset >= to_receive)
+    {
+        // copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
+        curbuff.copy(this.data, this.received_bytes, off, off+to_receive);
+        bufferlist.offset += to_receive;
+        this.received_bytes += to_receive;
+        bufferlist.length -= to_receive;   
+        
+        if (bufferlist.offset == curbuff.length)
+        {
+             bufferlist.readlist.shift();
+             bufferlist.offset = 0;
+        }
+
+        console.log([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
+        this.callback(this.data);
+        return true;
+    } 
+    
+
+    
+   // while (buffs.length > 0)     
+   // {
+   // }
+
+
+
+
+
+
+
+    
+    if (0)//bufferlist.readlist.length == 1)
+    {
+        var to_receive = this.length - this.received_bytes;
+        var buff = bufferlist.readlist[0];
+        if ( (buff.length-bufferlist.offset) >= to_receive){
+            console.log(["using Buffer.copy", buff.length]);
+            buff.copy(this.data, to_receive, bufferlist.offset, bufferlist.offset + to_receive);
+            bufferlist.length -= to_receive;
+		return false;
+        }      
+        //var to_receive = this.length - this.received_bytes;
+        //console.log([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
+        
+    }
+    //console.log([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
+    //console.log(["byte by byte copy", bufferlist.length]);
+    var to_receive = this.length - this.received_bytes;
+    console.log([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
     for(var i=0 ; i < to_receive; ++i)
     {
         if (bufferlist.length == 0)

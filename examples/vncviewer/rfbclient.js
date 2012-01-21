@@ -10,25 +10,6 @@ var hexy = require('./hexy').hexy;
 // constants
 var rfb = require('./constants');
 
-// array to flip bits in byte
-var flip = [ 0, 128, 64, 192, 32, 160, 96, 224, 16, 144, 80, 208, 48, 176, 112, 240,
-             8, 136, 72, 200, 40, 168, 104, 232, 24, 152, 88, 216, 56, 184, 120, 248,
-             4, 132, 68, 196, 36, 164, 100, 228, 20, 148, 84, 212, 52, 180, 116, 244,
-             12, 140, 76, 204, 44, 172, 108, 236, 28, 156, 92, 220, 60, 188, 124, 252,
-             2,  130, 66, 194, 34, 162, 98,  226, 18, 146, 82, 210, 50, 178, 114, 242,
-             10, 138, 74, 202, 42, 170, 106, 234, 26, 154, 90, 218, 58, 186, 122, 250,
-              6, 134, 70, 198, 38, 166, 102, 230, 22, 150, 86, 214, 54, 182, 118, 246,
-             14, 142, 78, 206, 46, 174, 110, 238, 30, 158, 94, 222, 62, 190, 126, 254,
-              1, 129, 65, 193, 33, 161, 97, 225, 17, 145, 81, 209, 49, 177, 113, 241,
-              9, 137, 73, 201, 41, 169, 105, 233, 25, 153, 89, 217, 57, 185, 121, 249,
-              5, 133, 69, 197, 37, 165, 101, 229, 21, 149, 85, 213, 53, 181, 117, 245,
-             13, 141, 77, 205, 45, 173, 109, 237, 29, 157, 93, 221, 61, 189, 125, 253,
-              3, 131, 67, 195, 35, 163, 99, 227, 19, 147, 83, 211, 51, 179, 115, 243,
-             11, 139, 75, 203, 43, 171, 107, 235, 27, 155, 91, 219, 59, 187, 123, 251,
-              7, 135, 71, 199, 39, 167, 103, 231, 23, 151, 87, 215, 55, 183, 119, 247,
-             15, 143, 79, 207, 47, 175, 111, 239, 31, 159, 95, 223, 63, 191, 127, 255 ];
-
-
 function RfbClient(stream, params)
 {
     EventEmitter.call(this);
@@ -37,12 +18,12 @@ function RfbClient(stream, params)
     cli.stream = stream;
     cli.pack_stream = new PackStream();
     cli.pack_stream.on('data', function( data ) {
-        //console.log(hexy(data, {prefix: 'from client '}));
+        console.log(hexy(data, {prefix: 'from client '}));
         cli.stream.write(data);
     });
     stream.on('data', function( data ) {
-        //var dump = data.length >  20 ? data.slice(0,20) : data;
-        //console.log(hexy(dump, {prefix: 'from server '}));
+        var dump = data.length >  20 ? data.slice(0,20) : data;
+        console.log(hexy(dump, {prefix: 'from server '}));
         cli.pack_stream.write(data);
     });
 
@@ -77,22 +58,22 @@ RfbClient.prototype.readServerVersion = function()
     var stream = this.pack_stream;
     var cli = this;
     stream.get(12, function(rfbver) {
-        //console.log(rfbver);
+        console.log(rfbver);
         stream.pack('a', [ 'RFB 003.008\n' ]).flush();
         // read security types
         stream.unpack('C', function(res) {
             var numSecTypes = res[0];
+            console.log(['sec types result', res]);
             if (numSecTypes == 0) {
                 cli.readError();
             } else {
                 
                 stream.get(numSecTypes, function(secTypes) {
-                    // check what is in options
-
+                    // TODO: check what is in options
                     //
                     // send sec type we are going to use
-                    cli.securityType = rfb.security.None;
-                    //cli.securityType = rfb.security.VNC;
+                    //cli.securityType = rfb.security.None;
+                    cli.securityType = rfb.security.VNC;
                     stream.pack('C', [cli.securityType]).flush();
                     cli.processSecurity();
                 });
@@ -123,56 +104,14 @@ RfbClient.prototype.processSecurity = function()
 {
     var stream = this.pack_stream;
     var cli = this;
-    //console.log('Using security type =' + cli.securityType);
     switch(cli.securityType) {
     case rfb.security.None:
         // do nothing
         cli.readSecurityResult();
         break;
     case rfb.security.VNC:
-
-        /* =========
-
-           from rfb protocol spec, responce = DES(challenge, password).
-
-           In reality (from http://bytecrafter.blogspot.com/2010/09/des-encryption-as-used-in-vnc.html)
-
-           1) DES is used in ECB mode.
-           2) The ECB Key is based upon an ASCII password. 
-              The key must be 8 bytes long. The password is either 
-              truncated to 8 bytes, or else zeros are added to the end
-              to bring it up to 8 bytes. As an additional twist, each byte 
-              in flipped. So, if the ASCII password was "pword" [0x 70 77 6F 72 64],
-              the resulting key would be [0x 0E EE F6 4E 26 00 00 00].
-           3) The VNC Authentication scheme sends a 16 byte challenge. This challenge 
-              should be encrypted with the key that was just described, but DES in ECB
-              mode can only encrypt an 8 byte message. So, the challenge is split 
-              into two messages, encrypted separately, and then jammed back together.
-
-           =========
-        */
         stream.get(16, function(challenge) {
-            
-            console.log(['challenge = ', challenge]);
-            var crypto = require('crypto');
-
-            // prepare password
-            var passwd = '';
-            for (var i=0; i < 8; ++i)
-            {
-                if (i < cli.params.password.length)
-                    passwd += String.fromCharCode(flip[cli.params.password.charCodeAt(i)]);
-                else
-                    passwd += String.fromCharCode(0);
-            }
-
-            var des1 = crypto.createCipher('DES-ECB', passwd);
-            var response1 = des1.update(challenge.slice(0, 8), 'binary');
-            var des2 = crypto.createCipher('DES-ECB', passwd);
-            var response2 = des1.update(challenge.slice(8,16), 'binary');
-            var response = response1 + response2;
-
-            console.log(['response = ', response]);
+            var response = require('./d3des').response(challenge, cli.params.password);
             stream.pack('a', [response]).flush();
             cli.readSecurityResult();
         });
@@ -183,20 +122,6 @@ RfbClient.prototype.processSecurity = function()
     }
 }
 
-        function swapBytes2U(num)
-        {
-            return ( (num & 0xff) << 8 ) + ( ( num & 0xff00 ) >> 8);
-        }
-
-        function swapBytes4U(num)
-        {
-            return (  (num & 0xff) << 24 ) + 
-                   (  (num & 0xff00 ) << 8) + 
-                  (  (num & 0xff0000 ) >> 8) + 
-                  (  (num & 0xff000000 ) >> 24); 
-        }
-
-
 RfbClient.prototype.clientInit = function()
 {
     var stream = this.pack_stream;
@@ -204,8 +129,6 @@ RfbClient.prototype.clientInit = function()
 
     var initMessage = cli.disconnectOthers ? rfb.connectionFlag.Exclusive : rfb.connectionFlag.Shared;
     stream.pack('C', [ initMessage ]).flush();
-
-    //console.log('initMessage sent');
 
     stream.unpackTo(
         cli,
@@ -227,23 +150,12 @@ RfbClient.prototype.clientInit = function()
         ],
 
         function() {
-            // all ints are bigEndian except width and height in pixel format
-            //if (!cli.isBigEndian) 
-            //{
-            //    cli.width       = swapBytes2U(cli.width);
-            //    cli.height      = swapBytes2U(cli.height);
-            //    cli.redMax      = swapBytes2U(cli.redMax); 
-            //    cli.greenMax    = swapBytes2U(cli.greenMax); 
-            //    cli.blueMax     = swapBytes2U(cli.blueMax);
-            //}
 
-            //console.log([cli.width, cli.height]);
- 
+            // TODO: remove next 3 lines 
             stream.serverBigEndian = false; //cli.isBigEndian; 
             stream.clientBigEndian = false; //cli.isBigEndian; 
             //stream.bigEndian = false; //cli.isBigEndian; 
 
-            //console.log(cli);
             stream.get(cli.titleLength, function(titleBuf) {
 
                 cli.title = titleBuf.toString();
@@ -266,8 +178,7 @@ RfbClient.prototype.setPixelFormat = function()
         [0, cli.bpp, cli.depth, cli.isBigEndian, cli.isTrueColor, cli.redMax, cli.greenMax, cli.blueMax, 
             cli.redShift, cli.greenShift, cli.blueShift]
     );
-    //TODO: add actual sendPixelFormat
-    // ignore for now (it is optional );
+    stream.flush();
     cli.setEncodings();
 }
 
@@ -285,7 +196,7 @@ RfbClient.prototype.setEncodings = function()
     var cli = this;
 
     // build encodings list
-    // todo: API
+    // TODO: API
     var encodings = [rfb.encodings.raw, rfb.encodings.copyRect, rfb.encodings.pseudoDesktopSize]; //, rfb.encodings.hextile];
 
     stream.pack('CxS', [rfb.clientMsgTypes.setEncodings, encodings.length]);
@@ -450,27 +361,18 @@ function createConnection(params)
     return new RfbClient(stream, params);
 }
 
-//testing
-// home RealVNC
-//var r = createConnection({host: '10.0.0.6', port: 5900});
-// macbook local
-//var r = createConnection({port: 5900, password: 'tetris'});
-// virtulbox x11vnc
-
 var host = process.argv[2];
 var port = process.argv[3];
+var password = process.argv[4]
 if (!host)
-{
     host = '127.0.0.1';
-}
 if (!port)
-{
     port = 5900;
-}
 
 var opts = {};
 opts.host = host;
 opts.port = port;
+opts.password = password;
 console.log(opts);
 var r = createConnection(opts);
 r.on('connect', function() {
