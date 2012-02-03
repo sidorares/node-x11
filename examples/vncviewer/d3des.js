@@ -372,8 +372,6 @@ function desfunc(block, keys)
 	right ^= (work << 4);
 	block[0] = right;
 	block[1] = leftt;
-	
-        console.log([block, keys]);
 	return;
 	}
 
