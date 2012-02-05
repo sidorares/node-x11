@@ -15,6 +15,12 @@ exports.serverMsgTypes = {
     cutText: 3,
 };
 
+exports.versionstring = {
+   V3_003: 'RFB 003.003\n',   
+   V3_007: 'RFB 003.007\n',   
+   V3_008: 'RFB 003.008\n'   
+};
+
 exports.encodings = {
     raw : 0,
     copyRect : 1,
@@ -24,6 +30,17 @@ exports.encodings = {
     pseudoCursor : -239,
     pseudoDesktopSize : -223,
 };
+
+exports.subEncodings = {
+};
+
+exports.subEncodings.hextile = {
+    raw: 1,
+    backgroundSpecified: 2,
+    foregroundSpecified: 4,
+    anySubrects: 8,
+    subrectsColored: 16
+}
 
 exports.security = {   
     None: 1,
