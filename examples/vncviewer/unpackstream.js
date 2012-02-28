@@ -1,3 +1,6 @@
+//var clog = clog;
+var clog = function() {};
+
 var EventEmitter = require('events').EventEmitter;
 var util = require('util');
 
@@ -30,7 +33,7 @@ function ReadFixedRequest(length, callback)
 {
     this.length = length;
     this.callback = callback;
-    console.log(length);
+    //clog(length);
     this.data = new Buffer(length);
     this.received_bytes = 0;
 }
@@ -49,7 +52,7 @@ ReadFixedRequest.prototype.execute = function(bufferlist)
     
     
     var to_receive = this.length - this.received_bytes;
-    console.log([bufferlist.offset, bufferlist.length, to_receive]);
+    //clog([bufferlist.offset, bufferlist.length, to_receive]);
     
     var buffs = bufferlist.readlist;
     var off = bufferlist.offset;
@@ -73,7 +76,7 @@ ReadFixedRequest.prototype.execute = function(bufferlist)
              bufferlist.offset = 0;
         }
 
-        console.log([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
+        //clog([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
         this.callback(this.data);
         return true;
     } 
@@ -96,19 +99,19 @@ ReadFixedRequest.prototype.execute = function(bufferlist)
         var to_receive = this.length - this.received_bytes;
         var buff = bufferlist.readlist[0];
         if ( (buff.length-bufferlist.offset) >= to_receive){
-            console.log(["using Buffer.copy", buff.length]);
+            clog(["using Buffer.copy", buff.length]);
             buff.copy(this.data, to_receive, bufferlist.offset, bufferlist.offset + to_receive);
             bufferlist.length -= to_receive;
 		return false;
         }      
         //var to_receive = this.length - this.received_bytes;
-        //console.log([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
+        //clog([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
         
     }
-    //console.log([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
-    //console.log(["byte by byte copy", bufferlist.length]);
+    //clog([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
+    //clog(["byte by byte copy", bufferlist.length]);
     var to_receive = this.length - this.received_bytes;
-    console.log([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
+    clog([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
     for(var i=0 ; i < to_receive; ++i)
     {
         if (bufferlist.length == 0)
@@ -252,17 +255,34 @@ UnpackStream.prototype.get = function(length, callback)
 
 UnpackStream.prototype.resume = function()
 {
+    //clog('resume!!!!');
+    
     if (this.resumed)
          return;
+    if (this.read_queue.length == 0)
+    {
+        //clog('at resume: no data, skip');
+        return;
+    }
+
     this.resumed = true;
+    //clog('++++++resumed = ' + this.resumed);
     // process all read requests until enough data in the buffer
     while(this.read_queue[0].execute(this))
     {
+        //clog('executing read request ...');
+        //clog(this.read_queue);
         this.read_queue.shift();
         if (this.read_queue.length == 0)
-            return;
+        {
+           //clog('problem?????'); 
+           this.resumed = false;
+           //clog('------resumed = ' + this.resumed);
+           return;
+        }
     }
     this.resumed = false;
+    //clog('------resumed = ' + this.resumed);
 }
 
 UnpackStream.prototype.getbyte = function()

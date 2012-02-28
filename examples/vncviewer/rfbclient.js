@@ -1,5 +1,9 @@
 "use strict";
 
+//var clog = clog;
+//var clog = function() {};
+var clog = console.log;
+
 var util = require('util'); // util.inherits
 var net = require('net');
 
@@ -18,12 +22,12 @@ function RfbClient(stream, params)
     cli.stream = stream;
     cli.pack_stream = new PackStream();
     cli.pack_stream.on('data', function( data ) {
-        console.log(hexy(data, {prefix: 'from client '}));
+        //clog(hexy(data, {prefix: 'from client '}));
         cli.stream.write(data);
     });
     stream.on('data', function( data ) {
-        var dump = data.length >  20 ? data.slice(0,20) : data;
-        console.log(hexy(dump, {prefix: 'from server '}));
+        //var dump = data.length >  20 ? data.slice(0,20) : data;
+        //clog(hexy(dump, {prefix: 'from server '}));
         cli.pack_stream.write(data);
     });
 
@@ -38,7 +42,7 @@ PackStream.prototype.readString = function(strcb)
 {
     var stream = this;
     stream.unpack('L', function(res) {
-        //console.log(res[0]);
+        //clog(res[0]);
         stream.get(res[0], function(strBuff) {
             strcb(strBuff.toString());
         });
@@ -47,8 +51,9 @@ PackStream.prototype.readString = function(strcb)
 
 RfbClient.prototype.readError = function()
 {
+    var cli = this;
     this.pack_stream.readString(function(str) {
-         //console.log(str);
+         console.error(str);
          cli.emit('error', str);
     });
 }
@@ -58,13 +63,35 @@ RfbClient.prototype.readServerVersion = function()
     var stream = this.pack_stream;
     var cli = this;
     stream.get(12, function(rfbver) {
-        console.log(rfbver);
-        stream.pack('a', [ 'RFB 003.008\n' ]).flush();
+        cli.serverVersion = rfbver.toString('ascii');
+        console.log(['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', rfbver]);
+        stream.pack('a', [ rfb.versionstring.V3_008 ]).flush();
+        if (cli.serverVersion == rfb.versionstring.V3_003) 
+        {
+            stream.unpack('L', function(secType) {
+                var type = secType[0];
+                console.error('3.003 security type: ' + type);
+                if (type == 0)
+                {
+                    cli.readError();
+                } else {
+                    cli.securityType = type;
+                    // 3.003 version does not send result for None security
+                    if (type == rfb.security.None) 
+                        cli.clientInit();
+                    else    
+                        cli.processSecurity();
+                }
+                                
+            });
+            return;
+        }
+ 
         // read security types
         stream.unpack('C', function(res) {
             var numSecTypes = res[0];
-            console.log(['sec types result', res]);
             if (numSecTypes == 0) {
+                console.error(['zero num sec types', res]);
                 cli.readError();
             } else {
                 
@@ -87,7 +114,6 @@ RfbClient.prototype.readSecurityResult = function()
     var stream = this.pack_stream;
     var cli = this;
     stream.unpack('L', function(securityResult) {
-        //console.log(['security result: ', securityResult]);
         if (securityResult[0] == 0)
         {
             cli.clientInit();
@@ -151,18 +177,15 @@ RfbClient.prototype.clientInit = function()
 
         function() {
 
+
             // TODO: remove next 3 lines 
             stream.serverBigEndian = false; //cli.isBigEndian; 
             stream.clientBigEndian = false; //cli.isBigEndian; 
             //stream.bigEndian = false; //cli.isBigEndian; 
 
             stream.get(cli.titleLength, function(titleBuf) {
-
                 cli.title = titleBuf.toString();
                 delete cli.titleLength;
-                cli.width = cli.width;
-                cli.height = cli.height;
-                cli.title = cli.title;
                 cli.setPixelFormat();
             });
         }
@@ -200,12 +223,14 @@ RfbClient.prototype.setEncodings = function()
     var encodings = [rfb.encodings.raw, rfb.encodings.copyRect, rfb.encodings.pseudoDesktopSize]; //, rfb.encodings.hextile];
 
     stream.pack('CxS', [rfb.clientMsgTypes.setEncodings, encodings.length]);
-    stream.pack(repeat('L', encodings.length), encodings);
+    stream.pack(repeat('l', encodings.length), encodings);
     stream.flush();
 
     cli.requestUpdate(false, 0, 0, cli.width, cli.height);    
     cli.expectNewMessage();
+    console.log('handshake performed');
     this.emit('connect');
+    console.log('emitted CONNECT');
 }
 
 RfbClient.prototype.expectNewMessage = function()
@@ -213,13 +238,14 @@ RfbClient.prototype.expectNewMessage = function()
     var stream = this.pack_stream;
     var cli = this;
     stream.get(1, function(buff) {
+        console.log('server message:' + buff[0]);
         switch(buff[0]) {
         case rfb.serverMsgTypes.fbUpdate: cli.readFbUpdate(); break;
         case rfb.serverMsgTypes.setColorMap: cli.readColorMap(); break;
         case rfb.serverMsgTypes.bell: cli.readBell(); break;
         case rfb.serverMsgTypes.cutText: cli.readClipboardUpdate(); break;
         default:
-            console.log('unsopported server message: ' + buff[0]);
+            clog('unsopported server message: ' + buff[0]);
         }
     });
 }
@@ -230,7 +256,8 @@ var decodeHandlers = {
 
 RfbClient.prototype.readFbUpdate = function()
 {
-    //console.log('fb update');
+    clog('fb update');
+    
     var stream = this.pack_stream;
     var cli = this;
 
@@ -238,7 +265,7 @@ RfbClient.prototype.readFbUpdate = function()
         var numRects = res[0];
         // decode each rectangle
         var numRectsLeft = numRects;
-        //console.log(numRects);
+        clog('number of rectngles in fb updte message: ' + numRects);
         function unpackRect() {
             if (numRectsLeft == 0)
             {
@@ -262,20 +289,182 @@ RfbClient.prototype.readFbUpdate = function()
                         cli.readCopyRect(rect, unpackRect);
                         break;
                     case rfb.encodings.pseudoDesktopSize:
-                        console.log(['Resize', rect]);
+                        clog(['Resize', rect]);
                         cli.width = rect.width;
                         cli.height = rect.height;
                         cli.emit('resize', rect);
                         unpackRect();
                         break;
+                    case rfb.encodings.hextile:
+                        cli.readHextile(rect, unpackRect);
+                        break;
                     default:
-                        console.log('unknown encoding!!!');
+                        clog('unknown encoding!!! ' + rect.encoding);
                     }
                 }
             );
         }
         unpackRect();
     });
+}
+
+RfbClient.prototype.readHextile = function(rect, cb)
+{
+    rect.emitter = new EventEmitter();
+    rect.on = function(eventname, cb) {
+        rect.emitter.on(eventname, cb);
+    }
+    rect.emit = function(eventname, param) {
+        rect.emitter.emit(eventname, param);
+    }
+
+    rect.widthTiles = (rect.width >>> 4);
+    rect.heightTiles = (rect.height >>> 4);
+    clog(['tiles: ', rect.widthTiles, rect.heightTiles]);
+    rect.rightRectWidth = rect.width & 0x0f;
+    rect.bottomRectHeight = rect.height & 0x0f;
+    rect.tilex = 0;
+    rect.tiley = 0;
+    rect.tiles = [];
+    console.log('===== emitting rect');
+    this.emit('rect', rect);
+    this.readHextileTile(rect, cb); 
+}
+
+RfbClient.prototype.readHextileTile = function(rect, cb)
+{
+    var tile = {};
+    clog('read hextile tile');
+    var stream = this.pack_stream;
+    var cli = this;
+
+    tile.x = rect.tilex;
+    tile.y = rect.tiley;
+    tile.width = 16;
+    if (tile.x == rect.widthTiles && rect.rightRectWidth > 0)
+         tile.width = rect.rightRectWidt;
+    tile.height = 16;
+    if (tile.y == rect.heightTiles && rect.bottomRectHeight > 0)
+         tile.height = rect.bottomRectHeight;
+
+    // calculate next tilex & tiley and move up 'stack' if we at the last tile
+    function nextTile(rect, cb)
+    {
+        //clog('nextTile ===================== ');
+        rect.tiles.push(tile);
+        //clog(tile);
+        tile = {};
+
+        if (rect.tilex < rect.widthTiles)
+        {
+            rect.tilex++;
+            //clog([rect.tilex, rect.tiley]);
+            return cli.readHextileTile(rect, cb);
+        } else {
+            clog('===================== new row! ' + rect.tiley);
+            rect.tilex = 0;
+            if (rect.tiley < rect.heightTiles)
+            {
+                rect.tiley++;
+                //clog([rect.tilex, rect.tiley]);
+                return cli.readHextileTile(rect, cb);
+            } else {
+                clog('====================')
+                clog(rect);
+                return cb();
+            }
+        }   
+    }
+
+    var bytesPerPixel = cli.bpp >> 3;
+    stream.unpack('C', function(subEnc) {
+        //clog('tile flags: ' + subEnc[0]);
+        tile.subEncoding = subEnc[0];
+        var hextile = rfb.subEncodings.hextile;
+        if (tile.subEncoding & hextile.raw) {
+            clog('raw tile!!!');
+            stream.get(bytesPerPixel*tile.width*tile.height, function(rawbuff)
+            {
+                tile.buffer = rawbuff;
+                setTimeout(function(){nextTile(rect, cb);}, 10);
+            });
+            return;
+        }
+        // TODO: rewrite to be DRY
+        if (tile.subEncoding & hextile.backgroundSpecified) {
+            //clog('hextile.backgroundSpecified');
+            stream.get(bytesPerPixel, function(pixelValue)
+            {
+                //clog(['tile.backgroundColor', pixelValue, tile.subEncoding]);
+                tile.backgroundColor = pixelValue;
+                rect.backgroundColor = pixelValue;
+                if (!(tile.subEncoding & hextile.anySubrects))
+                {
+                    return setTimeout(function() { nextTile(rect, cb) }, 10);
+                }
+            });
+        } else {
+            //clog(['not specified, using prev: tile.backgroundColor', rect.backgroundColor]);
+            tile.backgroundColor = rect.backgroundColor;
+        }
+        if (rect.subEncoding & hextile.foregroundSpeciﬁed) {
+            stream.get(bytesPerPixel, function(pixelValue)
+            {
+                tile.foreroundColor = pixelValue;
+                rect.foreroundColor = pixelValue;
+            });
+        } else {
+            if (rect.foregroundColor) {
+                //clog(['not specified, using prev: tile.foregroundColor', rect.foregroundColor]);
+                tile.backgroundColor = rect.backgroundColor;
+            }
+        }
+
+        tile.subrects = [];
+        if (tile.subEncoding & hextile.anySubrects) {
+            // read number of subrectangles
+            stream.get('C', function(subrectsNum) {
+                 tile.subrectsNum = subrectsNum[0];
+                 clog('============================= subrects! ========' + tile.subrectsNum);
+            });        
+        } else {
+            return setTimeout(function() { nextTile(rect, cb) }, 10);
+            //return nextTile(rect, cb);
+        }
+
+        function readSubrect() {
+            //clog('reading subrects');
+            //clog(tile);
+            var subrect = {};
+            if (tile.subEncoding & hextile.subrectsColored) {
+                stream.get(bytesPerPixel, function(pixelValue)
+                {
+                    subrect.foreroundColor = pixelValue;
+                    tile.foreroundColor = pixelValue;
+                });
+            } else {
+                subrect.foreroundColor = tile.foregroundColor;
+            }
+            // read subrect x y w h encoded in two bytes
+            stream.get(2, function(subrectRaw) {
+                subrect.x = (subrectRaw[0] & 0xf0) >> 4;
+                subrect.y = (subrectRaw[0] & 0x0f);
+                subrect.width  = (subrectRaw[1] & 0xf0) >> 4;
+                subrect.height = (subrectRaw[1] & 0x0f);
+                tile.subrects.push(subrect);
+                if (tile.subrects.length == tile.subrectsNum)
+                {
+                    //delete tile..subrectsNum;
+                    //cli.emit('rect', rect);
+                    return setTimeout(function() { nextTile(rect, cb) }, 500);
+                    //return nextTile(rect, cb);
+                } else
+                    setTimeout(readSubrect, 500);
+            });
+        }
+        readSubrect();
+
+    }); 
 }
 
 RfbClient.prototype.readCopyRect = function(rect, cb)
@@ -285,7 +474,7 @@ RfbClient.prototype.readCopyRect = function(rect, cb)
 
     stream.unpack('SS', function(src) {
         rect.src = { x: src[0], y: src[1] };
-        console.log(['copy rect', src, rect]);
+        clog(['copy rect', src, rect]);
         cli.emit('rect', rect);
         cb(rect);
     });
@@ -299,7 +488,7 @@ RfbClient.prototype.readRawRect = function(rect, cb)
     var bytesPerPixel = cli.bpp >> 3;
     stream.get(bytesPerPixel*rect.width*rect.height, function(rawbuff)
     {
-        //console.log('arrived ' + rawbuff.length + ' bytes of fb update');
+        //clog('arrived ' + rawbuff.length + ' bytes of fb update');
         rect.buffer = rawbuff;
         cli.emit('rect', rect);
         cb(rect);
@@ -308,25 +497,25 @@ RfbClient.prototype.readRawRect = function(rect, cb)
 
 RfbClient.prototype.readColorMap = function()
 {
-    console.log('color map');
+    clog('color map');
 }
 
 RfbClient.prototype.readBell = function()
 {
-    console.log('bell');
+    clog('bell');
     this.expectNewMessage();
 }
 
 RfbClient.prototype.readClipboardUpdate = function()
 {
-    console.log('clipboard update');
+    clog('clipboard update');
     var stream = this.pack_stream;
     var cli = this;
 
     stream.unpack('xxxL', function(res) {
-         console.log(res[0] + ' bytes string in the buffer');
+         clog(res[0] + ' bytes string in the buffer');
          stream.get(res[0], function(buf) {
-             console.log(buf.toString());
+             clog(buf.toString());
              cli.expectNewMessage();
          })
     });
@@ -355,9 +544,89 @@ RfbClient.prototype.requestUpdate = function(incremental, x, y, width, height)
     stream.flush();
 }
 
+// TODO: add client cutText event!
+
+
+
+var fs = require('fs');
+function createRfbStream(name)
+{
+    console.log("WAT?" + name);
+    var stream = new EventEmitter();
+    var fileStream = fs.createReadStream(name);
+    var pack = new PackStream();
+    fileStream.on('data', function( data ) {
+	//fileStream.pause();
+        //setTimeout(function() {
+            pack.write(data);
+            //clog('received from filestream:' + data.length);
+            //fileStream.resume();
+        //}, 10);
+    });
+ 
+    var start = +new Date();
+    function readData()
+    {
+        pack.unpack('L', function(size) {
+            pack.get(size[0], function(databuf) {
+                pack.unpack('L', function(timestamp) {
+                    var padding = 3 - ((size - 1) & 0x03);
+                    pack.get(padding, function() {
+                        stream.emit('data', databuf);
+                        var now = +new Date - start; 
+                        var timediff = timestamp[0] - now;
+                        setTimeout(readData, 1);//timediff);
+                    });
+                });
+            }); 
+        });
+    }
+
+    pack.get(12, function(fileVersion) {
+         readData();
+    });
+
+    stream.write = function(buf) {
+        // ignore
+    }
+    return stream;
+}
+
 function createConnection(params)
 {
-    var stream = net.createConnection(params.port, params.host);
+    var stream;
+    if (params.rfbfile)
+    {
+        console.log('reading from ' + params.rfbfile);
+        stream = createRfbStream(params.rfbfile);
+    }
+    else {
+        console.log('connecting to ' + params.host + ':' + params.port);
+        stream = net.createConnection(params.port, params.host);
+    }
+
+    if (params.rfbFileOut)
+    {
+        var start = +new Date();
+        var wstream = fs.createWriteStream(params.rfbFileOut);
+        wstream.write('FBS 001.001\n');
+        stream.on('data', function(data) {
+            var sizeBuf = new Buffer(4);
+            var timeBuf = new Buffer(4);
+            var size = data.length;
+            sizeBuf.writeInt32BE(size, 0);
+            wstream.write(sizeBuf);
+            wstream.write(data);
+            timeBuf.writeInt32BE(+new Date() - start, 0);
+            wstream.write(timeBuf);
+            var padding = 3 - ((size - 1) & 0x03);
+            var pbuf = new Buffer(padding);
+            wstream.write(pbuf);             
+        }).on('end', function() {
+            wstream.end();
+        });
+    }
+
     return new RfbClient(stream, params);
 }
 
@@ -373,18 +642,27 @@ var opts = {};
 opts.host = host;
 opts.port = port;
 opts.password = password;
-console.log(opts);
+opts.rfbfile = process.argv[5];
+//opts.rfbFileOut = process.argv[5];
+
+clog(opts);
+
+
+var x11 = require('../../lib/x11');
+var xclient = x11.createClient();
+
 var r = createConnection(opts);
 r.on('connect', function() {
-     startUI();    
+    console.log('======================== here'); 
+    startUI();    
 });
+console.log('added CONNECT handler');
+
 
 
 function startUI()
 {
 
-var x11 = require('../../lib/x11');
-var xclient = x11.createClient();
 var Exposure = x11.eventMask.Exposure;
 var PointerMotion = x11.eventMask.PointerMotion;
 var ButtonPress = x11.eventMask.ButtonPress;
@@ -397,8 +675,7 @@ xclient.on('connect', function(display) {
 
     var X = display.client;   
     X.require('big-requests', function(BigReq) {
-        BigReq.Enable(function(maxLen) {});
-        X.require('render', function(Render) {
+        BigReq.Enable(function(maxLen) {
    
     var keycode2keysym = [];
     var min = display.min_keycode;
@@ -426,7 +703,8 @@ xclient.on('connect', function(display) {
        }
     );
     X.MapWindow(wid);
-  
+    console.log('AAAAAAAAAAAAAAAAAAAA');  
+
     var gc = X.AllocID();
     X.CreateGC(gc, wid, { foreground: black, background: white } );
     X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, r.title);
@@ -438,16 +716,16 @@ xclient.on('connect', function(display) {
     //Render.CreatePicture(pic, pixmap1, Render.rgba32);
     
 
-    var pic1 = X.AllocID();
-    Render.CreatePicture(pic1, wid, Render.rgb24);
+    //var pic1 = X.AllocID();
+    //Render.CreatePicture(pic1, wid, Render.rgb24);
     var buttonsState = 0;
 
     X.on('error', function(err) {
-        console.log(err);
+        clog(err);
     });
 
     X.on('event', function(ev) {
-        //console.log(ev);
+        //clog(ev);
         if (ev.type == 12) // expose
         {
             //X.PutImage(2, wid, gc, 128, 128, 0, 0, 0, 24, bitmap);
@@ -463,9 +741,9 @@ xclient.on('connect', function(display) {
                 buttonsState &= ~buttonBit;
             r.pointerEvent(ev.x, ev.y, buttonsState);
         } else if (ev.type == 2 || ev.type == 3) {
-            //console.log(keycode2keysym[ev.keycode]);
+            //clog(keycode2keysym[ev.keycode]);
             var shift = ev.buttons & 1;
-            //console.log(shift); 
+            //clog(shift); 
             var keysym = keycode2keysym[ev.keycode][shift];
             var isDown = (ev.type == 2) ? 1 : 0;
             r.keyEvent(keysym, isDown);
@@ -474,18 +752,25 @@ xclient.on('connect', function(display) {
 
     r.on('resize', function(rect)
     {
-        console.log('============');
-        X.ResiseWindow(wid, rect.width, rect.height);
+        X.ResizeWindow(wid, rect.width, rect.height);
     });
- 
+     
+    console.log('listening rect events'); 
     r.on('rect', function(rect) {
-        //console.log('========= in handler');
-        //console.log(rect);
+        //clog('========= in handler');
+        //clog(rect);
         if (rect.encoding == rfb.encodings.raw) {
             // format, drawable, gc, width, height, dstX, dstY, leftPad, depth, data
             X.PutImage(2, wid, gc, rect.width, rect.height, rect.x, rect.y, 0, 24, rect.buffer);
         } else if (rect.encoding == rfb.encodings.copyRect) {
             X.CopyArea(wid, wid, gc, rect.src.x, rect.src.y, rect.x, rect.y, rect.width, rect.height);
+        } else if (rect.encoding == rfb.encodings.hextile)
+        {
+            clog('hextile rec!!!');
+            clog(rect);
+            rect.on('tile', function(tile) {
+                clog(tile);
+            });
         }
     });
 
