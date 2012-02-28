@@ -784,12 +784,21 @@ var FlateStream = (function() {
             data[i++] = v;
             data[i++] = pixel[1] || 255;
           } else {
-            if (pixel.length == 4 && pixel[3] != 0)
-                console.log(pixel);
-            for (_k = 0, _len3 = pixel.length; _k < _len3; _k++) {
-              byte = pixel[_k];
-              data[i++] = byte;
-            }
+            //console.log(pixel.length);
+            //if (pixel.length == 4 && pixel[3] != 0)
+                //console.log(pixel);
+            //for (_k = 0, _len3 = pixel.length; _k < _len3; _k++) {
+            //for (_k = 0; _k < 4; _k++) {
+            //  byte = pixel[_k];
+            //  data[i++] = byte;
+            //}
+            var a = (256 - pixel[3])/256.;
+            var aa = (1.-a)*255.;
+
+            data[i++] = parseInt(pixel[2]*a + aa);
+            data[i++] = parseInt(pixel[1]*a + aa);
+            data[i++] = parseInt(pixel[0]*a + aa);
+            data[i++] = pixel[3];
             if (!alpha) {
               data[i++] = 255;
             }
