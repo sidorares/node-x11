@@ -3,11 +3,12 @@ var x11 = require('../lib/x11');
 var xclient = x11.createClient();
 
 xclient.on('connect', function(display) {
-    var X = this;
-    var hello = 'Hello, node.js';
-    X.InternAtom(false, hello, function(atomId) {
-        X.GetAtomName(atomId, function(str) {
-            console.log('Value for atom ' + atomId + ' is \"' + str + '\"');
-        });
-    });
+  var X = this;
+  var hello = 'Hello, node.js';
+  X.InternAtom({ only_if_exists: false, name: hello }, function(internResp) {
+    console.log(internResp)
+      X.GetAtomName({ atom: internResp.atom }, function(atomNameResp) {
+        console.log(atomNameResp);
+      });
+  });
 });

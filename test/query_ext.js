@@ -4,9 +4,10 @@ var numExt = 0;
 X.on('connect', function(display) {
     X.ListExtensions(function(list) {
         console.log(list);
-        list.forEach(function(ext) {
+        list.names.forEach(function(ext) {
             numExt++;
-            X.QueryExtension(ext, function(e) {
+            X.QueryExtension({ name: ext.name }, function(e) {
+              console.log(e)
                 e.name = ext;
                 console.log(e);
                 if (--numExt == 0)

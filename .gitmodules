@@ -1,0 +1,3 @@
+[submodule "protocols"]
+	path = protocols
+	url = git://github.com/CrypticSwarm/XProto2JSON.git

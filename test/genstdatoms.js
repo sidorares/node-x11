@@ -8,13 +8,13 @@ xclient.on('connect', function(display) {
     {
         function getAtom(a)
         {
-            X.GetAtomName(a, function(str) {
+            X.GetAtomName({ atom: a }, function(str) {
                 if (a == 1)
                     console.log('module.exports = {')
                 if (a != 68)
-                    console.log('    %s: %d,', str, a);
+                    console.log('    %s: %d,', str.name, a);
                 else
-                    console.log('    %s: %d\n}', str, a);
+                    console.log('    %s: %d\n}', str.name, a);
                 listAtoms();
             });
         }

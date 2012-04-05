@@ -13,32 +13,32 @@ xclient.on('connect', function(display) {
 
     var wid = X.AllocID();
     X.CreateWindow(
-       wid, root, 
-       10, 10, 400, 300, 
-       1, 1, 0,
-       { 
-           backgroundPixel: white, eventMask: Exposure|PointerMotion  
-       }
-    );
-    X.MapWindow(wid);
+      { depth: 0
+      , wid: wid
+      , parent: root
+      , x: 10
+      , y: 10
+      , width: 400
+      , height: 300
+      , border_width: 1
+      , _class: 1
+      , visual: 0
+      , value_mask: { BackPixel: white, EventMask: Exposure|PointerMotion }
+    });
+    X.MapWindow({ window: wid });
   
     var gc = X.AllocID();
-    X.AllocColor(display.screen[0].default_colormap, 0xffff, 0, 0, function(redcolor) {
+    X.AllocColor({ cmap: display.screen[0].default_colormap, red: 0xffff, blue: 0, green: 0 }, function(redcolor) {
         // todo: it is possible for PolyLine to be called before CreateGC!
         console.log(redcolor);
-        X.CreateGC(gc, wid, { foreground: redcolor.pixel, background: white } );
+        X.CreateGC({ cid: gc, drawable: wid, value_mask: { Foreground: redcolor.pixel, Background: white } });
     });
     
     X.on('event', function(ev) {
-        if (ev.type == 12)
-        {
-            if (pts.length > 4)
-                X.PolyLine(0, wid, gc, pts);
-        } else if (ev.type == 6) {
-            pts.push(ev.x);
-            pts.push(ev.y);
-            if (pts.length > 4)
-                X.PolyLine(0, wid, gc, pts.slice(-4));
+        if (ev.type == 12 && pts.length > 1) X.PolyLine({ coordinate_mode: 0, drawable: wid, gc: gc, points: pts });
+        else if (ev.type == 6) {
+            pts.push({ x: ev.x, y: ev.y });
+            if (pts.length > 1) X.PolyLine({ coordinate_mode: 0, drawable: wid, gc: gc, points: pts.slice(-2) });
         }
     });
 
