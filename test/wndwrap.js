@@ -97,9 +97,10 @@ function Window(parent, x, y, w, h, bg)
     var borderWidth = 1;
     var _class = 1; // InputOutput
     var visual = 0; // CopyFromParent
+    var depth = 0;
     this.xclient.CreateWindow(
         this.id, this.parent.id, this.x, this.y, this.w, this.h, 
-        borderWidth, _class, visual, 
+        borderWidth, depth, _class, visual, 
         { 
             backgroundPixel: bg, 
             eventMask: Exposure|PointerMotion|ButtonPress|ButtonRelease|SubstructureNotify|StructureNotify

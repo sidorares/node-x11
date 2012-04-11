@@ -4,12 +4,10 @@ var Window = require('./wndwrap');
 var width = 700;
 var height = 500;
 
-var xclient = x11.createClient();
 var pts = [];
+x11.createClient(function(display) {
 
-xclient.on('connect', function(display) {
-
-    var mainwnd = new Window(xclient, 0, 0, width, height);
+    var mainwnd = new Window(display.client, 0, 0, width, height);
     mainwnd.on('mousemove', function(ev) 
     {
         pts.push(ev.x); 
@@ -22,5 +20,4 @@ xclient.on('connect', function(display) {
             ev.gc.drawText(pts[i], pts[i+1], 'Hello, NodeJS!');
     });
     mainwnd.map();
-
 });

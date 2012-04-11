@@ -10,7 +10,7 @@ x11.createClient(function(display) {
     var X = display.client;
     var min = display.min_keycode;
     var max = display.max_keycode;
-    X.GetKeyboardMapping(min, max-min, function(list) {
+    X.GetKeyboardMapping(min, max-min, function(err, list) {
 	for (var i=0; i < list.length; ++i)
         {
             var name = kk2Name[i+min] = [];
@@ -23,11 +23,11 @@ x11.createClient(function(display) {
         var wid = X.AllocID();
         var white = display.screen[0].white_pixel;
         var black = display.screen[0].black_pixel;
-        X.CreateWindow(wid, root, 10, 10, 400, 300, 1, 1, 0, { backgroundPixel: white, eventMask: x11.eventMask.KeyPress});
+        X.CreateWindow(wid, root, 10, 10, 400, 300, 0, 0, 0, 0, { backgroundPixel: white, eventMask: x11.eventMask.KeyPress});
         X.MapWindow(wid);
 
         X.on('event', function(ev) {
-            console.log(kk2Name[ev.keycode]);
+            console.log([ev.keycode, kk2Name[ev.keycode]]);
         });
     });
 });

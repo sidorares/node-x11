@@ -1,12 +1,11 @@
 var x11 = require('../lib/x11');
 
-var xclient = x11.createClient();
 var Exposure = x11.eventMask.Exposure;
 var PointerMotion = x11.eventMask.PointerMotion;
 var pts = [];
 
-xclient.on('connect', function(display) {
-    var X = this;
+x11.createClient(function(display) {
+    var X = display.client;
     var root = display.screen[0].root;
     var white = display.screen[0].white_pixel;
     var black = display.screen[0].black_pixel;
@@ -14,8 +13,8 @@ xclient.on('connect', function(display) {
     var wid = X.AllocID();
     X.CreateWindow(
        wid, root, 
-       10, 10, 400, 300, 
-       1, 1, 0,
+       0, 0, 400, 300, 
+       0, 0, 0, 0,
        { 
            backgroundPixel: white, eventMask: Exposure|PointerMotion  
        }
