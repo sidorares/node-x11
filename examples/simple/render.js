@@ -1,15 +1,14 @@
-var x11 = require('../lib/x11');
+var x11 = require('../../lib/x11');
 var PointerMotion = x11.eventMask.PointerMotion;
 
 var xclient = x11.createClient(function(display) {
     var X = display.client;
     var root = display.screen[0].root;
     display.client.require('render', function(Render) {
-        console.log(Render);
         var wid = X.AllocID();
         var white = display.screen[0].white_pixel;
         varblack = display.screen[0].black_pixel;
-        X.CreateWindow(wid, root, 10, 10, 400, 300, 1, 1, 0, { backgroundPixel: white, eventMask: PointerMotion });
+        X.CreateWindow(wid, root, 10, 10, 400, 300, 0, 0, 0, 0, { backgroundPixel: white, eventMask: PointerMotion });
         X.MapWindow(wid);
 
         var pict = X.AllocID();
