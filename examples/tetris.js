@@ -1,8 +1,3 @@
-process.on('uncaughtException', function (err) {
-    console.log(err);
-    console.log('Caught exception: ' + err);
-});
-
 var figs = [
     //[ 0, 0, 4, 0],
 
@@ -31,6 +26,7 @@ var Buffer = require('buffer').Buffer;
 var startpos = [4, 15];
 var cupsize = [10, 20];
 var cup = new Buffer(cupsize[0]*cupsize[1]);
+var moveInterval;
 
 function clearCup()
 {
@@ -150,7 +146,7 @@ function startGame()
 {
     // start timers set up cirrent + next figure, clear cup
     clearCup();
-    setInterval(timerMove, 200);
+    moveInterval = setInterval(timerMove, 200);
 }
 
 function getTransformedFigure(num, angle, pos)
@@ -259,7 +255,7 @@ x11.createClient(function(display) {
     var min = display.min_keycode;
     var max = display.max_keycode;
     X = display.client;
-    X.GetKeyboardMapping(min, max-min, function(list) {
+    X.GetKeyboardMapping(min, max-min, function(err, list) {
         for (var i=0; i < list.length; ++i)
         {
             var name = kk2Name[i+min] = [];
@@ -272,7 +268,7 @@ x11.createClient(function(display) {
     var white = display.screen[0].white_pixel;
     var black = display.screen[0].black_pixel; 
     wid = X.AllocID();
-    X.CreateWindow(wid, root, 0, 0, cupsize[0]*sqsize, cupsize[1]*sqsize, 1, 1, 0, { backgroundPixel: white, eventMask: KeyPress|Exposure });
+    X.CreateWindow(wid, root, 0, 0, cupsize[0]*sqsize, cupsize[1]*sqsize, 0, 0, 0, 0, { backgroundPixel: white, eventMask: KeyPress|Exposure });
     cidBlack = X.AllocID();
     cidWhite = X.AllocID();
     X.CreateGC(cidBlack, wid,  { foreground: black, background: white } );
@@ -302,6 +298,10 @@ x11.createClient(function(display) {
          default:
               console.log('default event', ev);
          }
+    });
+
+    X.on('end', function() {
+        clearInterval(moveInterval);
     });
 
   });
