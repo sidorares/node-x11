@@ -30,11 +30,11 @@ x11.createClient(function(display)
     {
         X.require('render', function(Render) {
             X.Render = Render;
-            BigReq.Enable(function(maxLen)
+            BigReq.Enable(function(err, maxLen)
             {
                 var min = display.min_keycode;
                 var max = display.max_keycode;
-		X.GetKeyboardMapping(min, max-min, function(list) 
+		X.GetKeyboardMapping(min, max-min, function(err, list) 
                 {
 	            // map keycode to key name
 		    for (var i=0; i < list.length; ++i)
@@ -64,7 +64,7 @@ function main(X)
     X.CreateWindow(
        win, root, 
        0, 0, kbdImg.width, kbdImg.height, 
-       1, 1, 0,
+       0, 0, 0, 0,
        { 
            backgroundPixel: white, eventMask: Exposure|KeyPress|ButtonPress  
        }
@@ -75,7 +75,7 @@ function main(X)
     X.CreateWindow(
        win1, root, 
        0, 0, kbdImg.width, kbdImg.height, 
-       1, 1, 0,
+       0, 0, 0, 0,
        { 
            backgroundPixel: white, eventMask: Exposure|KeyPress|ButtonPress  
        }
