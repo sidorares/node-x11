@@ -18,14 +18,14 @@ Core requsests usage:
     var PointerMotion = x11.eventMask.PointerMotion;
 
     x11.createClient(function(display) {
-        var X = this;
+        var X = display.client;
         var root = display.screen[0].root;
         var wid = X.AllocID();
         X.CreateWindow(
-           wid, root, 
-           0, 0, 100, 100, 
-           0, 0, 0, 0,
-           { eventMask: Exposure|PointerMotion }
+           wid, root,        // new window id, parent
+           0, 0, 100, 100,   // x, y, w, h
+           0, 0, 0, 0,       // border, depth, class, visual
+           { eventMask: Exposure|PointerMotion } // other parameters
         );
         X.MapWindow(wid);      
         var gc = X.AllocID();
