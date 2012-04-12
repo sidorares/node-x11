@@ -54,6 +54,12 @@ PackStream.prototype.readString = function(strcb)
     });
 }
 
+RfbClient.prototype.terminate = function()
+{
+    debugger;
+    this.stream.end();
+}
+
 RfbClient.prototype.readError = function()
 {
     var cli = this;
@@ -225,7 +231,7 @@ RfbClient.prototype.setEncodings = function()
 
     // build encodings list
     // TODO: API
-    var encodings = [rfb.encodings.raw, rfb.encodings.copyRect, rfb.encodings.pseudoDesktopSize]; //, rfb.encodings.hextile];
+    var encodings = [rfb.encodings.raw, rfb.encodings.copyRect, rfb.encodings.pseudoDesktopSize, rfb.encodings.hextile];
 
     stream.pack('CxS', [rfb.clientMsgTypes.setEncodings, encodings.length]);
     stream.pack(repeat('l', encodings.length), encodings);
@@ -339,7 +345,6 @@ RfbClient.prototype.readHextile = function(rect, cb)
 RfbClient.prototype.readHextileTile = function(rect, cb)
 {
     var tile = {};
-    clog('read hextile tile');
     var stream = this.pack_stream;
     var cli = this;
 
@@ -353,13 +358,11 @@ RfbClient.prototype.readHextileTile = function(rect, cb)
          tile.height = rect.bottomRectHeight;
 
     // calculate next tilex & tiley and move up 'stack' if we at the last tile
-    function nextTile(rect, cb)
+    function nextTile()
     {
-        //clog('nextTile ===================== ');
-        rect.tiles.push(tile);
-        //clog(tile);
+        clog('nextTile');
+        rect.emit('tile', tile);
         tile = {};
-
         if (rect.tilex < rect.widthTiles)
         {
             rect.tilex++;
@@ -382,93 +385,134 @@ RfbClient.prototype.readHextileTile = function(rect, cb)
     }
 
     var bytesPerPixel = cli.bpp >> 3;
+    console.log('bytesPerPixel: ' + bytesPerPixel);
+    var tilebuflen = bytesPerPixel*tile.width*tile.height;
     stream.unpack('C', function(subEnc) {
-        //clog('tile flags: ' + subEnc[0]);
+        clog('tile flags: ' + subEnc[0]);
         tile.subEncoding = subEnc[0];
         var hextile = rfb.subEncodings.hextile;
         if (tile.subEncoding & hextile.raw) {
-            clog('raw tile!!!');
-            stream.get(bytesPerPixel*tile.width*tile.height, function(rawbuff)
+            stream.get(tilebuflen, function(rawbuff)
             {
+                clog('raw tile');
                 tile.buffer = rawbuff;
-                setTimeout(function(){nextTile(rect, cb);}, 10);
+                nextTile();
             });
             return;
         }
-        // TODO: rewrite to be DRY
-        if (tile.subEncoding & hextile.backgroundSpecified) {
-            //clog('hextile.backgroundSpecified');
-            stream.get(bytesPerPixel, function(pixelValue)
-            {
-                //clog(['tile.backgroundColor', pixelValue, tile.subEncoding]);
-                tile.backgroundColor = pixelValue;
-                rect.backgroundColor = pixelValue;
-                if (!(tile.subEncoding & hextile.anySubrects))
-                {
-                    return setTimeout(function() { nextTile(rect, cb) }, 10);
-                }
-            });
-        } else {
-            //clog(['not specified, using prev: tile.backgroundColor', rect.backgroundColor]);
-            tile.backgroundColor = rect.backgroundColor;
+        tile.buffer = new Buffer(tilebuflen);
+     
+        function solidBackground() {
+            clog('solidBackground');
+            // the whole tile is just single colored width x height
+            for (var i=0; i < tilebuflen; i+= bytesPerPixel)
+                tile.backgroundColor.copy(tile.buffer, i); 
         }
-        if (rect.subEncoding & hextile.foregroundSpeciﬁed) {
-            stream.get(bytesPerPixel, function(pixelValue)
-            {
-                tile.foreroundColor = pixelValue;
-                rect.foreroundColor = pixelValue;
-            });
-        } else {
-            if (rect.foregroundColor) {
-                //clog(['not specified, using prev: tile.foregroundColor', rect.foregroundColor]);
+        
+        function readBackground() {
+            clog('readBackground');
+            if (tile.subEncoding & hextile.backgroundSpecified) {
+                clog('hextile.backgroundSpecified');
+                stream.get(bytesPerPixel, function(pixelValue)
+                {
+                    clog(['tile.backgroundColor', pixelValue, tile.subEncoding]);
+                    tile.backgroundColor = pixelValue;
+                    rect.backgroundColor = pixelValue;
+                    readForeground(); 
+                });
+            } else {
                 tile.backgroundColor = rect.backgroundColor;
+                readForeground(); 
             }
         }
 
-        tile.subrects = [];
-        if (tile.subEncoding & hextile.anySubrects) {
-            // read number of subrectangles
-            stream.get('C', function(subrectsNum) {
-                 tile.subrectsNum = subrectsNum[0];
-                 clog('============================= subrects! ========' + tile.subrectsNum);
-            });        
-        } else {
-            return setTimeout(function() { nextTile(rect, cb) }, 10);
-            //return nextTile(rect, cb);
+        function readForeground() {
+            clog('readForeground');
+            // we should have background color set here
+            solidBackground();
+            if (rect.subEncoding & hextile.foregroundSpeciﬁed) {
+                clog('foreground specified');
+                stream.get(bytesPerPixel, function(pixelValue)
+                {
+                    tile.foreroundColor = pixelValue;
+                    rect.foreroundColor = pixelValue;
+                    console.log(rect);
+                    readSubrects();
+                });
+            } else {
+                clog('foreground NOT specified');
+                clog(rect);
+                tile.foregroundColor = rect.foregroundColor;
+                readSubrects();
+            }
+        }
+
+        function readSubrects() {
+            clog('readSubrects');
+            if (tile.subEncoding & hextile.anySubrects) {
+                clog('have subrects');
+                // read number of subrectangles
+                stream.get('C', function(subrectsNum) {
+                    tile.subrectsNum = subrectsNum[0];
+                    clog('number of subrects = ' + tile.subrectsNum);
+                    readSubrect();
+                });        
+            } else {
+                nextTile();
+            }
+        }
+
+        function drawRect(x, y, w, h)
+        {
+            console.log(tile);
+            console.log(['drawRect', x, y, w, h, tile.foregroundColor]);
+            // TODO: optimise
+            for(var px = x; px < x+w; ++px)
+            {
+                for(var py = x; py < y+h; ++py)
+                {
+                    var offset = bytesPerPixel*(tile.width*py + px);
+                    tile.foregroundColor.copy(tile.buffer, offset);
+                }
+            }
         }
 
         function readSubrect() {
-            //clog('reading subrects');
-            //clog(tile);
-            var subrect = {};
+            clog('readSubrect');
             if (tile.subEncoding & hextile.subrectsColored) {
+                // we have color + rect data
                 stream.get(bytesPerPixel, function(pixelValue)
                 {
-                    subrect.foreroundColor = pixelValue;
+                    clog(['coloredSubrect: ', pixelValue]);
                     tile.foreroundColor = pixelValue;
+                    rect.foreroundColor = pixelValue;
+                    readSubrectRect(); 
                 });
-            } else {
-                subrect.foreroundColor = tile.foregroundColor;
-            }
+            } else // we have just rect data
+                readSubrectRect();
+        }
+
+        function readSubrectRect() {
+            clog('readSubrectRect');
             // read subrect x y w h encoded in two bytes
             stream.get(2, function(subrectRaw) {
-                subrect.x = (subrectRaw[0] & 0xf0) >> 4;
-                subrect.y = (subrectRaw[0] & 0x0f);
-                subrect.width  = (subrectRaw[1] & 0xf0) >> 4;
-                subrect.height = (subrectRaw[1] & 0x0f);
-                tile.subrects.push(subrect);
-                if (tile.subrects.length == tile.subrectsNum)
+                var x = (subrectRaw[0] & 0xf0) >> 4;
+                var y = (subrectRaw[0] & 0x0f);
+                var width  = (subrectRaw[1] & 0xf0) >> 4 + 1;
+                var height = (subrectRaw[1] & 0x0f) + 1;
+                clog(['readSubrectRect', x, y, width, height, tile.subrectsNum]);
+                drawRect(x, y, width, height);
+                tile.subrectsNum--;
+                
+                if (tile.subrectsNum === 0)
                 {
-                    //delete tile..subrectsNum;
-                    //cli.emit('rect', rect);
-                    return setTimeout(function() { nextTile(rect, cb) }, 500);
-                    //return nextTile(rect, cb);
+                    nextTile();
                 } else
-                    setTimeout(readSubrect, 500);
+                    readSubrect();
             });
         }
-        readSubrect();
 
+        readBackground();
     }); 
 }
 
@@ -556,7 +600,6 @@ RfbClient.prototype.requestUpdate = function(incremental, x, y, width, height)
 var fs = require('fs');
 function createRfbStream(name)
 {
-    console.log("WAT?" + name);
     var stream = new EventEmitter();
     var fileStream = fs.createReadStream(name);
     var pack = new PackStream();
@@ -577,10 +620,12 @@ function createRfbStream(name)
                 pack.unpack('L', function(timestamp) {
                     var padding = 3 - ((size - 1) & 0x03);
                     pack.get(padding, function() {
-                        stream.emit('data', databuf);
-                        var now = +new Date - start; 
-                        var timediff = timestamp[0] - now;
-                        setTimeout(readData, 1);//timediff);
+                        if (!stream.ending) {
+                            stream.emit('data', databuf);
+                            var now = +new Date - start; 
+                            var timediff = timestamp[0] - now;
+                            stream.timeout = setTimeout(readData, timediff);
+                        }
                     });
                 });
             }); 
@@ -590,6 +635,12 @@ function createRfbStream(name)
     pack.get(12, function(fileVersion) {
          readData();
     });
+
+    stream.end = function() {
+        stream.ending = true;
+        if (stream.timeout)
+            clearTimeout(stream.timeout);
+    };
 
     stream.write = function(buf) {
         // ignore

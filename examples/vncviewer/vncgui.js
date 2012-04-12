@@ -111,9 +111,13 @@ x11.createClient(function(display) {
                      console.log('hextile rec! (currently not fully supported');
                      console.log(rect);
                      rect.on('tile', function(tile) {
-                         console.log(tile);
+                         X.PutImage(2, wid, gc, 16, 16, tile.x, tile.y, 0, 24, tile.buffer);
                      });
                 }
+            });
+
+            X.on('end', function() {
+                r.terminate();
             });
 
         }); // r.on('connect)
