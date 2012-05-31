@@ -24,7 +24,7 @@
     "sinon": "*"
   }
 , "scripts": {
-    "test": "mocha",
+    "test": "mocha --globals 'r,i'",
     "prepublish" : "npm prune"
   }
 }
