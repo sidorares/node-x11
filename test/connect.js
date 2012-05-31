@@ -1,6 +1,7 @@
 var x11 = require('../lib/x11');
 //var sinon = require('sinon');
 var should = require('should');
+var assert = require('assert');
 
 describe("Client", function() {
 
@@ -19,5 +20,26 @@ describe("Client", function() {
       should.exist(display.major);
       done();
     });
+    client.on('error', function(err) { done(err); });
+  });
+
+  it("throws error if $DISPLAY is bogus", function(done) {
+     try {
+        var client = x11.createClient(function(display) {
+          done("Should not reach here");
+        }, "BOGUS DISPLAY");
+        client.on('error', function(err) { done(); });
+     } catch(err) {
+        assert(err && err.message == "Cannot parse display");
+        done();
+     }
+  });
+
+  it("uses display variable from parameter if present ignoring anvironment $DISPLAY", function(done) {
+     var disp = process.env.DISPLAY;
+     process.env.DISPLAY = "BOGUS DISPLAY";
+     var client = x11.createClient(function(display) {
+        done();
+     }, disp);
   });
 });
