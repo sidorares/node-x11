@@ -13,6 +13,9 @@ describe("Client", function() {
   it("calls first createClient parameter with display object", function(done) {
     var client = x11.createClient(function(display) {
       should.exist(display);
+      should.exist(display.screen);
+      should.exist(display.screen[0]);
+      should.exist(display.screen[0].root);
       done();
     });
   });
