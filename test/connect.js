@@ -16,6 +16,7 @@ describe("Client", function() {
       should.exist(display.screen);
       should.exist(display.screen[0]);
       should.exist(display.screen[0].root);
+      should.exist(display.major);
       done();
     });
   });
