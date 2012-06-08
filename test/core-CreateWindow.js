@@ -39,7 +39,8 @@ describe('CreateWindow request', function() {
       X.QueryTree(display.screen[0].root, function(err, list) {
           if (err)
               done(err);
-          assert(list.children.indexOf(wid) != -1, 'can\'t find created window');
+          var pos = list.children.indexOf(wid);
+          assert.notEqual(pos, -1, 'can\'t find created window');
           done();
       });
   });
