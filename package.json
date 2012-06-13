@@ -20,7 +20,7 @@
 , "engines" : { "node" : "*" }
 , "devDependencies": {
     "mocha": "*",
-    "should": "*",
+    "should": "*"
   }
 , "scripts": {
     "test": "mocha",
