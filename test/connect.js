@@ -1,5 +1,4 @@
 var x11 = require('../lib/x11');
-//var sinon = require('sinon');
 var should = require('should');
 var assert = require('assert');
 
@@ -10,8 +9,9 @@ describe('Client', function() {
       var client = x11.createClient(function(dpy) {
           display=dpy;
           done();
+          client.removeListener('error', done);
       });
-      client.on('error', function(err) { done(err); });
+      client.on('error', done);
   });
 
   it('calls first createClient parameter with display object', function(done) {
@@ -29,6 +29,7 @@ describe('Client', function() {
      var client = x11.createClient(function(display) {
         done();
      }, disp);
+     client.on('error', done);
      process.env.DISPLAY=disp;
   });
 
@@ -42,7 +43,6 @@ describe('Client', function() {
      }, /Cannot parse display/);
      done();
      } catch(e) {
-        console.log(e);
         done(); 
     }
   });
