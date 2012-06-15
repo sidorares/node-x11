@@ -8,6 +8,10 @@ Windows users:
 1) install [XMing](http://www.straightrunning.com/XmingNotes/) or [Cygwin/X](http://x.cygwin.com/) 
 2) get node-x11 copy (using [git](http://code.google.com/p/msysgit/downloads/list?can=3) or from [Github](https://github.com/sidorares/node-x11/archives/master ))
 
+#CI build status:
+
+[![Build Status](https://secure.travis-ci.org/sidorares/node-x11.png)](http://travis-ci.org/sidorares/node-x11)
+
 # example
 
 Core requsests usage:
