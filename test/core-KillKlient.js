@@ -12,7 +12,10 @@ describe('KillKlient request', function() {
           X = display.client;
           done();
       });
-      client.on('error', done);
+      client.on('error', function(err) {
+         console.log(err);
+         done(err);
+      });
   });
 
   afterEach(function(done) {
