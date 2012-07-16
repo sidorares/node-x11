@@ -23,7 +23,7 @@
     "should": "*"
   }
 , "scripts": {
-    "test": "mocha -t 30000",
+    "test": "mocha -t 80000",
     "prepublish" : "npm prune"
   }
 }
