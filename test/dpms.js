@@ -11,23 +11,12 @@ describe('DPMS extension', function() {
         var client = x11.createClient(function(dpy) {
             display = dpy;
             X = display.client;
-            // To be able to perform the tests we need the server:
-            // 1 - to support the dpms extension.
-            // 2 - dpms version is 1.1.
-            // 3 - to be dpms capable.
             X.require('dpms', function(ext) {
                 if (util.isError(ext)) {
                     done(ext);
                 } else {
                     dpms = ext;
-                    dpms.GetVersion(undefined, undefined, function(err, version) {
-                        if (err) return done(err);
-                        version.should.eql([1, 1]);
-                        dpms.Capable(function(err, capable) {
-                            if (!err) capable.should.eql([1]);
-                            done(err);
-                        });
-                    });
+                    done();
                 }
             });
         });
