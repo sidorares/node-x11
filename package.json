@@ -20,7 +20,7 @@
     "should": "*"
   }
 , "scripts": {
-    "test": "mocha -t 80000",
+    "test": "node test-runner.js",
     "prepublish" : "npm prune"
   }
 }
