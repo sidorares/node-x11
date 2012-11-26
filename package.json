@@ -3,7 +3,7 @@
 , "description": "A pure node.js JavaScript client implementing X Window (X11) protocol."
 , "keywords": ["X Window", "ui", "gui", "widgets", "desktop", "XWindow", "X"]
 , "homepage": "https://github.com/sidorares/node-x11"
-, "version" : "0.0.10"
+, "version" : "0.0.11"
 , "maintainers" :
   [ { "name": "Andrey Sidorov"
     , "email": "sidoares@yandex.ru"
@@ -11,19 +11,17 @@
   ]
 , "bugs" : { "url" : "http://github.com/sidorares/node-x11/issues" }
 , "licenses" : [ { "type" : "MIT" } ]
-, "repositories" :
-  [ { "type" : "git"
-    , "url" : "http://github.com/sidorares/node-x11"
-    }
-  ]
+, "repository" : { "type" : "git", "url" : "http://github.com/sidorares/node-x11.git" }
+
 , "main" : "./lib/x11"
 , "engines" : { "node" : "*" }
 , "devDependencies": {
     "mocha": "*",
-    "should": "*"
+    "should": "*",
+    "async": "*"
   }
 , "scripts": {
-    "test": "mocha -t 80000",
+    "test": "node test-runner.js",
     "prepublish" : "npm prune"
   }
 }
