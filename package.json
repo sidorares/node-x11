@@ -12,12 +12,13 @@
 , "bugs" : { "url" : "http://github.com/sidorares/node-x11/issues" }
 , "licenses" : [ { "type" : "MIT" } ]
 , "repository" : { "type" : "git", "url" : "http://github.com/sidorares/node-x11.git" }
- 
+
 , "main" : "./lib/x11"
 , "engines" : { "node" : "*" }
 , "devDependencies": {
     "mocha": "*",
-    "should": "*"
+    "should": "*",
+    "async": "*"
   }
 , "scripts": {
     "test": "node test-runner.js",
