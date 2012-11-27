@@ -18,7 +18,7 @@
 , "devDependencies": {
     "mocha": "*",
     "should": "*",
-    "sax", "*",
+    "sax": "*",
     "async": "*"
   }
 , "scripts": {
