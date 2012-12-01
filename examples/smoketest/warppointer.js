@@ -1,5 +1,5 @@
 var angle = 0;
-var x11 = require('../lib/x11').createClient(function(display) {
+var x11 = require('../../lib/x11').createClient(function(display) {
     setInterval(function() {
         var x = 500 + 100*Math.cos(angle);
         var y = 500 + 100*Math.sin(angle);

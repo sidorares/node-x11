@@ -4,7 +4,7 @@
 var fs = require('fs');
 var Pixmap = require('./pixmap').Pixmap;
 var Buffer = require('buffer').Buffer;
-require('../lib/x11/unpackbuffer').addUnpack(Buffer);
+require('../../lib/x11/unpackbuffer').addUnpack(Buffer);
 
 var reversed = new Buffer(256);
 for (var i=0; i < 256; ++i)

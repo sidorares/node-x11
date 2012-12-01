@@ -1,4 +1,4 @@
-var x11 = require('../lib/x11');
+var x11 = require('../../lib/x11');
 
 var xclient = x11.createClient();
 var PointerMotion = x11.eventMask.PointerMotion;
