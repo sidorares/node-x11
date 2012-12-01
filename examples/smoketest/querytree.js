@@ -1,4 +1,4 @@
-var x11 = require('../lib/x11');
+var x11 = require('../../lib/x11');
 var wid = process.argv[2];
 console.log(wid);
 var wids = [];
