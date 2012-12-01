@@ -1,4 +1,4 @@
-var x11 = require('../lib/x11');
+var x11 = require('../../lib/x11');
 var X = x11.createClient();
 var numExt = 0;
 X.on('connect', function(display) {
