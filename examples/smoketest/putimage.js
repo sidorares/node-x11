@@ -28,6 +28,11 @@ xclient.on('connect', function(display) {
        1, 1, 0,
        { 
            backgroundPixel: white, eventMask: Exposure|PointerMotion  
+       wid, root,
+       10, 10, 400, 300,
+       0, 0, 0, 0,
+       {
+           backgroundPixel: white, eventMask: Exposure|PointerMotion
        }
     );
     X.MapWindow(wid);
