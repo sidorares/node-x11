@@ -247,6 +247,11 @@ function init(gl, done)
 
    /* make the gears */
    gl.GenLists(3, function(err, startIndex) {
+       if (err)
+       {
+           console.log(err);
+           return;
+       }
        gear1 = startIndex;
        gl.NewList(gear1, gl.COMPILE);
        gl.Materialfv(gl.FRONT, gl.AMBIENT_AND_DIFFUSE, red);
@@ -275,16 +280,31 @@ var eventmask = x11.eventMask.PointerMotion|x11.eventMask.ButtonPress|x11.eventM
 x11.createClient(function(display) {
     var X = display.client;
     var root = display.screen[0].root;
-    var width = 1000;
-    var height = 1000;
+    var width = 300;
+    var height = 300;
     X.require('glx', function(GLX) {
-        var visual = 0xa1;
+        var depth = 24;
+        var visual = 147;
+        var rgbaVisuals = Object.keys(display.screen[0].depths[depth]);
+        for (v in rgbaVisuals)
+        {
+           var vid = rgbaVisuals[v];
+           var visualClass = display.screen[0].depths[depth][vid].class;
+           if (visualClass == 4 || visualClass == 5)
+           {
+              visual = vid;
+              break;
+           }
+        }
+
+        var cmid = X.AllocID();
+        X.CreateColormap(cmid, root, visual, 0);
         var win = X.AllocID();
-        X.CreateWindow(win, root, 0, 0, width, height, 0, 0, 0, 0, { eventMask: eventmask });
+        X.CreateWindow(win, root, 0, 0, width, height, 0, depth, 0, visual, { eventMask: eventmask, colormap: cmid, backgroundPixel: 0, borderPixel: 0 });
         X.MapWindow(win);
 
         var ctx = X.AllocID();
-        GLX.CreateContext(ctx, 0xa1, 0, 0, 0);
+        GLX.CreateContext(ctx, visual, 0, 0, 0);
         GLX.MakeCurrent(win, ctx, 0, function() {});
         var gl = GLX.renderPipeline(ctx);
 
@@ -297,18 +317,17 @@ x11.createClient(function(display) {
               reshape(gl, width, height);
               draw(gl);
               gl.SwapBuffers(win);
-          }, 10);
+          }, 20);
         });
 
         X.on('event', function(ev) {
            switch(ev.type) {
            case 22:
-              //reshape(gl, ev.width, ev.height);
+              reshape(gl, ev.width, ev.height);
               width = ev.width;
               height = ev.height;
               break;
            }
-           angle += 2;
            reshape(gl, width, height);
            if (initialized)
               draw(gl);
