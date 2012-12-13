@@ -1,9 +1,9 @@
 { "name" : "x11"
 , "author": "Andrey Sidorov <sidorares@yandex.ru>"
-, "description": "A pure node.js JavaScript client implementing X Window (X11) protocol."
+, "description": "A pure node.js JavaScript client implementing X Window (X11) protocol and extensions."
 , "keywords": ["X Window", "ui", "gui", "widgets", "desktop", "XWindow", "X"]
 , "homepage": "https://github.com/sidorares/node-x11"
-, "version" : "0.0.12"
+, "version" : "0.0.13"
 , "maintainers" :
   [ { "name": "Andrey Sidorov"
     , "email": "sidoares@yandex.ru"
