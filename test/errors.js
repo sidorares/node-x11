@@ -28,3 +28,15 @@ describe('Client', function() {
      });
   });
 });
+
+describe('Create client to non existent display', function() {
+  it('should emit the corresponding connection error', function(done) {
+    var client = x11.createClient(function(dpy) {
+    }, ':44');
+    
+    client.on('error', function(err) {
+      err.errno.should.equal('ENOENT');
+      done();
+    });
+  })
+});
