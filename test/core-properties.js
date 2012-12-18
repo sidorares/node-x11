@@ -13,13 +13,17 @@ describe('Window property', function() {
   var X;
   var wid;
   beforeEach(function(done) {
-      var client = x11.createClient(function(dpy) {
-          display=dpy;
-          X = display.client;
-          wid = X.AllocID();
-          X.CreateWindow(wid, display.screen[0].root, 0, 0, 100, 100, 0, 0, 0, 0, { eventMask: x11.eventMask.PropertyChange});
-          done();
-          client.removeListener('error', done); // all future errors should be attached to corresponding test 'done'
+      var client = x11.createClient(function(err, dpy) {
+          if (!err) {
+              display = dpy;
+              X = display.client;
+              wid = X.AllocID();
+              X.CreateWindow(wid, display.screen[0].root, 0, 0, 100, 100, 0, 0, 0, 0, { eventMask: x11.eventMask.PropertyChange});
+              done();
+              client.removeListener('error', done); // all future errors should be attached to corresponding test 'done'
+          } else {
+              done(err);
+          }
       });
       client.on('error', done);
   });
@@ -38,7 +42,7 @@ describe('Window property', function() {
       X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 10000000, function(err, prop) {
           if (err) return done(err);
           var propvalget = prop.data.toString();
-          assert.equal(propvalset, propvalget, 'get property result different from set property value'); 
+          assert.equal(propvalset, propvalget, 'get property result different from set property value');
           done();
       });
   });
@@ -60,7 +64,7 @@ describe('Window property', function() {
           done('unexpexted event');
       });
   });
-  
+
   it('should not exist after DeleteProperty called', function(done) {
       X.on('error', done);
       var propvalset = "some property value";
@@ -68,7 +72,7 @@ describe('Window property', function() {
       X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 10000000, function(err, prop) {
           if (err) return done(err);
           var propvalget = prop.data.toString();
-          assert.equal(propvalset, propvalget, 'get property result different from set property value'); 
+          assert.equal(propvalset, propvalget, 'get property result different from set property value');
           X.DeleteProperty(wid, X.atoms.WM_NAME);
           X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 10000000, function(err, prop) {
               assert.equal(prop.type, 0, 'non-existent property type should be 0');

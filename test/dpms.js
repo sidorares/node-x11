@@ -8,17 +8,21 @@ describe('DPMS extension', function() {
     var X;
     var dpms;
     before(function(done) {
-        var client = x11.createClient(function(dpy) {
-            display = dpy;
-            X = display.client;
-            X.require('dpms', function(ext) {
-                if (util.isError(ext)) {
-                    done(ext);
-                } else {
-                    dpms = ext;
-                    done();
-                }
-            });
+        var client = x11.createClient(function(err, dpy) {
+            if (!err) {
+                display = dpy;
+                X = display.client;
+                X.require('dpms', function(ext) {
+                    if (util.isError(ext)) {
+                        done(ext);
+                    } else {
+                        dpms = ext;
+                        done();
+                    }
+                });
+            } else {
+                done(err);
+            }
         });
 
         client.on('error', done);

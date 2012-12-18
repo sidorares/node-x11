@@ -6,13 +6,14 @@ describe('Client', function() {
 
   var display;
   beforeEach(function(done) {
-      var client = x11.createClient(function(dpy) {
-      display=dpy;
-      done();
-    });
+      var client = x11.createClient(function(err, dpy) {
+        console.log(err)
+          display = dpy;
+          done(err);
+      });
   });
 
-  it('should emit error which is instance of Error with seqence number corresponding to source request', function(done) {
+  it('should emit error which is instance of Error with sequence number corresponding to source request', function(done) {
     display.client.options.debug = true;
     display.client.CreateWindow(); // should emit error
     var seq = display.client.seq_num;
