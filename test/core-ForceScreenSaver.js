@@ -7,10 +7,13 @@ describe('ForceScreenSaver request', function() {
   var display;
   var X;
   beforeEach(function(done) {
-      var client = x11.createClient(function(dpy) {
-          display=dpy;
-          X = display.client;
-          done();
+      var client = x11.createClient(function(err, dpy) {
+          if (!err) {
+            display = dpy;
+            X = display.client;
+          }
+
+          done(err);
       });
       client.on('error', done);
   });

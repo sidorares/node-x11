@@ -8,17 +8,21 @@ describe('XTEST extension', function() {
     var X;
     var xtest;
     before(function(done) {
-        var client = x11.createClient(function(dpy) {
-            display = dpy;
-            X = display.client;
-            X.require('xtest', function(ext) {
-                if (util.isError(ext)) {
-                    done(ext);
-                } else {
-                    xtest = ext;
-                    done();
-                }
-            });
+        var client = x11.createClient(function(err, dpy) {
+            if (!err) {
+                display = dpy;
+                X = display.client;
+                X.require('xtest', function(ext) {
+                    if (util.isError(ext)) {
+                        done(ext);
+                    } else {
+                        xtest = ext;
+                        done();
+                    }
+                });
+            } else {
+                done(err);
+            }
         });
 
         client.on('error', done);
