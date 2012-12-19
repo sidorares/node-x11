@@ -1,16 +1,22 @@
 var x11 = require('../lib/x11');
 var should = require('should');
 var assert = require('assert');
+var util = require('util');
 
 describe('Client', function() {
 
   var display;
   beforeEach(function(done) {
-      var client = x11.createClient(function(dpy) {
-          display=dpy;
-          done();
-          client.removeListener('error', done);
+      var client = x11.createClient(function(err, dpy) {
+          if (!err) {
+              display = dpy;
+              done();
+              client.removeListener('error', done);
+          } else {
+              done(err);
+          }
       });
+
       client.on('error', done);
   });
 
@@ -22,13 +28,11 @@ describe('Client', function() {
       should.exist(display.major);
       done();
   });
-  
+
   it('uses display variable from parameter if present ignoring anvironment $DISPLAY', function(done) {
      var disp = process.env.DISPLAY;
      process.env.DISPLAY = 'BOGUS DISPLAY';
-     var client = x11.createClient(function(display) {
-        done();
-     }, disp);
+     var client = x11.createClient({ display : disp }, done);
      client.on('error', done);
      process.env.DISPLAY=disp;
   });
@@ -36,14 +40,21 @@ describe('Client', function() {
   it('throws error if $DISPLAY is bogus', function(done) {
      try {
      assert.throws(function() {
-        var client = x11.createClient(function(display) {
+        var client = x11.createClient({ display : 'BOGUS DISPLAY' }, function(err, display) {
           done('Should not reach here');
-        }, 'BOGUS DISPLAY');
+        });
         client.on('error', function(err) { done(); });
      }, /Cannot parse display/);
      done();
      } catch(e) {
-        done(); 
+        done();
     }
+  });
+
+  it('returns error when connecting to non existent display', function(done) {
+    var client = x11.createClient({ display : ':44' }, function(err, display) {
+        assert(util.isError(err));
+        done();
+    });
   });
 });

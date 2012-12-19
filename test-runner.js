@@ -14,7 +14,8 @@ var mocha = new Mocha({
 // 2 - dpms version is 1.1.
 // 3 - to be dpms capable.
 var run_dpms_test = function(cb) {
-    var client = x11.createClient(function(dpy) {
+    var client = x11.createClient(function(err, dpy) {
+        if (err) return cb(false);
         var display = dpy;
         var X = display.client;
         X.require('dpms', function(ext) {
@@ -42,7 +43,8 @@ var run_dpms_test = function(cb) {
 };
 
 var run_xtest_test = function(cb) {
-    var client = x11.createClient(function(dpy) {
+    var client = x11.createClient(function(err, dpy) {
+        if (err) return cb(false);
         var display = dpy;
         var X = display.client;
         X.require('dpms', function(ext) {

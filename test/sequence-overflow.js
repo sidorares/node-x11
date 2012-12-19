@@ -6,10 +6,14 @@ describe('Client', function() {
 
   var display;
   beforeEach(function(done) {
-      var client = x11.createClient(function(dpy) {
-          display=dpy;
-          done();
-          client.removeListener('error', done);
+      var client = x11.createClient(function(err, dpy) {
+          if (!err) {
+              display = dpy;
+              done();
+              client.removeListener('error', done);
+          } else {
+              done(err);
+          }
       });
       client.on('error', done);
   });
@@ -33,7 +37,7 @@ describe('Client', function() {
          left--;
          display.client.GetAtomName(1, test);
       }
-      
+
       left++;
       test(); // first call starts sequens and not a callback from GetAtomName, thus left++
   });
