@@ -182,7 +182,6 @@ function gear(gl, inner_radius, outer_radius, width, teeth, tooth_depth)
       gl.Vertex3f(r0 * cos(angle), r0 * sin(angle), width * 0.5);
    }
    gl.End();
-   gl.render();
 }
 
 
@@ -228,7 +227,6 @@ function reshape(gl, width, height)
    gl.LoadIdentity();
    gl.Translatef(0.0, 0.0, -40.0);
    gl.Scalef(0.1, 0.1, 0.1);
-   gl.render();
 }
 
 
@@ -275,15 +273,32 @@ function init(gl, done)
 }
 
 var x11 = require('../../lib/x11');
-var eventmask = x11.eventMask.PointerMotion|x11.eventMask.ButtonPress|x11.eventMask.ButtonRelease|x11.eventMask.StructureNotify|x11.eventMask.Exposure;
+//var eventmask = x11.eventMask.PointerMotion|x11.eventMask.PointerMotionHint|x11.eventMask.ButtonPress|x11.eventMask.ButtonRelease|x11.eventMask.StructureNotify|x11.eventMask.Exposure;
+var eventmask = x11.eventMask.PointerMotion;
+//var eventmask = x11.eventMask.PointerMotion|x11.eventMask.ButtonPress|x11.eventMask.ButtonRelease|x11.eventMask.StructureNotify|x11.eventMask.Exposure;
+var exec = require('child_process').exec;
 
-x11.createClient(function(display) {
+function findBestVisual(display, done) {
+    exec('glxinfo -i -b', function(error, stdout, stderr) {
+        console.log(stdout);
+        if (error)
+            return done(error);
+        done(null, parseInt(stdout)+1);
+        //done(null, 0xb1);
+    })
+}
+
+
+x11.createClient(function(error, display) {
     var X = display.client;
     var root = display.screen[0].root;
-    var width = 300;
-    var height = 300;
+    var width = 500;
+    var height = 500;
     X.require('glx', function(GLX) {
         var depth = 24;
+        findBestVisual(display, function(err, visual) {
+
+        /*
         var visual = 147;
         var rgbaVisuals = Object.keys(display.screen[0].depths[depth]);
         for (v in rgbaVisuals)
@@ -296,10 +311,12 @@ x11.createClient(function(display) {
               break;
            }
         }
+        */
 
         var cmid = X.AllocID();
         X.CreateColormap(cmid, root, visual, 0);
         var win = X.AllocID();
+        console.log(eventmask);
         X.CreateWindow(win, root, 0, 0, width, height, 0, depth, 0, visual, { eventMask: eventmask, colormap: cmid, backgroundPixel: 0, borderPixel: 0 });
         X.MapWindow(win);
 
@@ -310,29 +327,41 @@ x11.createClient(function(display) {
 
         var initialized = false;
         init(gl, function() {
-          gl.render();
           initialized = true;
           setInterval(function() {
               angle += 2;
               reshape(gl, width, height);
               draw(gl);
               gl.SwapBuffers(win);
-          }, 20);
+          }, 50);
         });
 
         X.on('event', function(ev) {
+           console.log(ev);
            switch(ev.type) {
            case 22:
               reshape(gl, ev.width, ev.height);
               width = ev.width;
               height = ev.height;
               break;
+           case 6:
+              X.QueryPointer(win, function(err, pointer) {
+                view_rotx = pointer.childX;
+                view_roty = pointer.childY;
+                reshape(gl, width, height);
+                if (initialized)
+                  draw(gl);
+                gl.SwapBuffers(win);
+              });
+              return;
            }
            reshape(gl, width, height);
            if (initialized)
               draw(gl);
            gl.SwapBuffers(win);
         });
+
+ }); // findBestVisual
 
     });
     X.on('error', function(err) { console.log(err); });
