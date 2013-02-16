@@ -12,9 +12,9 @@ function ManageWindow(wid)
     X.GetWindowAttributes(wid, function(err, attrs) {
 
         if (attrs[8]) // override-redirect flag
-        { 
-            // don't manage  
-            console.log("don't manage");  
+        {
+            // don't manage
+            console.log("don't manage");
             X.MapWindow(wid);
             return;
         }
@@ -24,7 +24,7 @@ function ManageWindow(wid)
     var winX, winY;
     winX = parseInt(Math.random()*300);
     winY = parseInt(Math.random()*300);
-    
+
     X.GetGeometry(wid, function(err, clientGeom) {
 
         console.log("window geometry: ", clientGeom);
@@ -32,9 +32,9 @@ function ManageWindow(wid)
         var height = clientGeom.height + 24;
         console.log("CreateWindow", fid, root, winX, winY, width, height);
         X.CreateWindow(fid, root, winX, winY, width, height, 0, 0, 0, 0,
-        { 
-            backgroundPixel: white, 
-            eventMask: events 
+        {
+            backgroundPixel: white,
+            eventMask: events
         });
 
          var bggrad = X.AllocID();
@@ -78,7 +78,7 @@ function ManageWindow(wid)
     });
 }
 
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
     X = display.client;
     X.require('render', function(Render) {
     X.Render = Render;
