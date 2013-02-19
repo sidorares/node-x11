@@ -1,4 +1,4 @@
-var x11 = require('./lib/x11');
+var x11 = require('./lib');
 var Mocha = require('mocha');
 var fs = require('fs');
 var path = require('path');
