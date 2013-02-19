@@ -9,7 +9,7 @@
 // 0.4.9pre:  16700 +/-300
 
 
-var x11 = require('../../../lib/x11');
+var x11 = require('../../../lib');
 
 var xclient = x11.createClient();
 var reqcounter = 0;

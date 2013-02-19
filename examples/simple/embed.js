@@ -1,5 +1,5 @@
 var spawn = require('child_process').spawn;
-var x11 = require('../../lib/x11');
+var x11 = require('../../lib');
 
 x11.createClient(function(display) {
     var X = display.client;

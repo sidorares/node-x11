@@ -13,7 +13,7 @@
 , "licenses" : [ { "type" : "MIT" } ]
 , "repository" : { "type" : "git", "url" : "http://github.com/sidorares/node-x11.git" }
 
-, "main" : "./lib/x11"
+, "main" : "./lib"
 , "engines" : { "node" : "*" }
 , "devDependencies": {
     "mocha": "*",

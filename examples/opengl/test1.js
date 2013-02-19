@@ -1,4 +1,4 @@
-var x11 = require('../../lib/x11');
+var x11 = require('../../lib');
 
 var randomarr = [];
 for(var i=0; i < 2000; ++i) {

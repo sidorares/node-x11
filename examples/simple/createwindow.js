@@ -1,4 +1,4 @@
-var x11 = require('../../lib/x11');
+var x11 = require('../../lib');
 x11.createClient(function(display) {
     console.log(display.screen[0])
     var X = display.client;

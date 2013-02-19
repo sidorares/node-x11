@@ -1,6 +1,6 @@
 // this will be eventually moved to lib/node-x11/extensions
 
-var x11 = require('../../lib/x11');
+var x11 = require('../../lib');
 
 // adding XRender functions manually from
 //     http://cgit.freedesktop.org/xcb/proto/tree/src/render.xml?id=HEAD

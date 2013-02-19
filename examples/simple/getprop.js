@@ -1,6 +1,6 @@
 // ChangeProperty/GetProperty / PropertyChange event example
 
-var x11 = require('../../lib/x11');
+var x11 = require('../../lib');
 var PropertyChange = x11.eventMask.PropertyChange;
 
 x11.createClient(function(display) {

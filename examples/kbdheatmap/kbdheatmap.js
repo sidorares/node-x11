@@ -1,7 +1,7 @@
 #!/home/laplace/node/node
 
 var Buffer = require('buffer').Buffer;
-var x11 = require('../../lib/x11');
+var x11 = require('../../lib');
 
 var Exposure = x11.eventMask.Exposure;
 var KeyPress = x11.eventMask.KeyPress;

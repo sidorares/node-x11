@@ -1,5 +1,5 @@
 var Buffer = require('buffer').Buffer;
-var x11 = require('../../lib/x11');
+var x11 = require('../../lib');
 var fs = require('fs');
 var logo1bit = fs.readFileSync('./nodejs-black.bmp');
 var pixmap = require('./bmp').decodeBuffer(logo1bit);

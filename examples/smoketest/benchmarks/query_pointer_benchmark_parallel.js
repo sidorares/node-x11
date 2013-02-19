@@ -13,7 +13,7 @@
 // x11perf -sync -pointer  :
 // x11perf -pointer        :
 
-var x11 = require('../../../lib/x11');
+var x11 = require('../../../lib');
 var X = x11.createClient();
 
 var total = 50000;

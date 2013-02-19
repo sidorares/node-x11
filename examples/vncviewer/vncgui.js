@@ -1,7 +1,7 @@
 "use strict";
 
 var rfb = require('./rfbclient');
-var x11 = require('../../lib/x11');
+var x11 = require('../../lib');
 
 // TODO: use optimist for args parsing
 var host = process.argv[2];

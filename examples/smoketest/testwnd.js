@@ -1,4 +1,4 @@
-var x11 = require('../../lib/x11');
+var x11 = require('../../lib');
 var Window = require('./wndwrap');
 
 var width = 700;

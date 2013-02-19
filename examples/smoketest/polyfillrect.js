@@ -1,4 +1,4 @@
-var x11 = require('../../lib/x11');
+var x11 = require('../../lib');
 
 var xclient = x11.createClient();
 var Exposure = x11.eventMask.Exposure;

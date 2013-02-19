@@ -16,7 +16,7 @@ var figs = [
     //  000
     [  0, 0,  1, 0,  0, 1, -1, 0 ],
     //    0
-    //  000   
+    //  000
     [ 0, 0, -1, 0, -2, 0, 0, 1 ],
     [ 0, 0, -1, 0, -2, 0, 0, -1 ]
 ];
@@ -34,9 +34,9 @@ function clearCup()
         cup[i] = 0;
 }
 
-var anglecoeff = [1, 0,  0, 1, 
-                  0, -1, 1, 0, 
-                  -1, 0, 0, -1, 
+var anglecoeff = [1, 0,  0, 1,
+                  0, -1, 1, 0,
+                  -1, 0, 0, -1,
                   0, 1, -1, 0];
 //       0: x = 1x + 0y, y =  0x + 1y
 //       1: x = 0x - 1y, y =  1x + 0y
@@ -106,7 +106,7 @@ function deleteLines()
     }
 }
 
-var x11 = require('../lib/x11');
+var x11 = require('../lib');
 var Exposure = x11.eventMask.Exposure;
 var KeyPress = x11.eventMask.KeyPress;
 var sqsize = 15;
@@ -246,7 +246,7 @@ function drop()
 }
 
 
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
     var ks = x11.keySyms;
     var ks2Name = {};
     for (var key in ks)
@@ -266,7 +266,7 @@ x11.createClient(function(display) {
 
     var root = display.screen[0].root;
     var white = display.screen[0].white_pixel;
-    var black = display.screen[0].black_pixel; 
+    var black = display.screen[0].black_pixel;
     wid = X.AllocID();
     X.CreateWindow(wid, root, 0, 0, cupsize[0]*sqsize, cupsize[1]*sqsize, 0, 0, 0, 0, { backgroundPixel: white, eventMask: KeyPress|Exposure });
     cidBlack = X.AllocID();
@@ -283,11 +283,11 @@ x11.createClient(function(display) {
          case 6:
               break;
          case 12: // expose
-              draw(); break;              
+              draw(); break;
          case 2:
               var key = kk2Name[ev.keycode][0];
               console.log(key);
-              switch(key) {            
+              switch(key) {
                   case 'XK_Up': rotateUp(); break;
                   case 'XK_Down': rotateDown(); break;
                   case 'XK_Left': moveLeft(); break;

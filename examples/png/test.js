@@ -1,5 +1,5 @@
 //var logo = require('./node-png').readPng('./node-logo.png');
-var x11 = require('../../lib/x11');
+var x11 = require('../../lib');
 
 var Exposure = x11.eventMask.Exposure;
 var KeyPress = x11.eventMask.KeyPress;

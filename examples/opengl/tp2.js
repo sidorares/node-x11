@@ -296,7 +296,7 @@ function init(gl, done)
    });
 }
 
-var x11 = require('../../lib/x11');
+var x11 = require('../../lib');
 var eventmask = x11.eventMask.PointerMotion|x11.eventMask.ButtonPress|x11.eventMask.ButtonRelease|x11.eventMask.StructureNotify|x11.eventMask.Exposure;
 
 x11.createClient(function(display) {
