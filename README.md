@@ -1,5 +1,7 @@
 # About
  X11 protocol client for node.js
+ 
+ Implements core X11 protocol, as well as Xrender, Damage, Composite, Big-Requests, Dpms, Screensaver, XFixes, Shape, XTest, XC-Misc, GLX and Apple-WM extensions.
 # install
 
 `npm install x11`
