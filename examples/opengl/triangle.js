@@ -5,7 +5,7 @@ for(var i=0; i < 20000; ++i) {
     randomarr.push([Math.random()*30-15, Math.random()*30-15, Math.random()*30-15]);
 }
 
-var xclient = x11.createClient(function(display) {
+var xclient = x11.createClient(function(err, display) {
     var X = display.client;
     var root = display.screen[0].root;
     X.require('glx', function(GLX) {

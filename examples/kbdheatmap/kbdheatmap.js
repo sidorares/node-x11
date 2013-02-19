@@ -23,7 +23,7 @@ for (var k in keysyms)
 var kk2name = {};
 
 
-x11.createClient(function(display) 
+x11.createClient(function(err, display) 
 {
     var X = display.client;   
     X.require('big-requests', function(BigReq) 

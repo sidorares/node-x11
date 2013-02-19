@@ -5,7 +5,7 @@ var PointerMotion = x11.eventMask.PointerMotion;
 var ButtonPress = x11.eventMask.ButtonPress;
 var ButtonRelease = x11.eventMask.ButtonRelease;
 
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
     var X = display.client;
     var root = display.screen[0].root;
     var white = display.screen[0].white_pixel;

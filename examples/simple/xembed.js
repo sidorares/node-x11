@@ -1,5 +1,5 @@
 var x11 = require('../../lib');
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
     var X = display.client;
     var wid = X.AllocID();
     X.CreateWindow(wid, display.screen[0].root, 100, 100, 400, 300, 0, 0, 0, 0, {eventMask: x11.eventMask.PointerMotion});

@@ -2,7 +2,7 @@ var x11 = require('../../lib');
 
 var Exposure = x11.eventMask.Exposure;
 
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
     var repaint;
     var X = display.client;
     var root = display.screen[0].root;

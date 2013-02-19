@@ -6,7 +6,7 @@ for (var key in ks)
     ks2Name[ ks[key] ] = key;
 var kk2Name = {};
 
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
     var X = display.client;
     var min = display.min_keycode;
     var max = display.max_keycode;

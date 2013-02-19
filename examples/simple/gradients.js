@@ -7,7 +7,7 @@ var x11 = require('../../lib');
 // and http://www.x.org/releases/X11R7.6/doc/renderproto/renderproto.txt
 // TODO: move to templates
 x11.createClient(
-    function(display) {
+    function(err, display) {
         var X = display.client;
             X.require('render', function(Render) {
 

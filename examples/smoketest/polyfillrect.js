@@ -4,7 +4,7 @@ var xclient = x11.createClient();
 var Exposure = x11.eventMask.Exposure;
 var PointerMotion = x11.eventMask.PointerMotion;
 
-xclient.on('connect', function(display) {
+xclient.on('connect', function(err, display) {
     var X = this;
     var root = display.screen[0].root;
     var white = display.screen[0].white_pixel;

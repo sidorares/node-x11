@@ -13,7 +13,7 @@ var counter = 0;
 var t = +new Date();
 var t0 = t;
 var num = 100000;
-xclient.on('connect', function(display) {
+xclient.on('connect', function(err, display) {
     console.log(display);
     process.exit(0);
     var X = this;

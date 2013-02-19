@@ -56,7 +56,7 @@ function benchmarkAtoms()
 
 
 
-xclient.on('connect', function(display) {
+xclient.on('connect', function(err, display) {
     X = this;
     X.t1 = +new Date();
     benchmarkAtoms();

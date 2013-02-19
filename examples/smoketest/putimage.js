@@ -14,7 +14,7 @@ for (var i=0; i < bitmap.length; ++i)
     bitmap[i] = i % 256;
 }
 
-xclient.on('connect', function(display) {
+xclient.on('connect', function(err, display) {
     var X = this;
     var root = display.screen[0].root;
     var white = display.screen[0].white_pixel;

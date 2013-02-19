@@ -1,7 +1,7 @@
 var x11 = require('../../lib');
 var Window = require('./wndwrap');
 
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
 
     var pts = [];
     new Window(display.client, 0, 0, 600, 400, display.screen[0].white_pixel)

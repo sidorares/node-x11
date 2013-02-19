@@ -1,7 +1,7 @@
 var x11 = require('../../lib');
 var PointerMotion = x11.eventMask.PointerMotion;
 
-var xclient = x11.createClient(function(display) {
+var xclient = x11.createClient(function(err, display) {
     var X = display.client;
     var root = display.screen[0].root;
     display.client.require('render', function(Render) {

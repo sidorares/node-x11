@@ -4,7 +4,7 @@ var xclient = x11.createClient();
 var PointerMotion = x11.eventMask.PointerMotion;
 var mapped = true;
 
-xclient.on('connect', function(display) {
+xclient.on('connect', function(err, display) {
     var X = this;
     var root = display.screen[0].root;
     var wid = X.AllocID();

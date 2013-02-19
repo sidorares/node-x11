@@ -12,7 +12,7 @@ var interv = 0;
 var total_frames = 0;
 var last_frames = 0;
 
-x11.createClient(function(display)
+x11.createClient(function(err, display)
 {
 
     console.log('111111');

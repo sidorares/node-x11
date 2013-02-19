@@ -7,7 +7,7 @@ var X, Render;
 var pressed = false;
 var gradNo = 0;
 
-var xclient = x11.createClient(function(display) {
+var xclient = x11.createClient(function(err, display) {
     X = display.client;
     var root = display.screen[0].root;
     X.require('render', function(rendExt) {

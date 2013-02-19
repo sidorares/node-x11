@@ -1,5 +1,5 @@
 var x11 = require('../../lib');
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
     console.log(display.screen[0])
     var X = display.client;
     var wid = X.AllocID();

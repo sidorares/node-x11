@@ -1,6 +1,6 @@
 var x11 = require('../../lib');
 
-var xclient = x11.createClient(function(display) {
+var xclient = x11.createClient(function(err, display) {
     var X = display.client;
     var root = display.screen[0].root;
     display.client.require('xtest', function(Test) {

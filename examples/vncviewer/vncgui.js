@@ -29,7 +29,7 @@ var ButtonRelease = x11.eventMask.ButtonRelease;
 var KeyPress = x11.eventMask.KeyPress;
 var KeyRelease = x11.eventMask.KeyRelease;
 
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
     var X = display.client;   
     X.require('big-requests', function(BigReq) {
         BigReq.Enable(function(err, maxLen) {

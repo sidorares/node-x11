@@ -1,7 +1,7 @@
 var spawn = require('child_process').spawn;
 var x11 = require('../../lib');
 
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
     var X = display.client;
     var wid = X.AllocID();
     X.CreateWindow(wid, display.screen[0].root, 100, 100, 900, 700, 0, 0, 0, 0, {backgroundPixel: display.screen[0].black_pixel});

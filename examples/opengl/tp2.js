@@ -299,7 +299,7 @@ function init(gl, done)
 var x11 = require('../../lib');
 var eventmask = x11.eventMask.PointerMotion|x11.eventMask.ButtonPress|x11.eventMask.ButtonRelease|x11.eventMask.StructureNotify|x11.eventMask.Exposure;
 
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
     var X = display.client;
     var root = display.screen[0].root;
     var width = 1000;

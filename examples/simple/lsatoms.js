@@ -1,5 +1,5 @@
 var x11 = require('../../lib');
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
   var maxstd = 0;
   var atomName;
   for (atomName in display.atoms)

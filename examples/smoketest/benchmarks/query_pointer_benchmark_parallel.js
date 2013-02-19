@@ -40,7 +40,7 @@ function benchmarkQP()
         process.nextTick(benchmarkQP);
 }
 
-X.on('connect', function(display) {
+X.on('connect', function(err, display) {
     var screen = display.screen[0];
     wid = X.AllocID();
     X.CreateWindow(wid, screen.root, 10, 10, 400, 300, 1, 1, 0, { backgroundPixel: screen.white_pixel });

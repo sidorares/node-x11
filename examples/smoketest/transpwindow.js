@@ -1,6 +1,6 @@
 var x11 = require('../../lib');
 
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
     var visual;
     var rgbaVisuals = Object.keys(display.screen[0].depths[32]);
     for (v in rgbaVisuals)

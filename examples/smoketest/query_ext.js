@@ -1,7 +1,7 @@
 var x11 = require('../../lib');
 var X = x11.createClient();
 var numExt = 0;
-X.on('connect', function(display) {
+X.on('connect', function(err, display) {
     X.ListExtensions(function(err, list) {
         console.log(list);
         list.forEach(function(ext) {

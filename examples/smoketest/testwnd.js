@@ -5,7 +5,7 @@ var width = 700;
 var height = 500;
 
 var pts = [];
-x11.createClient(function(display) {
+x11.createClient(function(err, display) {
 
     var mainwnd = new Window(display.client, 0, 0, width, height);
     mainwnd.on('mousemove', function(ev) 

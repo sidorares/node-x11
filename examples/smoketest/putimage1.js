@@ -20,7 +20,7 @@ for (var i=0; i < bitmap.length; ++i)
                 
 }
 
-xclient.on('connect', function(display) {
+xclient.on('connect', function(err, display) {
 
     var X = display.client;   
     X.require('big-requests', function(BigReq) {
