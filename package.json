@@ -19,7 +19,8 @@
     "mocha": "*",
     "should": "*",
     "sax": "*",
-    "async": "*"
+    "async": "*",
+    "sinon": "*"
   }
 , "scripts": {
     "test": "node test-runner.js",
