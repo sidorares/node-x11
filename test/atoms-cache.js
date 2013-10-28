@@ -65,27 +65,45 @@ describe('Atoms and atom names cache', function() {
 
     it('should be used after the first request for non-std atom_names', function(done) {
         var self = this;
-        this.X.InternAtom(false, 'My testing atom', function(err, atom) {
-            should.not.exist(err);
-            sinon.assert.calledOnce(self.spy);
-            async.parallel(
-                [
-                    function(cb) {
-                        self.X.InternAtom(true, 'My testing atom', cb);
-                    },
-                    function(cb) {
-                        self.X.GetAtomName(atom, cb);
-                    }
-                ],
-                function(err, results) {
-                    should.not.exist(err);
-                    results[0].should.equal(atom);
-                    results[1].should.equal('My testing atom');
-                    sinon.assert.calledOnce(self.spy);
-                    done();
+        var my_name;
+        /*
+         * First get an atom defined in the server greater than 68 (WM_TRANSIENT_FOR) and less than 100
+         * and not already cached
+         */
+        var my_atom = 69;
+        async.until(
+            function() {
+                return (my_name || my_atom > 99);
+            },
+            function(cb) {
+                if (self.X.atom_names[my_atom]) {
+                    return cb();
                 }
-            );
-        });
+
+                self.X.GetAtomName(my_atom, function(err, name) {
+                    should.not.exist(err);
+                    if (name && name !== '') {
+                        my_name = name;
+                    } else {
+                        ++ my_atom;
+                    }
+
+                    cb();
+                });
+            },
+            function(err) {
+                should.not.exist(err);
+                should.exist(my_name);
+                self.spy.reset();
+                self.X.InternAtom(true, my_name, function(err, atom) {
+                    should.not.exist(err);
+                    my_atom.should.equal(atom);
+                    sinon.assert.notCalled(self.spy);
+                    Object.keys(self.X.pending_atoms).should.be.empty;
+                    done();
+                });
+            }
+        );
     });
 
     after(function(done) {
