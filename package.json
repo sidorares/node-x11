@@ -1,29 +1,49 @@
-{ "name" : "x11"
-, "author": "Andrey Sidorov <sidorares@yandex.ru>"
-, "description": "A pure node.js JavaScript client implementing X Window (X11) protocol and extensions."
-, "keywords": ["X Window", "ui", "gui", "widgets", "desktop", "XWindow", "X"]
-, "homepage": "https://github.com/sidorares/node-x11"
-, "version" : "0.3.0"
-, "maintainers" :
-  [ { "name": "Andrey Sidorov"
-    , "email": "sidoares@yandex.ru"
+{
+  "name": "x11",
+  "author": "Andrey Sidorov <sidorares@yandex.ru>",
+  "description": "A pure node.js JavaScript client implementing X Window (X11) protocol and extensions.",
+  "keywords": [
+    "X Window",
+    "ui",
+    "gui",
+    "widgets",
+    "desktop",
+    "XWindow",
+    "X"
+  ],
+  "homepage": "https://github.com/sidorares/node-x11",
+  "version": "0.3.1",
+  "maintainers": [
+    {
+      "name": "Andrey Sidorov",
+      "email": "sidoares@yandex.ru"
     }
-  ]
-, "bugs" : { "url" : "http://github.com/sidorares/node-x11/issues" }
-, "licenses" : [ { "type" : "MIT" } ]
-, "repository" : { "type" : "git", "url" : "http://github.com/sidorares/node-x11.git" }
-
-, "main" : "./lib"
-, "engines" : { "node" : "*" }
-, "devDependencies": {
+  ],
+  "bugs": {
+    "url": "http://github.com/sidorares/node-x11/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/sidorares/node-x11.git"
+  },
+  "main": "./lib",
+  "engines": {
+    "node": "*"
+  },
+  "devDependencies": {
     "mocha": "*",
     "should": "*",
     "sax": "*",
     "async": "*",
     "sinon": "*"
-  }
-, "scripts": {
+  },
+  "scripts": {
     "test": "node test-runner.js",
-    "prepublish" : "npm prune"
+    "prepublish": "npm prune"
   }
 }
