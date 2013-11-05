@@ -15,6 +15,7 @@ describe('ChangeProperty', function() {
             self.X.QueryTree(dpy.screen[0].root, function(err, list) {
                 should.not.exist(err);
                 list.children.indexOf(self.wid).should.not.equal(-1);
+                self.X.ChangeWindowAttributes(self.wid, { eventMask: x11.eventMask.PropertyChange });
                 done();
             });
         });
@@ -29,10 +30,15 @@ describe('ChangeProperty', function() {
             var raw = new Buffer(4);
             raw.writeUInt32LE(self.wid, 0);
             self.X.ChangeProperty(0, self.wid, atom, self.X.atoms.WINDOW, 32, raw);
-            self.X.GetProperty(0, self.wid, atom, self.X.atoms.WINDOW, 0, 1000000000, function(err, prop) {
-                should.not.exist(err);
-                prop.data.readUInt32LE(0).should.equal(self.wid);
-                done();
+            self.X.once('event', function(ev) {
+                ev.type.should.equal(28);
+                ev.atom.should.equal(atom);
+                ev.window.should.equal(self.wid);
+                self.X.GetProperty(0, self.wid, atom, self.X.atoms.WINDOW, 0, 1000000000, function(err, prop) {
+                    should.not.exist(err);
+                    prop.data.readUInt32LE(0).should.equal(self.wid);
+                    done();
+                });
             });
         });
     });
@@ -45,11 +51,16 @@ describe('ChangeProperty', function() {
             raw.writeUInt32LE(self.wid, 0);
             raw.writeUInt32LE(self.wid_helper, 4);
             self.X.ChangeProperty(0, self.wid, atom, self.X.atoms.ATOM, 32, raw);
-            self.X.GetProperty(0, self.wid, atom, self.X.atoms.ATOM, 0, 1000000000, function(err, prop) {
-                should.not.exist(err);
-                prop.data.readUInt32LE(0).should.equal(self.wid);
-                prop.data.readUInt32LE(4).should.equal(self.wid_helper);
-                done();
+            self.X.once('event', function(ev) {
+                ev.type.should.equal(28);
+                ev.atom.should.equal(atom);
+                ev.window.should.equal(self.wid);
+                self.X.GetProperty(0, self.wid, atom, self.X.atoms.ATOM, 0, 1000000000, function(err, prop) {
+                    should.not.exist(err);
+                    prop.data.readUInt32LE(0).should.equal(self.wid);
+                    prop.data.readUInt32LE(4).should.equal(self.wid_helper);
+                    done();
+                });
             });
         });
     });
@@ -60,10 +71,15 @@ describe('ChangeProperty', function() {
             should.not.exist(err);
             var raw = new Buffer(0);
             self.X.ChangeProperty(0, self.wid, atom, self.X.atoms.WINDOW, 32, raw);
-            self.X.GetProperty(0, self.wid, atom, self.X.atoms.WINDOW, 0, 1000000000, function(err, prop) {
-                should.not.exist(err);
-                prop.data.length.should.equal(0);
-                done();
+            self.X.once('event', function(ev) {
+                ev.type.should.equal(28);
+                ev.atom.should.equal(atom);
+                ev.window.should.equal(self.wid);
+                self.X.GetProperty(0, self.wid, atom, self.X.atoms.WINDOW, 0, 1000000000, function(err, prop) {
+                    should.not.exist(err);
+                    prop.data.length.should.equal(0);
+                    done();
+                });
             });
         });
     });
