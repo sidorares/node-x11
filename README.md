@@ -71,3 +71,7 @@ Core requests usage:
   - Python:  http://sourceforge.net/projects/python-xlib/ ( github fork: https://github.com/Ademan/python-xlib-branch pypi: http://pypi.python.org/pypi/Python%20Xlib )
   - Python/twisted:  https://launchpad.net/twisted-x11
   - Perl: http://search.cpan.org/~smccam/X11-Protocol-0.56/Protocol.pm
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/sidorares/node-x11/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
