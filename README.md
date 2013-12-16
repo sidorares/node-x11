@@ -65,6 +65,7 @@ Core requests usage:
   - [vnc](https://github.com/sidorares/node-vnc) - vnc client.
   - [node-ewmh](https://github.com/santigimeno/node-ewmh) - set of EWMH helpers.
   - [OdieWM](https://github.com/bu/OdieWM) - window manager
+  - [Dbusmenu](https://github.com/sidorares/node-dbusmenu) - unity global menu client. 
 
 # Protocol documentation
 
