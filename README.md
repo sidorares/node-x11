@@ -58,6 +58,14 @@ Core requests usage:
   ![OpenGL glxgears](http://img-fotki.yandex.ru/get/4123/37511094.30/0_81712_6c2ebb11_L)
   ![OpenGL teapot](http://img-fotki.yandex.ru/get/4132/37511094.30/0_81713_82a5ac48_L)
 
+# In use
+  - [ntk](https://github.com/sidorares/ntk) - higher level toolkit on top of X11
+  - [node-remote](https://github.com/AndrewSwerlick/node-remote) - metia center controller
+  - [tiles](https://github.com/dominictarr/tiles) - tiling window manager 
+  - [vnc](https://github.com/sidorares/node-vnc) - vnc client.
+  - [node-ewmh](https://github.com/santigimeno/node-ewmh) - set of EWMH helpers.
+  - [OdieWM](https://github.com/bu/OdieWM) - window manager
+
 # Protocol documentation
 
   - http://www.x.org/releases/X11R7.6/doc/
