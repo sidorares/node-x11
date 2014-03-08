@@ -52,9 +52,16 @@ describe('Client', function() {
   });
 
   it('returns error when connecting to non existent display', function(done) {
+    var errorCbCalled = false;
     var client = x11.createClient({ display : ':44' }, function(err, display) {
         assert(util.isError(err));
+	errorCbCalled = true;
         done();
+    });
+    // TODO: stop writing to socket after first error
+    client.on('error', function() {
+      if (!errorCbCalled)
+        done('should not reach here before first done()');
     });
   });
 });
