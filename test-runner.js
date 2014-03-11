@@ -88,7 +88,6 @@ x11.createClient(function(err, display) {
                 });
             } else if (file === 'randr.js') {
                 run_randr_test(X, function(run) {
-                    console.log('RUN: ' + run);
                     if (run) {
                         mocha.addFile(path.join('./test', file));
                     }
