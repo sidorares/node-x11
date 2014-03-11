@@ -102,8 +102,8 @@ x11.createClient(function(err, display) {
         function() {
             X.terminate();
             X.on('end', function() {
-                mocha.run(function() {
-                    process.exit();
+                mocha.run(function(failures) {
+                    process.exit(failures);
                 });
             });
 

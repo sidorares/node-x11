@@ -5,26 +5,30 @@ var assert = require('assert');
 describe('Client', function() {
 
   var display;
-  beforeEach(function(done) {
-      var client = x11.createClient({ debug: true }, function(err, dpy) {
-        console.log(err)
+  before(function(done) {
+      var client = x11.createClient({ debug: false }, function(err, dpy) {
+          should.not.exist(err);
           display = dpy;
-          done(err);
+          done();
       });
   });
 
   it('should emit error which is instance of Error with sequence number corresponding to source request', function(done) {
+    var times = 0;
     display.client.CreateWindow(); // should emit error
     var seq = display.client.seq_num;
-    display.client.once('error', function(err) {
-        assert.equal(err.constructor, Error);
-        assert.equal(seq, err.seq);
-        display.client.CreateWindow(); // should emit error
-        seq = display.client.seq_num;
-        display.client.once('error', function(err) {
+    display.client.on('error', function(err) {
+      switch (++ times) {
+          case 11:
+              display.client.removeAllListeners('error');
+              done(1);
+          break;
+          default:
+            assert.equal(err.constructor, Error);
             assert.equal(seq, err.seq);
-            done();
-        });
-     });
-  });
+            display.client.CreateWindow(); // should emit error
+            seq = display.client.seq_num;
+      }
+    });
 });
+  });
