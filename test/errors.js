@@ -19,16 +19,16 @@ describe('Client', function() {
     var seq = display.client.seq_num;
     display.client.on('error', function(err) {
       switch (++ times) {
-          case 11:
-              display.client.removeAllListeners('error');
-              done(1);
-          break;
-          default:
-            assert.equal(err.constructor, Error);
-            assert.equal(seq, err.seq);
-            display.client.CreateWindow(); // should emit error
-            seq = display.client.seq_num;
-      }
+        case 11:
+          display.client.removeAllListeners('error');
+          done();
+        break;
+        default:
+          assert.equal(err.constructor, Error);
+          assert.equal(seq, err.seq);
+          display.client.CreateWindow(); // should emit error
+          seq = display.client.seq_num;
+       }
     });
-});
   });
+});
