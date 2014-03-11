@@ -49,7 +49,6 @@ var run_randr_test = function(X, cb) {
                 if (err) {
                     cb(false);
                 } else {
-                    console.log(version);
                     cb((version[0] === 1) && (version[1] >= 2));
                 }
             });
