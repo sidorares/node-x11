@@ -82,8 +82,8 @@ describe('Window property', function() {
       });
   });
 
-  it('should exist in the ListProperties result after inserted');
-  it('should not exist after GetProperty with delete flag called');
+  // it('should exist in the ListProperties result after inserted');
+  // it('should not exist after GetProperty with delete flag called');
   //it('should not exist after GetProperty with delete flag called', function(done) {
   //    done();
   //});
