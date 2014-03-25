@@ -1,7 +1,6 @@
 var Buffer = require('buffer').Buffer;
 var x11 = require('../../lib');
 
-var xclient = x11.createClient();
 var Exposure = x11.eventMask.Exposure;
 var PointerMotion = x11.eventMask.PointerMotion;
 
@@ -17,16 +16,13 @@ for (var i=0; i < bitmap.length; ++i)
         bitmap[i] = parseInt((i/256)%256);
     if (byteNum == 2)
         bitmap[i] = parseInt((i/1024)%256);
-                
+
 }
 
-xclient.on('connect', function(err, display) {
+x11.createClient(function(err, display) {
+    if (err) throw err;
 
-    var X = display.client;   
-    X.require('big-requests', function(BigReq) {
-       
-        BigReq.Enable(function(maxLen) { console.log( maxLen ); });
-
+    var X = display.client;
 X.require('render', function(Render) {
 
     var root = display.screen[0].root;
@@ -36,23 +32,23 @@ X.require('render', function(Render) {
 
     var wid = X.AllocID();
     X.CreateWindow(
-       wid, root, 
-       10, 10, 400, 300, 
+       wid, root,
+       10, 10, 400, 300,
        1, 1, 0,
-       { 
-           backgroundPixel: white, eventMask: Exposure|PointerMotion  
+       {
+           backgroundPixel: white, eventMask: Exposure|PointerMotion
        }
     );
     X.MapWindow(wid);
-  
+
     var gc = X.AllocID();
     X.CreateGC(gc, wid, { foreground: black, background: white } );
 
     var pixmap1 = X.AllocID();
     X.CreatePixmap(pixmap1, wid, 32, 128, 128);
-    var pic = X.AllocID(); 
+    var pic = X.AllocID();
     Render.CreatePicture(pic, pixmap1, Render.rgba32);
-    
+
 
     var pic1 = X.AllocID();
     Render.CreatePicture(pic1, wid, Render.rgb24);
@@ -64,7 +60,7 @@ X.require('render', function(Render) {
             X.PutImage(2, pixmap1, gc, 128, 128, 0, 0, 0, 32, bitmap);
             //Render.Composite(3, pic1, 0, pic, 0, 0, 0, 0, 30, 40, 128, 128);
 
-        } 
+        }
     });
     X.on('error', function(e) {
         console.log(e);
@@ -72,5 +68,4 @@ X.require('render', function(Render) {
 
 });
 
-    });
 });
