@@ -74,7 +74,7 @@ var xclient = x11.createClient({ debug: true }, function(err, display) {
           Render.FillRectangles(1, pict, [0xffff, 0xffff, 0xffff, 0xffff], [0, 0, 1000, 1000]);
           // op, src, dst, maskFormat, gsid, srcX, srcY, dstX, dstY, glyphs
           //Render.CompositeGlyphs8(3, pictSolidPix, pict, 0, glyphSet, 0, 0, [[10, 60,'12345678 Hello! '], [100, 100, 'World *&@#$%']]);
-          Render.CompositeGlyphs8(3, pictGrad, pict, 0, glyphSet, x, y, [[10, 60,'12345678 Hello! '], 'World']);
+          Render.CompositeGlyphs8(3, pictGrad, pict, 0, glyphSet, 260-x, 260-y, [[10, 60,'12345678 Hello! '], [-40, 0, 'World'], [10, 10, "testing"]]);
         }
 
         X.on('event', function(ev) {
