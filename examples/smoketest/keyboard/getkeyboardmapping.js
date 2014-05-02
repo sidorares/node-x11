@@ -1,4 +1,6 @@
-var x11 = require('../../lib');
+var x11 = require('../../../lib');
+var keysym = require('keysym');
+
 
 var ks = x11.keySyms;
 var ks2Name = {};
@@ -16,7 +18,7 @@ x11.createClient(function(err, display) {
             var name = kk2Name[i+min] = [];
             var sublist = list[i];
             for (var j =0; j < sublist.length; ++j)
-		name.push(ks2Name[sublist[j]]);
+		name.push([ks2Name[sublist[j]], sublist[j]]);
         }
 
         var root = display.screen[0].root;
@@ -27,7 +29,19 @@ x11.createClient(function(err, display) {
         X.MapWindow(wid);
 
         X.on('event', function(ev) {
-            console.log([ev.keycode, kk2Name[ev.keycode]]);
+            console.log(ev.type);
+            console.log(ev);
+            //console.log([ev.keycode, kk2Name[ev.keycode], keysym.fromKeysym(kk2Name[ev.keycode][0][1])]);
+            var shift = ev.buttons & 1;
+            var keySyms = kk2Name[ev.keycode];
+            if (keySyms) {
+              var codePoint = keysym.fromKeysym(keySyms[shift ? 1 : 0][1]).unicode;
+              if (codePoint == 13)
+                codePoint = 10;
+              if (codePoint != 0)
+                process.stdout.write(String.fromCharCode(codePoint));
+               //console.log('\n', codePoint);
+            }
         });
     });
 });
