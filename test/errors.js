@@ -15,7 +15,8 @@ describe('Client', function() {
 
   it('should emit error which is instance of Error with sequence number corresponding to source request', function(done) {
     var times = 0;
-    display.client.CreateWindow(); // should emit error
+    //id, parentId, x, y, width, height, borderWidth, depth, _class, visual, values
+    display.client.CreateWindow(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {});
     var seq = display.client.seq_num;
     display.client.on('error', function(err) {
       switch (++ times) {
@@ -26,7 +27,7 @@ describe('Client', function() {
         default:
           assert.equal(err.constructor, Error);
           assert.equal(seq, err.seq);
-          display.client.CreateWindow(); // should emit error
+          display.client.CreateWindow(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {}); // should emit error
           seq = display.client.seq_num;
        }
     });
