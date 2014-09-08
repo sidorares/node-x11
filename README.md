@@ -1,6 +1,6 @@
 # About
  X11 protocol client for node.js
- 
+
  Implements core X11 protocol, as well as Xrender, Damage, Composite, Big-Requests, Dpms, Screensaver, XFixes, Shape, XTest, XC-Misc, GLX and Apple-WM extensions.
 # install
 
@@ -61,11 +61,11 @@ Core requests usage:
 # In use
   - [ntk](https://github.com/sidorares/ntk) - higher level toolkit on top of X11
   - [node-remote](https://github.com/AndrewSwerlick/node-remote) - metia center controller
-  - [tiles](https://github.com/dominictarr/tiles) - tiling window manager 
+  - [tiles](https://github.com/dominictarr/tiles) - tiling window manager
   - [vnc](https://github.com/sidorares/node-vnc) - vnc client.
   - [node-ewmh](https://github.com/santigimeno/node-ewmh) - set of EWMH helpers.
   - [OdieWM](https://github.com/bu/OdieWM) - window manager
-  - [Dbusmenu](https://github.com/sidorares/node-dbusmenu) - unity global menu client. 
+  - [Dbusmenu](https://github.com/sidorares/node-dbusmenu) - unity global menu client.
 
 # Protocol documentation
 
@@ -78,9 +78,14 @@ Core requests usage:
   - C: XLib - http://www.sbin.org/doc/Xlib/ http://www.tronche.com/gui/x/xlib/ http://www.x.org/docs/X11/xlib.pdf
   - C: XCB - http://xcb.freedesktop.org/
   - Python:  http://sourceforge.net/projects/python-xlib/ ( github fork: https://github.com/Ademan/python-xlib-branch pypi: http://pypi.python.org/pypi/Python%20Xlib )
+  - https://github.com/alexer/python-xlib-render
   - Python/twisted:  https://launchpad.net/twisted-x11
   - Perl: http://search.cpan.org/~smccam/X11-Protocol-0.56/Protocol.pm
-
+  - Go: https://github.com/BurntSushi/xgb
+  - Java: https://github.com/xderoche/J11
+  - Ruby: https://github.com/dj2/x-ruby-bindings
+  - Clojure: https://github.com/noodlewiz/xcljb
+  - Guile: https://github.com/mwitmer/guile-xcb
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/sidorares/node-x11/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
