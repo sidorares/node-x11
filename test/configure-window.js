@@ -13,12 +13,6 @@ describe('ConfigureWindow', function() {
             self.wid_helper = self.X.AllocID();
             self.X.CreateWindow(self.wid, dpy.screen[0].root, 0, 0, 1, 1); // 1x1 pixel window
             self.X.CreateWindow(self.wid_helper, dpy.screen[0].root, 0, 0, 1, 1); // 1x1 pixel window
-
-
-            // self.X.ConfigureWindow(self.wid, { stackMode: 1 });
-            // self.X.ConfigureWindow(self.wid_helper, { stackMode: 1 });
-
-
             self.X.QueryTree(dpy.screen[0].root, function(err, list) {
                 should.not.exist(err);
                 list.children.indexOf(self.wid).should.not.equal(-1);
@@ -71,7 +65,6 @@ describe('ConfigureWindow', function() {
     it('should RaiseWindow correctly', function(done) {
         var self = this;
         this.X.once('event', function(ev) {
-            console.log(ev);
             ev.type.should.equal(22); /* ConfigureNotify */
             ev.aboveSibling.should.equal(self.wid_helper);
             done();
