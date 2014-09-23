@@ -304,7 +304,7 @@ x11.createClient(function(err, display) {
     var root = display.screen[0].root;
     var width = 1000;
     var height = 1000;
-    X.require('glx', function(GLX) {
+    X.require('glx', function(err, GLX) {
         var visual = 0xa1;
         var win = X.AllocID();
         X.CreateWindow(win, root, 0, 0, width, height, 0, 0, 0, 0, { eventMask: eventmask });

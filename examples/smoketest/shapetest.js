@@ -3,11 +3,11 @@ var x11 = require('../../lib');
 x11.createClient(function(err, display) {
     var X = display.client;
     var root = display.screen[0].root;
-    X.require('shape', function(Shape) {
+    X.require('shape', function(err, Shape) {
         var win = X.AllocID();
         X.CreateWindow(win, root, 0, 0, 200, 200);
         var gc = X.AllocID();
-        X.CreateGC(gc, win);     
+        X.CreateGC(gc, win);
         //X.MapWindow(win);
         Shape.SelectInput(win, 1);
         Shape.InputSelected(win, function(err, isSelected) {
@@ -23,5 +23,5 @@ x11.createClient(function(err, display) {
         });
     });
     X.on('error', function(err) { console.log(err); });
- 
+
 });

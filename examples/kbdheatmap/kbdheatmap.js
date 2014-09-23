@@ -15,7 +15,7 @@ var ButtonRelease = x11.eventMask.ButtonRelease;
 var kbdImg = require('./node-jpg').readJpeg('./keyboard.jpg');
 var keycoords = require('./coordinates');
 
-// from https://github.com/substack/node-keysym 
+// from https://github.com/substack/node-keysym
 var keysyms = require('./keysyms').records;
 var ks2name = {};
 for (var k in keysyms)
@@ -23,18 +23,18 @@ for (var k in keysyms)
 var kk2name = {};
 
 
-x11.createClient(function(err, display) 
+x11.createClient(function(err, display)
 {
-    var X = display.client;   
-    X.require('big-requests', function(BigReq) 
+    var X = display.client;
+    X.require('big-requests', function(err, BigReq)
     {
-        X.require('render', function(Render) {
+        X.require('render', function(err, Render) {
             X.Render = Render;
             BigReq.Enable(function(err, maxLen)
             {
                 var min = display.min_keycode;
                 var max = display.max_keycode;
-		X.GetKeyboardMapping(min, max-min, function(err, list) 
+		X.GetKeyboardMapping(min, max-min, function(err, list)
                 {
 	            // map keycode to key name
 		    for (var i=0; i < list.length; ++i)
@@ -62,26 +62,26 @@ function main(X)
 
     var win = X.AllocID();
     X.CreateWindow(
-       win, root, 
-       0, 0, kbdImg.width, kbdImg.height, 
+       win, root,
+       0, 0, kbdImg.width, kbdImg.height,
        0, 0, 0, 0,
-       { 
-           backgroundPixel: white, eventMask: Exposure|KeyPress|ButtonPress  
+       {
+           backgroundPixel: white, eventMask: Exposure|KeyPress|ButtonPress
        }
     );
     X.MapWindow(win);
-    
+
     var win1 = X.AllocID();
     X.CreateWindow(
-       win1, root, 
-       0, 0, kbdImg.width, kbdImg.height, 
+       win1, root,
+       0, 0, kbdImg.width, kbdImg.height,
        0, 0, 0, 0,
-       { 
-           backgroundPixel: white, eventMask: Exposure|KeyPress|ButtonPress  
+       {
+           backgroundPixel: white, eventMask: Exposure|KeyPress|ButtonPress
        }
     );
     X.MapWindow(win1);
-  
+
     var gc = X.AllocID();
     X.CreateGC(gc, win);
 
@@ -103,15 +103,15 @@ function main(X)
             var picKbd = X.AllocID();
             X.PutImage(2, pixmapKbd, gc, kbdImg.width, kbdImg.height, 0, 0, 0, 24, kbdImg.data);
             Render.CreatePicture(picKbd, pixmapKbd, Render.rgb24);
-            
+
             var pixmapHeat = X.AllocID();
             X.CreatePixmap(pixmapHeat, win, 32, kbdImg.width, kbdImg.height);
             var picHeat = X.AllocID();
             Render.CreatePicture(picHeat, pixmapHeat, Render.rgba32);
-            
+
             var picWin = X.AllocID();
             Render.CreatePicture(picWin, win, Render.rgb24);
-            
+
             var picWin1 = X.AllocID();
             Render.CreatePicture(picWin1, win1, Render.rgb24);
 
@@ -135,12 +135,12 @@ function main(X)
                     mindist = dist;
                 }
             }
-            
+
             Render.Composite(3, picKbd, 0, picWin, 0, 0, 0, 0, 0, 0, kbdImg.width, kbdImg.height);
             Render.Composite(3, picHeatPush, 0, picWin, 0, 0, 0, 0, x -150/2, y-150/2, 150, 150);
 
         } if (ev.type == 2) {
-           
+
             var name = kk2name[ev.keycode];
             for (var n in name)
             {
@@ -152,7 +152,7 @@ function main(X)
                     Render.Composite(3, picHeatPush, 0, picHeat, 0, 0, 0, 0, pt[0] -150/2, pt[1]-150/2, 150, 150);
                     Render.Composite(3, picHeatPush, 0, picWin1, 0, 0, 0, 0, pt[0] -150/2, pt[1]-150/2, 150, 150);
 
- 
+
                     break;
                 } else {
                     //console.log(name);

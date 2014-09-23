@@ -294,7 +294,7 @@ x11.createClient(function(error, display) {
     var root = display.screen[0].root;
     var width = 500;
     var height = 500;
-    X.require('glx', function(GLX) {
+    X.require('glx', function(err, GLX) {
         var depth = 24;
         findBestVisual(display, function(err, visual) {
 

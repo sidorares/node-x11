@@ -23,7 +23,7 @@ x11.createClient(function(err, display) {
     if (err) throw err;
 
     var X = display.client;
-X.require('render', function(Render) {
+X.require('render', function(err, Render) {
 
     var root = display.screen[0].root;
     var white = display.screen[0].white_pixel;

@@ -39,7 +39,7 @@ function padWidth(buf, width) {
 var xclient = x11.createClient({ debug: true }, function(err, display) {
     var X = display.client;
     var root = display.screen[0].root;
-    display.client.require('render', function(Render) {
+    display.client.require('render', function(err, Render) {
         var wid = X.AllocID();
         var white = display.screen[0].white_pixel;
         varblack = display.screen[0].black_pixel;

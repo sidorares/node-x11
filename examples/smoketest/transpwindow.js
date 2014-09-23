@@ -25,18 +25,18 @@ x11.createClient(function(err, display) {
 
     var cmid = X.AllocID();
     var depth = 32;
-    X.CreateColormap(cmid, root, visual, 0); // 0=AllocNone, 1 AllocAll 
-    
+    X.CreateColormap(cmid, root, visual, 0); // 0=AllocNone, 1 AllocAll
+
     X.CreateWindow(wid, root, 10, 10, 168, 195, 1, depth, 1, visual, { eventMask: x11.eventMask.Exposure, colormap: cmid, backgroundPixel: 0, borderPixel: 0 });
     X.MapWindow(wid);
 
     var gc = X.AllocID();
-    X.require('render', function(Render) {
+    X.require('render', function(err, Render) {
 
         var pict = X.AllocID();
         Render.CreatePicture(pict, wid, Render.rgba32);
         var gradients = [];
-        
+
         function randomLinear() {
             var stops = [];
             for (var i=0; i<3; ++i)
@@ -49,8 +49,8 @@ x11.createClient(function(err, display) {
                     parseInt(Math.random()*65535),
                     parseInt(Math.random()*65535),
                     parseInt(Math.random()*65535)]]);
-    
-            console.log(colors); 
+
+            console.log(colors);
 
             var gradient = X.AllocID();
             Render.LinearGradient(gradient, [0, 0], [100+parseInt(Math.random()*500), parseInt(100+Math.random()*300)], colors);
@@ -64,7 +64,7 @@ x11.createClient(function(err, display) {
             var gid = parseInt(Math.random()*gradients.length);
             console.log(gradients[gid]);
             Render.Composite(1, gradients[gid], 0, pict, 0, 0, 0, 0, 0, 0, 400, 300);
-        }, 2000); 
+        }, 2000);
     });
     //X.CreateGC(gc, wid, { foreground: black, background: white } );
     //setInterval(function() {

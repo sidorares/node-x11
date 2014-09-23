@@ -7,7 +7,7 @@ x11.createClient(function(err, display) {
     X.SetScreenSaver(20, 10, 2, 2);
 
 
-    X.require('screen-saver', function(SS) {
+    X.require('screen-saver', function(err, SS) {
         SS.SelectInput(root, SS.eventMask.Notify|SS.eventMask.Cycle);
         //console.log(SS);
         //setTimeout(function() {
@@ -15,7 +15,7 @@ x11.createClient(function(err, display) {
         //}, 5000);
         setInterval(function() {
         SS.QueryInfo(root, function(err, info) {
-            console.log(info.until);    
+            console.log(info.until);
             //SS.SelectInput(root, SS.eventMask.Notify|SS.eventMask.Cycle);
         });
         }, 1000);
@@ -24,5 +24,5 @@ x11.createClient(function(err, display) {
         });
     });
     X.on('error', function(err) { console.log(err); });
- 
+
 });

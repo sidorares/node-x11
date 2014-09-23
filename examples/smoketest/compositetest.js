@@ -3,8 +3,8 @@ var x11 = require('../../lib');
 x11.createClient(function(err, display) {
     var X = display.client;
     var root = display.screen[0].root;
-    X.require('composite', function(Composite) {
-      X.require('damage', function(Damage) {
+    X.require('composite', function(err, Composite) {
+      X.require('damage', function(err, Damage) {
         var wid = parseInt(process.argv[2]);
         //Composite.GetOverlayWindow(wid, function(err, overlayid) {
         //  console.log("OVERLAY:", err, overlayid);

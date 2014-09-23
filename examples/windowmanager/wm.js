@@ -80,7 +80,7 @@ function ManageWindow(wid)
 
 x11.createClient(function(err, display) {
     X = display.client;
-    X.require('render', function(Render) {
+    X.require('render', function(err, Render) {
     X.Render = Render;
 
     root = display.screen[0].root;
