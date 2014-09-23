@@ -13,7 +13,7 @@ var listId = 1;
 x11.createClient(function(err, display) {
     var X = display.client;
     var root = display.screen[0].root;
-    X.require('glx', function(GLX) {
+    X.require('glx', function(err, GLX) {
         var visual = 0;
         var visuals = display.screen[0].depths[24];
         for (visual in visuals) {

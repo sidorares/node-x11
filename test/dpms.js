@@ -12,13 +12,10 @@ describe('DPMS extension', function() {
             if (!err) {
                 display = dpy;
                 X = display.client;
-                X.require('dpms', function(ext) {
-                    if (util.isError(ext)) {
-                        done(ext);
-                    } else {
-                        dpms = ext;
-                        done();
-                    }
+                X.require('dpms', function(err, ext) {
+                    should.not.exist(err);
+                    dpms = ext;
+                    done();
                 });
             } else {
                 done(err);

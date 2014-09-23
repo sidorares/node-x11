@@ -9,21 +9,21 @@ var x11 = require('../../lib');
 x11.createClient(
     function(err, display) {
         var X = display.client;
-            X.require('render', function(Render) {
+            X.require('render', function(err, Render) {
 
             var root = display.screen[0].root;
             var win = X.AllocID();
             var white = display.screen[0].white_pixel;
             var black = display.screen[0].black_pixel;
-            X.CreateWindow(win, root, 0, 0, 500, 500, 0, 0, 0, 0, 
-            { 
-                  backgroundPixel: white, 
+            X.CreateWindow(win, root, 0, 0, 500, 500, 0, 0, 0, 0,
+            {
+                  backgroundPixel: white,
                   eventMask: x11.eventMask.Exposure | x11.eventMask.ButtonPress | x11.eventMask.PointerMotion
             });
             X.MapWindow(win);
 
             var picture = X.AllocID();
-            Render.CreatePicture(picture, win, Render.rgb24, { polyEdge: 1, polyMode: 0 } ); 
+            Render.CreatePicture(picture, win, Render.rgb24, { polyEdge: 1, polyMode: 0 } );
             var pixmap = X.AllocID();
             X.CreatePixmap(pixmap, win, 32, 2500, 2500);
             var pix_pict = X.AllocID();
@@ -34,30 +34,30 @@ x11.createClient(
             //RenderRadialGradient(pic_grad, [0,0], [1000,100], 10, 1000,
             //RenderConicalGradient(pic_grad, [250,250], 360,
                 [
-                  [0,   [0,0,0,0x3000 ] ], 
-                  [0.1, [0xfff, 0, 0xffff, 0x1000] ] , 
-                  [0.25, [0xffff, 0, 0xfff, 0x3000] ] , 
-                  [0.5, [0xffff, 0, 0xffff, 0x4000] ] , 
-                  [1,   [0xffff, 0xffff, 0, 0x8000] ] 
+                  [0,   [0,0,0,0x3000 ] ],
+                  [0.1, [0xfff, 0, 0xffff, 0x1000] ] ,
+                  [0.25, [0xffff, 0, 0xfff, 0x3000] ] ,
+                  [0.5, [0xffff, 0, 0xffff, 0x4000] ] ,
+                  [1,   [0xffff, 0xffff, 0, 0x8000] ]
                 ]);
 
             var pic_grad1 = X.AllocID();
 
             Render.ConicalGradient(pic_grad1, [250,250], 10,
                 [
-                  [0,   [0,0,0,0x5000 ] ], 
-                  [0.1, [0xfff, 0, 0xffff, 0x3000] ] , 
-                  [0.25, [0xffff, 0, 0xfff, 0x2000] ] , 
-                  [0.5, [0xffff, 0, 0xffff, 0x1000] ] , 
-                  [1,   [0xffff, 0xffff, 0, 0x8000] ] 
+                  [0,   [0,0,0,0x5000 ] ],
+                  [0.1, [0xfff, 0, 0xffff, 0x3000] ] ,
+                  [0.25, [0xffff, 0, 0xfff, 0x2000] ] ,
+                  [0.5, [0xffff, 0, 0xffff, 0x1000] ] ,
+                  [1,   [0xffff, 0xffff, 0, 0x8000] ]
                 ]);
 
             var pic_grad2 = X.AllocID();
             Render.RadialGradient(pic_grad2, [250,250], [250,250], 0, 250,
                 [
-                  [0,   [0,0,0,0x5000 ] ], 
+                  [0,   [0,0,0,0x5000 ] ],
                   [0.99,   [0xffff, 0xffff, 0, 0xffff] ],
-                  [1,   [0xffff, 0xffff, 0, 0x0] ] 
+                  [1,   [0xffff, 0xffff, 0, 0x0] ]
                 ]);
 
             var pixmap1 = X.AllocID();
@@ -112,7 +112,7 @@ x11.createClient(
                    draw();
                 } else {
                    draw();
-                }                  
+                }
             });
         });
      }

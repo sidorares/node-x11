@@ -3,7 +3,7 @@ var x11 = require('../../lib');
 x11.createClient(function(err, display) {
     var X = display.client;
     var root = display.screen[0].root;
-    X.require('xc-misc', function(Misc) {
+    X.require('xc-misc', function(err, Misc) {
         var xid = X.AllocID();
         console.log("first ID from connection: " + xid);
         debugger;
@@ -15,5 +15,5 @@ x11.createClient(function(err, display) {
         });
     });
     X.on('error', function(err) { console.log("Error", err); });
- 
+
 });

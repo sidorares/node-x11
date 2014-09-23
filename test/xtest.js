@@ -12,13 +12,10 @@ describe('XTEST extension', function() {
             if (!err) {
                 display = dpy;
                 X = display.client;
-                X.require('xtest', function(ext) {
-                    if (util.isError(ext)) {
-                        done(ext);
-                    } else {
-                        xtest = ext;
-                        done();
-                    }
+                X.require('xtest', function(err, ext) {
+                    should.not.exist(err);
+                    xtest = ext;
+                    done();
                 });
             } else {
                 done(err);

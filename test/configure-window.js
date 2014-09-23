@@ -22,34 +22,35 @@ describe('ConfigureWindow', function() {
             });
         });
 
-        client.on('error', done);
+        client.on('error', function (err) {
+            console.error('Error : ', err);
+        });
     });
 
     it('should ResizeWindow correctly to 200x300 pixels', function(done) {
         var self = this;
-        this.X.ResizeWindow(this.wid, 200, 300);
         this.X.once('event', function(ev) {
             ev.type.should.equal(22); /* ConfigureNotify */
             ev.height.should.equal(300);
             ev.width.should.equal(200);
             done();
         });
+        this.X.ResizeWindow(this.wid, 200, 300);
     });
 
     it('should MoveWindow correctly to x: 100, y: 150 pixels', function(done) {
         var self = this;
-        this.X.MoveWindow(this.wid, 100, 150);
         this.X.once('event', function(ev) {
             ev.type.should.equal(22); /* ConfigureNotify */
             ev.x.should.equal(100);
             ev.y.should.equal(150);
             done();
         });
+        this.X.MoveWindow(this.wid, 100, 150);
     });
 
     it('should MoveResizeWindow correctly to x: 200, y: 250 and 500x100 pixels', function(done) {
         var self = this;
-        this.X.MoveResizeWindow(this.wid, 200, 250, 500, 100);
         this.X.once('event', function(ev) {
             ev.type.should.equal(22); /* ConfigureNotify */
             ev.x.should.equal(200);
@@ -58,22 +59,23 @@ describe('ConfigureWindow', function() {
             ev.width.should.equal(500);
             done();
         });
+        this.X.MoveResizeWindow(this.wid, 200, 250, 500, 100);
     });
 
     it('should RaiseWindow correctly', function(done) {
         var self = this;
-        this.X.RaiseWindow(this.wid);
         this.X.once('event', function(ev) {
             ev.type.should.equal(22); /* ConfigureNotify */
             ev.aboveSibling.should.equal(self.wid_helper);
             done();
         });
+        this.X.RaiseWindow(this.wid);
     });
 
     after(function(done) {
         this.X.DestroyWindow(this.wid);
         this.X.DestroyWindow(this.wid_helper);
-        this.X.terminate();
         this.X.on('end', done);
+        this.X.terminate();
     });
 });

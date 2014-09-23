@@ -30,8 +30,8 @@ var KeyPress = x11.eventMask.KeyPress;
 var KeyRelease = x11.eventMask.KeyRelease;
 
 x11.createClient(function(err, display) {
-    var X = display.client;   
-    X.require('big-requests', function(BigReq) {
+    var X = display.client;
+    X.require('big-requests', function(err, BigReq) {
         BigReq.Enable(function(err, maxLen) {
             var keycode2keysym = [];
             var min = display.min_keycode;
@@ -54,19 +54,19 @@ x11.createClient(function(err, display) {
 
             var wid = X.AllocID();
             X.CreateWindow(wid, root, 0, 0, r.width, r.height);
-            X.ChangeWindowAttributes(wid, { 
-                backgroundPixel: black, 
-                eventMask: Exposure|PointerMotion|ButtonPress|ButtonRelease|KeyPress|KeyRelease 
+            X.ChangeWindowAttributes(wid, {
+                backgroundPixel: black,
+                eventMask: Exposure|PointerMotion|ButtonPress|ButtonRelease|KeyPress|KeyRelease
             });
             X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, r.title);
             X.MapWindow(wid);
 
             var gc = X.AllocID();
             X.CreateGC(gc, wid, { foreground: black, background: white } );
-            
+
             //var pixbuf = X.AllocID();
             //X.CreatePixmap(pixbuf, wid, 32, r.width, r.height);
-            //var pic = X.AllocID(); 
+            //var pic = X.AllocID();
             //Render.CreatePicture(pic, pixbuf, Render.rgba32);
 
             var buttonsState = 0;
@@ -86,7 +86,7 @@ x11.createClient(function(err, display) {
                     // set button bit
                     if (ev.type == 4)
                         buttonsState |= buttonBit;
-                    else 
+                    else
                         buttonsState &= ~buttonBit;
                     r.pointerEvent(ev.x, ev.y, buttonsState);
                 } else if (ev.type == 2 || ev.type == 3) {
@@ -121,7 +121,7 @@ x11.createClient(function(err, display) {
             });
 
         }); // r.on('connect)
-    }); // GetKeyboardMapping 
+    }); // GetKeyboardMapping
 }); // BigReq.Enable
 
 }); // require('big-requests
