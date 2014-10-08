@@ -57,7 +57,7 @@ describe('Window property', function() {
               assert.equal(ev.atom, X.atoms.WM_NAME, 'atom in notification should be same as in ChangeProperty');
               // TODO: replace 0 with X.PropertyNewValue
               assert.equal(ev.state, 0, 'atom in notification should be same as in ChangeProperty');
-              assert.equal(ev.window, wid, 'window in notification should be same as in ChangeProperty');
+              assert.equal(ev.wid, wid, 'window in notification should be same as in ChangeProperty');
               done();
               return;
           }
