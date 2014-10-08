@@ -33,7 +33,7 @@ describe('ChangeProperty', function() {
             self.X.once('event', function(ev) {
                 ev.type.should.equal(28);
                 ev.atom.should.equal(atom);
-                ev.window.should.equal(self.wid);
+                ev.wid.should.equal(self.wid);
                 self.X.GetProperty(0, self.wid, atom, self.X.atoms.WINDOW, 0, 1000000000, function(err, prop) {
                     should.not.exist(err);
                     prop.data.readUInt32LE(0).should.equal(self.wid);
@@ -54,7 +54,7 @@ describe('ChangeProperty', function() {
             self.X.once('event', function(ev) {
                 ev.type.should.equal(28);
                 ev.atom.should.equal(atom);
-                ev.window.should.equal(self.wid);
+                ev.wid.should.equal(self.wid);
                 self.X.GetProperty(0, self.wid, atom, self.X.atoms.ATOM, 0, 1000000000, function(err, prop) {
                     should.not.exist(err);
                     prop.data.readUInt32LE(0).should.equal(self.wid);
@@ -74,7 +74,7 @@ describe('ChangeProperty', function() {
             self.X.once('event', function(ev) {
                 ev.type.should.equal(28);
                 ev.atom.should.equal(atom);
-                ev.window.should.equal(self.wid);
+                ev.wid.should.equal(self.wid);
                 self.X.GetProperty(0, self.wid, atom, self.X.atoms.WINDOW, 0, 1000000000, function(err, prop) {
                     should.not.exist(err);
                     prop.data.length.should.equal(0);
