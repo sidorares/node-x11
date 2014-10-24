@@ -17,7 +17,7 @@ var Exposure      = x11.eventMask.Exposure;
           });
         });
         */
-        console.log(fontface.kerning('A'.charCodeAt(0), 'V'.charCodeAt(0), 50, 0, 96, 0))
+        //console.log(fontface.kerning('A'.charCodeAt(0), 'V'.charCodeAt(0), 50, 0, 96, 0))
 
 
 function padWidth(buf, width) {
@@ -81,8 +81,10 @@ var xclient = x11.createClient({ debug: true }, function(err, display) {
 
 
 
+       var size = parseInt(process.argv[3]*64);
 
-        var glyphs = fontface.available_characters.map(function(ch) { return fontface.render(ch, parseInt(process.argv[3]*64), 0, 96, 0); });
+       console.log(fontface.available_characters.length);
+        var glyphs = fontface.available_characters.map(function(ch) { return fontface.render(ch, size, 0, 96, 0); });
         var glyphFromCode = [];
         glyphs.forEach(function(g) {
           if (!g.image || (g.image.length == 0)) {
@@ -98,19 +100,28 @@ var xclient = x11.createClient({ debug: true }, function(err, display) {
             g.image = padWidth(g.image, g.width);
             g.width = g.image.length / g.height;
           }
-          g.offX = g.offX / 64;
-          g.offY = g.offY / 64;
           glyphFromCode[g.id] = g;
-
-          if (g.id == 'A'.charCodeAt(0))
-            g.offX -= 17;
         });
 
-        //Render.AddGlyphs(glyphSet, glyphs.slice(0, 128));
-        // TODO: check BigReq with big glyphset data
-        //Render.AddGlyphs(glyphSet, glyphs);
-        for(var i=0; i < 120; ++i)
-          Render.AddGlyphs(glyphSet, [glyphs[i]]);
+        Render.AddGlyphs(glyphSet, glyphs);
+        var text = process.argv[4];
+        var elems = [];
+        var pos = 0;
+        var start = 0;
+        var offX = 0;
+        while (pos + 1 < text.length) {
+          var kern = fontface.kerning(text.charCodeAt(pos), text.charCodeAt(pos+1), size, 0, 96, 0);
+          console.log(kern, text[pos], text[pos+1]);
+          if (kern.x) {
+            elems.push([offX, 0, text.slice(start, pos+1)]);
+            start = pos+1;
+            offX = Math.round(size*kern.x/(26.6*64*64));
+          }
+          pos++;
+        }
+        elems.push([offX, 0, text.slice(start, text.length)]);
+        elems[0][1] = 60;
+        console.log(elems);
 
         function draw(x, y) {
           if (!y)
@@ -123,7 +134,8 @@ var xclient = x11.createClient({ debug: true }, function(err, display) {
           // op, src, dst, maskFormat, gsid, srcX, srcY, dstX, dstY, glyphs
           //Render.CompositeGlyphs8(3, pictSolidPix, pict, 0, glyphSet, 0, 0, [[10, 60, process.argv[4]]]);
           var yoff = 2*parseInt(process.argv[3]);
-          Render.CompositeGlyphs8(3, pictSolidPix, pict, 0, glyphSet, 260-x, yoff+260-y, [[20, 50, process.argv[4]]]);
+          Render.CompositeGlyphs32(3, pictSolidPix, pict, 0, glyphSet, 260-x, yoff+260-y, elems);
+          Render.CompositeGlyphs32(3, pictSolidPix, pict, 0, glyphSet, 260-x, yoff+260-y, [[0, 140, text]]);
         }
 
         X.on('event', function(ev) {
