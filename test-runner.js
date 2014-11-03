@@ -35,8 +35,8 @@ var run_dpms_test = function(X, cb) {
 };
 
 var run_xtest_test = function(X, cb) {
-    X.require('xtest', function(ext) {
-        if (!util.isError(ext)) cb(true);
+    X.require('xtest', function(err) {
+        if (!util.isError(err)) cb(true);
         else cb(false);
     });
 };
