@@ -2,7 +2,6 @@ var x11 = require('./lib');
 var Mocha = require('mocha');
 var fs = require('fs');
 var path = require('path');
-var util = require('util');
 var async = require('async');
 
 var mocha = new Mocha({
@@ -16,7 +15,7 @@ var mocha = new Mocha({
 // 3 - to be dpms capable.
 var run_dpms_test = function(X, cb) {
     X.require('dpms', function(err, ext) {
-        if (!util.isError(err)) {
+        if (!err) {
             var dpms = ext;
             dpms.GetVersion(undefined, undefined, function(err, version) {
                 if (!err && version[0] === 1 && version[1] === 1) {
@@ -36,14 +35,14 @@ var run_dpms_test = function(X, cb) {
 
 var run_xtest_test = function(X, cb) {
     X.require('xtest', function(err) {
-        if (!util.isError(err)) cb(true);
+        if (!err) cb(true);
         else cb(false);
     });
 };
 
 var run_randr_test = function(X, cb) {
     X.require('randr', function(err, ext) {
-        if (!util.isError(err)) {
+        if (!err) {
             var randr = ext;
             randr.QueryVersion(1, 2, function(err, version) {
                 if (err) {
