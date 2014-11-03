@@ -17,7 +17,7 @@ var mocha = new Mocha({
 var run_dpms_test = function(X, cb) {
     X.require('dpms', function(err, ext) {
         if (!util.isError(err)) {
-            dpms = ext;
+            var dpms = ext;
             dpms.GetVersion(undefined, undefined, function(err, version) {
                 if (!err && version[0] === 1 && version[1] === 1) {
                     dpms.Capable(function(err, capable) {
@@ -44,7 +44,7 @@ var run_xtest_test = function(X, cb) {
 var run_randr_test = function(X, cb) {
     X.require('randr', function(err, ext) {
         if (!util.isError(err)) {
-            randr = ext;
+            var randr = ext;
             randr.QueryVersion(1, 2, function(err, version) {
                 if (err) {
                     cb(false);
