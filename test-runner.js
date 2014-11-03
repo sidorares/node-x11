@@ -15,8 +15,8 @@ var mocha = new Mocha({
 // 2 - dpms version is 1.1.
 // 3 - to be dpms capable.
 var run_dpms_test = function(X, cb) {
-    X.require('dpms', function(ext) {
-        if (!util.isError(ext)) {
+    X.require('dpms', function(err, ext) {
+        if (!util.isError(err)) {
             dpms = ext;
             dpms.GetVersion(undefined, undefined, function(err, version) {
                 if (!err && version[0] === 1 && version[1] === 1) {
@@ -42,8 +42,8 @@ var run_xtest_test = function(X, cb) {
 };
 
 var run_randr_test = function(X, cb) {
-    X.require('randr', function(ext) {
-        if (!util.isError(ext)) {
+    X.require('randr', function(err, ext) {
+        if (!util.isError(err)) {
             randr = ext;
             randr.QueryVersion(1, 2, function(err, version) {
                 if (err) {
