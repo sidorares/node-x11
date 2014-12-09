@@ -48,4 +48,13 @@ describe('CreateWindow request', function() {
       });
   });
 
+  it('should work with any kind of attributes too', function(done) {
+      var wid = X.AllocID();
+      X.CreateWindow(wid, display.screen[0].root, 0, 0, 1, 1, 0, 0, 0, 0, { overrideRedirect : true }); // 1x1 pixel window
+      X.QueryTree(display.screen[0].root, function(err, list) {
+          should.not.exist(err);
+          list.children.should.containEql(wid);
+          done();
+      });
+  });
 });
