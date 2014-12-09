@@ -9,7 +9,6 @@ describe('ConfigureRequest', function() {
             self.X = dpy.client;
             self.root = dpy.screen[0].root;
             self.wid = self.X.AllocID();
-            self.wid_helper = self.X.AllocID();
             /* self.X acts like a WM */
             self.X.ChangeWindowAttributes(self.root, { eventMask: x11.eventMask.SubstructureRedirect });
             self.X.CreateWindow(self.wid, self.root, 0, 0, 1, 1); // 1x1 pixel window
@@ -30,7 +29,6 @@ describe('ConfigureRequest', function() {
         var client = x11.createClient(function(err, dpy) {
             should.not.exist(err);
             self.X.once('event', function(ev) {
-                console.log(ev);
                 ev.name.should.equal('ConfigureRequest');
                 ev.x.should.equal(0);
                 ev.y.should.equal(20);
