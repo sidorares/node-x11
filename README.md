@@ -61,12 +61,14 @@ Core requests usage:
 
 # In use
   - [ntk](https://github.com/sidorares/ntk) - higher level toolkit on top of X11
-  - [node-remote](https://github.com/AndrewSwerlick/node-remote) - metia center controller
+  - [node-remote](https://github.com/AndrewSwerlick/node-remote) - media center controller
   - [tiles](https://github.com/dominictarr/tiles) - tiling window manager
   - [vnc](https://github.com/sidorares/node-vnc) - vnc client.
   - [node-ewmh](https://github.com/santigimeno/node-ewmh) - set of EWMH helpers.
   - [OdieWM](https://github.com/bu/OdieWM) - window manager
   - [Dbusmenu](https://github.com/sidorares/node-dbusmenu) - unity global menu client.
+  - [AirWM](https://github.com/AirWM/AirWM) - tiling window manager
+  - [npdf](https://github.com/sidorares/npdf) - pdf viewer
 
 # Protocol documentation
 
@@ -87,6 +89,4 @@ Core requests usage:
   - Ruby: https://github.com/dj2/x-ruby-bindings
   - Clojure: https://github.com/noodlewiz/xcljb
   - Guile: https://github.com/mwitmer/guile-xcb
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/sidorares/node-x11/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
