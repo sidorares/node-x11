@@ -72,6 +72,16 @@ describe('ConfigureWindow', function() {
         this.X.RaiseWindow(this.wid);
     });
 
+    it('should LowerWindow correctly', function(done) {
+        var self = this;
+        this.X.once('event', function(ev) {
+            ev.type.should.equal(22); /* ConfigureNotify */
+            ev.aboveSibling.should.equal(0); /* 0 -> no window below this */
+            done();
+        });
+        this.X.LowerWindow(this.wid);
+    });
+
     after(function(done) {
         this.X.DestroyWindow(this.wid);
         this.X.DestroyWindow(this.wid_helper);
