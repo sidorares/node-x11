@@ -82,7 +82,19 @@ describe('ConfigureWindow', function() {
         this.X.LowerWindow(this.wid);
     });
 
+    it('should ignore invalid mask values', function(done) {
+        this.X.once('event', function(ev) {
+            ev.x.should.equal(0);
+            done();
+        });
+
+        this.X.ConfigureWindow(this.wid, { foo : 3, x : 0 }, function(err) {
+            console.log(err);
+        });
+    });
+
     after(function(done) {
+        this.X.removeAllListeners('event');
         this.X.DestroyWindow(this.wid);
         this.X.DestroyWindow(this.wid_helper);
         this.X.on('end', done);
