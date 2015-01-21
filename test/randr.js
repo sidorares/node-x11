@@ -12,7 +12,7 @@ describe('RANDR extension', function() {
             self.screen = dpy.screen[0];
             self.root = self.screen.root;
             self.X.require('randr', function(err, ext) {
-                err.should.equal(null);
+                should.not.exist(err);
                 self.randr = ext;
                 /* We HAVE to QueryVersion before using it. Otherwise it does not work as expected */
                 self.randr.QueryVersion(1, 2, done);
