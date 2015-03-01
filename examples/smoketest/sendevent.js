@@ -1,11 +1,11 @@
 var x11 = require('../../lib');
 
-var xclient = x11.createClient();
+var xclient = x11.createClient({debug: true});
 var Exposure = x11.eventMask.Exposure;
 var PointerMotion = x11.eventMask.PointerMotion;
 var pts = [];
 
-xclient.on('connect', function(err, display) {
+xclient.on('connect', function(display) {
     var X = this;
     var root = display.screen[0].root;
     var white = display.screen[0].white_pixel;
@@ -13,18 +13,16 @@ xclient.on('connect', function(err, display) {
 
     function createWindow()
     {
-
-    var wid = X.AllocID();
-    X.CreateWindow(
-       wid, root, 
-       10, 10, 400, 300, 
-       1, 1, 0,
-       { 
-           backgroundPixel: white, eventMask: Exposure|PointerMotion  
-       }
-    );
-    X.MapWindow(wid);
-    return wid;
+      var wid = X.AllocID();
+      // id, parentId, x, y, width, height, borderWidth, depth, _class, visual, values
+      X.CreateWindow(
+        wid, root, 
+        10, 10, 400, 300, 
+        0, 0, 0, 0, { 
+          backgroundPixel: white, eventMask: Exposure|PointerMotion  
+      });
+      X.MapWindow(wid);
+      return wid;
     }
 
     var wid = createWindow();
@@ -59,7 +57,7 @@ xclient.on('connect', function(err, display) {
         }
     });
 
-    X.on('error', function(e) {
-        console.log(e);
-    });
+    //X.on('error', function(e) {
+    //    console.log(e);
+    //});
 });
