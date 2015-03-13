@@ -69,6 +69,7 @@ Core requests usage:
   - [Dbusmenu](https://github.com/sidorares/node-dbusmenu) - unity global menu client.
   - [AirWM](https://github.com/AirWM/AirWM) - tiling window manager
   - [npdf](https://github.com/sidorares/npdf) - pdf viewer
+  - [xoowm](https://github.com/Airblader/xoowm) - Toy window managaer written in node.js
 
 # Protocol documentation
 
