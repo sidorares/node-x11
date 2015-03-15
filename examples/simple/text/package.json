@@ -9,6 +9,6 @@
   "author": "",
   "license": "BSD-2-Clause",
   "dependencies": {
-    "freetype2_render": "~0.1.2"
+    "freetype2_render": "~0.1.3"
   }
 }
