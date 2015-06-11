@@ -19,6 +19,7 @@ Windows users:
 
 Core requests usage:
 
+```js
     var x11 = require('x11');
 
     var Exposure = x11.eventMask.Exposure;
@@ -51,6 +52,7 @@ Core requests usage:
 		    console.log(err);
         }
     });
+```
 
 # Screenshots
 
