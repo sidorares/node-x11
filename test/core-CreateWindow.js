@@ -57,4 +57,24 @@ describe('CreateWindow request', function() {
           done();
       });
   });
+
+  it('should emit CreateNotify event when', function(done) {
+      var wid = X.AllocID();
+      var root = display.screen[0].root;
+      X.ChangeWindowAttributes(root, { eventMask: x11.eventMask.SubstructureNotify });
+      X.on('event', function(ev) {
+        ev.name.should.equal('CreateNotify');
+        ev.parent.should.equal(root);
+        ev.wid.should.equal(wid);
+        ev.x.should.equal(0);
+        ev.y.should.equal(0);
+        ev.width.should.equal(1);
+        ev.height.should.equal(1);
+        ev.borderWidth.should.equal(0);
+        ev.overrideRedirect.should.equal(false);
+        done();
+      });
+
+      X.CreateWindow(wid, root, 0, 0, 1, 1); // 1x1 pixel window
+  })
 });
