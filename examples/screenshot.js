@@ -8,10 +8,10 @@ x11.createClient(function(err, display) {
 
     var id = wid ? wid : root;
     var gc = X.AllocID();
-    X.CreateGC(gc, id); 
+    X.CreateGC(gc, id);
     var width = 0;
     var hwight = 0;
-    X.GetGeometry(id, function(clientGeom) { 
+    X.GetGeometry(id, function(err, clientGeom) {
         width = clientGeom.width;
         height = clientGeom.height;
 
@@ -25,21 +25,21 @@ x11.createClient(function(err, display) {
         //var idScreenshot = X.AllocID();
         //X.CreatePixmap(idScreenshot, root, 24, clientGeom.width, clientGeom.height);
         // ask recursively each window to copy itself to pixmap
-        
+
         function drawWithKids(list, cb)
         {
             if (list.length == 0)
-                return cb();           
+                return cb();
             var p = list.pop();
             var win = p.win;
             if (win == dispwin)
                 return drawWithKids(list, cb);
 
-            X.GetWindowAttributes(win, function(res) {
+            X.GetWindowAttributes(win, function(err, res) {
                 if (res[8] == 0)
-                    return drawWithKids(list, cb); 
-                X.GetGeometry(win, function(geom) {
-                    // (srcDrawable, dstDrawable, gc, srcX, srcY, dstX, dstY, width, height) 
+                    return drawWithKids(list, cb);
+                X.GetGeometry(win, function(err, geom) {
+                    // (srcDrawable, dstDrawable, gc, srcX, srcY, dstX, dstY, width, height)
                     if (win != root)
                         X.CopyArea(win, dispwin, gc, 0, 0, p.x + geom.xPos, p.y + geom.yPos, geom.width, geom.height);
                     //X.CopyArea(win, idScreenshot, gc, 0, 0, p.x + geom.xPos, p.y + geom.yPos, geom.width, geom.height);
@@ -63,12 +63,12 @@ x11.createClient(function(err, display) {
             //    console.log(data);
             //});
             console.log('DONE! ready');
-            X.terminate(); 
+            X.terminate();
             //var dispwin = X.AllocID();
             //X.CreateWindow(dispwin, root, 0, 0, width, height, 1, 1, 0, { eventMask: x11.eventMask.Exposure });
             //X.MapWindow(dispwin);
             //X.CopyArea(idScreenshot, dispwin, gc, 0, 0, 0, 0, width, height);
-            
+
         });
         */
         X.GetImage(2, root, 0, 0, width, height, 0xffffffff, function(image) {
