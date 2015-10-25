@@ -94,3 +94,6 @@ Core requests usage:
   - Clojure: https://github.com/noodlewiz/xcljb
   - Guile: https://github.com/mwitmer/guile-xcb
 
+# Server side (protocol + functionality) implementations for js + DOM ( would be really great to make completely web based playground page, connecting node-x11 api to DOM based implementation ) 
+  - https://github.com/GothAck/javascript-x-server
+  - https://github.com/ttaubert/x-server-js
