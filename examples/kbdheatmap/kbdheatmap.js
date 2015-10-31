@@ -12,7 +12,7 @@ var ButtonRelease = x11.eventMask.ButtonRelease;
 // image and coords file from http://www.patrick-wied.at/projects/heatmap-keyboard/
 // TODO: add simple tool to use&tag coords in own keyboard photo
 // jpeg decoder is slightly modified version of https://github.com/notmasteryet/jpgjs
-var kbdImg = require('./node-jpg').readJpeg('./keyboard.jpg');
+var kbdImg = require('./node-jpg').readJpeg(__dirname+'/keyboard.jpg');
 var keycoords = require('./coordinates');
 
 // from https://github.com/substack/node-keysym
