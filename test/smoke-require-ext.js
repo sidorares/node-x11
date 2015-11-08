@@ -11,6 +11,6 @@ describe('all extension modules', function() {
       });
       done();
     });
-  }
+  });
 })
 
