@@ -5,7 +5,7 @@ var keysym = require('keysym');
 var ks = x11.keySyms;
 var ks2Name = {};
 for (var key in ks)
-    ks2Name[ ks[key] ] = key;
+    ks2Name[ ks[key].code ] = key;
 var kk2Name = {};
 
 x11.createClient(function(err, display) {
