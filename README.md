@@ -74,11 +74,14 @@ Core requests usage:
   - [tinywm](https://github.com/Airblader/node-tinywm) The famous [TinyWM](https://github.com/mackstann/tinywm) written in node.js
   - [basedwm](https://github.com/anko/basedwm) Infinite-desktop panning X window manager in LiveScript
 
-# Protocol documentation
+# X11 resources/documentation:
 
-  - http://www.x.org/releases/X11R7.6/doc/
-  - http://www.x.org/releases/X11R7.6/doc/xproto/x11protocol.pdf
+  - [Xplain](https://github.com/magcius/xplain) - A series of articles to help explain the X Window System http://magcius.github.io/xplain/article/
+  - [Official X11 docs](http://www.x.org/releases/X11R7.6/doc/) 
+  - [protocol specification](http://www.x.org/releases/X11R7.6/doc/xproto/x11protocol.pdf)
   - C Xlib to X11 request mapping table http://tronche.com/gui/x/xlib/appendix/a.html
+  - [How to write composite manager](http://www.talisman.org/~erlkonig/misc/x11-composite-tutorial/)
+  - [Extended Window Manager Hints specification](http://standards.freedesktop.org/wm-spec/wm-spec-1.3.html)
 
 # Other implementations
 
