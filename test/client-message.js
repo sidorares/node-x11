@@ -14,22 +14,15 @@ describe('ClientMessage', function() {
           self.wid = self.X.AllocID();
           self.X.CreateWindow(self.wid, dpy.screen[0].root, 0, 0, 1, 1); // 1x1 pixel window
 
-          //Ugly but works for now
           self.X.InternAtom(false, 'TEST_ATOM_1', function(err, atom) {
               should.not.exist(err);
               ATOM['TEST_ATOM_1'] = atom;
 
-              self.X.InternAtom(false, 'TEST_ATOM_2', function(err, atom) {
-                should.not.exist(err);
-                ATOM['TEST_ATOM_2'] = atom;
-                done();
-              });
+              done();
             });
       });
 
-      client.on('error', function (err) {
-          console.error('Error : ', err);
-      });
+      client.on('error', done);
     });
 
     it('should receive client message with format=8', function(done) {
