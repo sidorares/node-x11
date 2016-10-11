@@ -1,4 +1,5 @@
 var x11 = require('../lib');
+var async = require('async');
 var should = require('should');
 var assert = require('assert');
 var util = require('util');
@@ -32,6 +33,26 @@ describe('RANDR extension', function() {
             active_screen.mm_width.should.equal(self.screen.mm_width);
             active_screen.mm_height.should.equal(self.screen.mm_height);
             done();
+        });
+    });
+
+    it('GetScreenResources && GetOutputInfo', function(done) {
+        var self = this;
+        this.randr.GetScreenResources(this.root, function(err, resources) {
+            should.not.exist(err);
+            should.exist(resources);
+            async.each(
+                resources.outputs,
+                function(output, cb) {
+                    self.randr.GetOutputInfo(output, 0, function(err, info) {
+                        should.not.exist(err);
+                        should.exist(info);
+                        cb();
+                    });
+                },
+                done
+            );
+
         });
     });
 
