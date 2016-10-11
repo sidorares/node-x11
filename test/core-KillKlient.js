@@ -8,43 +8,41 @@ describe('KillKlient request', function() {
   var X;
   beforeEach(function(done) {
       var client = x11.createClient(function(err, dpy) {
-          if (!err) {
-              display = dpy;
-              X = display.client;
-          }
+          should.not.exist(err);
+          display = dpy;
+          X = display.client;
+          root = display.screen[0].root;
+          var eventMask = x11.eventMask.SubstructureNotify;
+          X.ChangeWindowAttributes(root, { eventMask: eventMask });
+          done();
+      });
 
-          done(err);
-      });
-      client.on('error', function(err) {
-         done(err);
-      });
+      client.on('error', done);
   });
 
   afterEach(function(done) {
-      X.terminate();
       X.on('end', done);
-      X = null;
-      display = null;
+      X.terminate();
   });
 
-  it('should exist as client member', function(done) {
+  it('should exist as client member', function() {
       should.exist(X.KillKlient);
       assert.equal(typeof X.KillKlient, 'function');
-      done();
   });
 
   it('should terminate other client connection', function(done) {
       x11.createClient(function(err, dpy) {
-          if (!err) {
-            var otherclient = dpy.client;
-            var wnd = otherclient.AllocID();
-            otherclient.CreateWindow(wnd, dpy.screen[0].root, 0, 0, 1, 1);
-            otherclient.on('end', done);
-            X.KillKlient(wnd);
-          } else {
-            done(err);
-          }
+          should.not.exist(err);
+          var otherclient = dpy.client;
+          var wnd = otherclient.AllocID();
+          X.once('event', function(ev) {
+              ev.name.should.equal('CreateNotify');
+              ev.wid.should.equal(wnd);
+              X.KillKlient(wnd);
+          });
+
+          otherclient.CreateWindow(wnd, dpy.screen[0].root, 0, 0, 1, 1);
+          otherclient.on('end', done);
       });
   });
-
 });
