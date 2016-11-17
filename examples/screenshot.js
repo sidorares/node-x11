@@ -17,7 +17,7 @@ x11.createClient(function(err, display) {
 
 
             var dispwin = X.AllocID();
-            X.CreateWindow(dispwin, root, 0, 0, width, height, 1, 1, 0, { eventMask: x11.eventMask.Exposure });
+            X.CreateWindow(dispwin, root, 0, 0, width, height, 0, 0, 0, 0, { eventMask: x11.eventMask.Exposure });
             X.MapWindow(dispwin);
             //X.CopyArea(idScreenshot, dispwin, gc, 0, 0, 0, 0, width, height);
 
@@ -71,7 +71,11 @@ x11.createClient(function(err, display) {
 
         });
         */
-        X.GetImage(2, root, 0, 0, width, height, 0xffffffff, function(image) {
+        X.GetImage(2, id, 0, 0, width, height, 0xffffffff, function(err, image) {
+            if (err) {
+              console.log(err);
+              process.exit(1);
+            }
             console.log(image);
             // format, drawable, gc, width, height, dstX, dstY, leftPad, depth, data
             X.PutImage(2, dispwin, gc, width, height, 0, 0, 0, 24, image.data);
