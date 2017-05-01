@@ -1,4 +1,6 @@
 # About
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/sidorares/node-x11.svg)](https://greenkeeper.io/)
 [![Gitter](https://badges.gitter.im/Join\ Chat.svg)](https://gitter.im/sidorares/node-x11?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
  X11 protocol client for node.js
 
