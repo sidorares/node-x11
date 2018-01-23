@@ -94,7 +94,7 @@ describe('Atoms and atom names cache', function() {
             function(err) {
                 should.not.exist(err);
                 should.exist(my_name);
-                self.spy.reset();
+                self.spy.resetHistory();
                 self.X.InternAtom(true, my_name, function(err, atom) {
                     should.not.exist(err);
                     my_atom.should.equal(atom);

@@ -40,11 +40,11 @@
     "node": "*"
   },
   "devDependencies": {
-    "mocha": "*",
-    "should": "*",
-    "sax": "*",
-    "async": "*",
-    "sinon": "*"
+    "async": "^2.6.0",
+    "mocha": "^5.0.0",
+    "sax": "^1.2.4",
+    "should": "^13.2.1",
+    "sinon": "^4.2.1"
   },
   "scripts": {
     "test": "node test-runner.js",
