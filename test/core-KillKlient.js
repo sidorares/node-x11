@@ -11,7 +11,7 @@ describe('KillKlient request', function() {
           should.not.exist(err);
           display = dpy;
           X = display.client;
-          root = display.screen[0].root;
+          var root = display.screen[0].root;
           var eventMask = x11.eventMask.SubstructureNotify;
           X.ChangeWindowAttributes(root, { eventMask: eventMask });
           done();
