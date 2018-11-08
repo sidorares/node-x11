@@ -51,6 +51,6 @@
     "prepublish": "npm prune"
   },
   "dependencies": {
-    "os-homedir": "^1.0.1"
+    "os-homedir": "^2.0.0"
   }
 }
