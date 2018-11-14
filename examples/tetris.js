@@ -25,7 +25,7 @@ var Buffer = require('buffer').Buffer;
 
 var startpos = [4, 15];
 var cupsize = [10, 20];
-var cup = new Buffer(cupsize[0]*cupsize[1]);
+var cup = Buffer.alloc(cupsize[0]*cupsize[1]);
 var moveInterval;
 
 function clearCup()

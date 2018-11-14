@@ -34,7 +34,7 @@ function ReadFixedRequest(length, callback)
     this.length = length;
     this.callback = callback;
     //clog(length);
-    this.data = new Buffer(length);
+    this.data = Buffer.alloc(length);
     this.received_bytes = 0;
 }
 
@@ -328,7 +328,7 @@ UnpackStream.prototype.pack = function(format, args)
         }
     }
 
-    var buf = new Buffer(packetlength);
+    var buf = Buffer.alloc(packetlength);
     var offset = 0;
     var arg = 0;
     for (var i = 0; i < format.length; ++i)

@@ -252,7 +252,7 @@ function genReq(req, last)
    if (req.body.length == 0)
    {       
        result.push('  function() {');
-       result.push('     return new Buffer([' + req.opcode + ', 0, 1, 0]);');
+       result.push('     return Buffer.from([' + req.opcode + ', 0, 1, 0]);');
    } else {
    result.push('  function (args) {');
    result.push('    var extraLength = 0;');
@@ -287,10 +287,10 @@ function genReq(req, last)
    var reqLen4 = ((reqLen + 3) >> 2);
 
    if (extraLength)
-     result.push('    var data = new Buffer(' + reqLen + ' + extraLength);');
+     result.push('    var data = Buffer.alloc(' + reqLen + ' + extraLength);');
    else {
      result.pop(); 
-     result.push('    var data = new Buffer(' + reqLen + ');');
+     result.push('    var data = Buffer.alloc(' + reqLen + ');');
    } 
    result.push('    data[0] = ' + req.opcode + ';');
    if (req.body.length != 0) {

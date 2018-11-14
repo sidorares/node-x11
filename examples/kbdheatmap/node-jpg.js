@@ -571,7 +571,7 @@ module.exports.readJpeg = function(path)
     var imageData = {};
     imageData.width = j.width;
     imageData.height = j.height;
-    imageData.data = new Buffer(j.width*j.height*4);
+    imageData.data = Buffer.from(j.width*j.height*4);
     j.copyToImageData(imageData);
     return imageData;
 }

@@ -40,7 +40,7 @@ describe('ClientMessage', function() {
             });
 
             var X = dpy.client;
-            var eventData = new Buffer(32);
+            var eventData = Buffer.alloc(32);
             eventData.writeInt8(33, 0);                          //Event Type 33 = ClientMessage
             eventData.writeInt8(8,  1);                          //Format
             eventData.writeInt32LE(self.wid, 4);                 //Window ID
@@ -67,7 +67,7 @@ describe('ClientMessage', function() {
             });
 
             var X = dpy.client;
-            var eventData = new Buffer(32);
+            var eventData = Buffer.alloc(32);
             eventData.writeInt8(33, 0);                          //Event Type 33 = ClientMessage
             eventData.writeInt8(16,  1);                          //Format
             eventData.writeInt32LE(self.wid, 4);                 //Window ID
@@ -94,7 +94,7 @@ describe('ClientMessage', function() {
             });
 
             var X = dpy.client;
-            var eventData = new Buffer(32);
+            var eventData = Buffer.alloc(32);
             eventData.writeInt8(33, 0);                          //Event Type 33 = ClientMessage
             eventData.writeInt8(32,  1);                         //Format
             eventData.writeInt32LE(self.wid, 4);                 //Window ID

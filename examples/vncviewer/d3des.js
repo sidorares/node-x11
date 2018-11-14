@@ -56,8 +56,8 @@ var pc2 = [
 function deskey(key, edf)
 {
 	var i, j, l, m, n;
-        var pc1m = new Buffer(56);
-        var pcr = new Buffer(56);
+        var pc1m = Buffer.alloc(56);
+        var pcr = Buffer.alloc(56);
 	var kn = new Array(32);
 
 	for ( j = 0; j < 56; j++ ) {
@@ -388,17 +388,17 @@ function desfunc(block, keys)
 
 module.exports.response = function(challenge, password)
 {
-    var key = new Buffer(8);
+    var key = Buffer.alloc(8);
     key.fill(0);
     key.write(password.substring(0,8));
     var in1 = challenge.slice(0,8);
     var in2 = challenge.slice(8,16);
-    var res1 = new Buffer(8);
-    var res2 = new Buffer(8);
+    var res1 = Buffer.alloc(8);
+    var res2 = Buffer.alloc(8);
     deskey(key, EN0);
     des(in1, res1);
     des(in2, res2);
-    var resp = new Buffer(16);
+    var resp = Buffer.alloc(16);
     res1.copy(resp);
     res2.copy(resp, 8);
     return resp;

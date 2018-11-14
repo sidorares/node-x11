@@ -95,7 +95,7 @@ PixmapFromFile.prototype.mapColors = function(content,size){
 }
 
 PixmapFromFile.prototype.toBuffer = function (colors,content,size) {
-  var buf = new Buffer(size.width*size.height*4);
+  var buf = Buffer.alloc(size.width*size.height*4);
   var offset = 0, byte,color;
   var copy;
   if( !this.options.format || this.options.format.toUpperCase() === "BGRA"){

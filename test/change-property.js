@@ -27,7 +27,7 @@ describe('ChangeProperty', function() {
         var self = this;
         this.X.InternAtom(false, TEST_PROPERTY, function(err, atom) {
             should.not.exist(err);
-            var raw = new Buffer(4);
+            var raw = Buffer.alloc(4);
             raw.writeUInt32LE(self.wid, 0);
             self.X.ChangeProperty(0, self.wid, atom, self.X.atoms.WINDOW, 32, raw);
             self.X.once('event', function(ev) {
@@ -47,7 +47,7 @@ describe('ChangeProperty', function() {
         var self = this;
         this.X.InternAtom(false, TEST_PROPERTY, function(err, atom) {
             should.not.exist(err);
-            var raw = new Buffer(new Array(8));
+            var raw = Buffer.from(new Array(8));
             raw.writeUInt32LE(self.wid, 0);
             raw.writeUInt32LE(self.wid_helper, 4);
             self.X.ChangeProperty(0, self.wid, atom, self.X.atoms.ATOM, 32, raw);
@@ -69,7 +69,7 @@ describe('ChangeProperty', function() {
         var self = this;
         this.X.InternAtom(false, TEST_PROPERTY, function(err, atom) {
             should.not.exist(err);
-            var raw = new Buffer(0);
+            var raw = Buffer.alloc(0);
             self.X.ChangeProperty(0, self.wid, atom, self.X.atoms.WINDOW, 32, raw);
             self.X.once('event', function(ev) {
                 ev.type.should.equal(28);

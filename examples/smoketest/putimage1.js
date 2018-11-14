@@ -4,7 +4,7 @@ var x11 = require('../../lib');
 var Exposure = x11.eventMask.Exposure;
 var PointerMotion = x11.eventMask.PointerMotion;
 
-var bitmap = new Buffer(128*128*4); // 16384 bits, 2048 bytes bitmap
+var bitmap = Buffer.alloc(128*128*4); // 16384 bits, 2048 bytes bitmap
 for (var i=0; i < bitmap.length; ++i)
 {
     var byteNum = i%4;

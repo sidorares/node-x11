@@ -400,7 +400,7 @@ RfbClient.prototype.readHextileTile = function(rect, cb)
             });
             return;
         }
-        tile.buffer = new Buffer(tilebuflen);
+        tile.buffer = Buffer.alloc(tilebuflen);
      
         function solidBackground() {
             clog('solidBackground');
@@ -667,8 +667,8 @@ function createConnection(params)
         var wstream = fs.createWriteStream(params.rfbFileOut);
         wstream.write('FBS 001.001\n');
         stream.on('data', function(data) {
-            var sizeBuf = new Buffer(4);
-            var timeBuf = new Buffer(4);
+            var sizeBuf = Buffer.alloc(4);
+            var timeBuf = Buffer.alloc(4);
             var size = data.length;
             sizeBuf.writeInt32BE(size, 0);
             wstream.write(sizeBuf);
@@ -676,7 +676,7 @@ function createConnection(params)
             timeBuf.writeInt32BE(+new Date() - start, 0);
             wstream.write(timeBuf);
             var padding = 3 - ((size - 1) & 0x03);
-            var pbuf = new Buffer(padding);
+            var pbuf = Buffer.alloc(padding);
             wstream.write(pbuf);             
         }).on('end', function() {
             wstream.end();

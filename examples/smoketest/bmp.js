@@ -6,7 +6,7 @@ var Pixmap = require('./pixmap').Pixmap;
 var Buffer = require('buffer').Buffer;
 require('../../lib/unpackbuffer').addUnpack(Buffer);
 
-var reversed = new Buffer(256);
+var reversed = Buffer.alloc(256);
 for (var i=0; i < 256; ++i)
 {
     var res = 0;

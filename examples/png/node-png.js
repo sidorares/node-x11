@@ -874,7 +874,7 @@ module.exports.readPng = function(path)
     var imageData = {};
     imageData.width = j.width;
     imageData.height = j.height;
-    imageData.data = new Buffer(j.width*j.height*4);
+    imageData.data = Buffer.alloc(j.width*j.height*4);
     j.render(imageData);
     return imageData;
 }
