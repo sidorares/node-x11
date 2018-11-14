@@ -7,7 +7,7 @@
 // It should create a pleasant looking hex dumb by default:
 //    
 //    var hexy = require('hexy.js'),
-//           b = new Buffer("\000\001\003\005\037\012\011bcdefghijklmnopqrstuvwxyz0123456789")
+//           b = Buffer.from("\000\001\003\005\037\012\011bcdefghijklmnopqrstuvwxyz0123456789")
 //    
 //    console.log(hexy.hexy(b))
 //

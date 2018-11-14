@@ -26,7 +26,7 @@ function padWidth(buf, width) {
     return buf;
   else {
     var stride = (width+3)&~3;
-    var res = new Buffer(height*stride);
+    var res = Buffer.alloc(height*stride);
     res.fill(0);
     for (var y=0; y < height; ++y) {
       // memcpy(tmpbitmap+y*stride, bitmap->buffer+y*ginfo.width, ginfo.width);
@@ -88,7 +88,7 @@ var xclient = x11.createClient({ debug: true }, function(err, display) {
         var glyphFromCode = [];
         glyphs.forEach(function(g) {
           if (!g.image || (g.image.length == 0)) {
-            g.image = new Buffer(64);
+            g.image = Buffer.alloc(64);
             g.image.fill(0);
             g.width = 8;
             g.height = 8;

@@ -62,7 +62,7 @@ RfbServer.prototype.processSecurity = function()
         break;
     case rfb.security.VNC:
         // generate random 16 byte challenge
-        serv.challenge = new Buffer(16);
+        serv.challenge = Buffer.alloc(16);
         serv.challenge.write('1234567890abcdef');
         console.log(['sending challenge', serv.challenge]);
         serv.pack_stream.pack('a', [serv.challenge]).flush();
