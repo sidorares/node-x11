@@ -19,12 +19,6 @@ Windows users:
 Core requests usage:
 
 ```js
-/*
-var nomnoml = require('nomnoml');
-var src = '[nomnoml] is -> [awesome]';
-console.log(nomnoml.renderSvg(src));
-*/
-
 var x11 = require('x11');
 
 var Exposure = x11.eventMask.Exposure;
