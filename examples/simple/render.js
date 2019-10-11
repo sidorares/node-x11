@@ -7,7 +7,7 @@ var xclient = x11.createClient(function(err, display) {
     display.client.require('render', function(err, Render) {
         var wid = X.AllocID();
         var white = display.screen[0].white_pixel;
-        varblack = display.screen[0].black_pixel;
+        var black = display.screen[0].black_pixel;
         X.CreateWindow(wid, root, 10, 10, 400, 300, 0, 0, 0, 0, { backgroundPixel: white, eventMask: PointerMotion });
         X.MapWindow(wid);
 
