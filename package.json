@@ -50,7 +50,5 @@
     "test": "node test-runner.js",
     "prepublish": "npm prune"
   },
-  "dependencies": {
-    "os-homedir": "^1.0.1"
-  }
+  "dependencies": {}
 }
