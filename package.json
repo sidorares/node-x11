@@ -40,7 +40,7 @@
     "node": "*"
   },
   "devDependencies": {
-    "async": "^2.6.0",
+    "async": "^3.0.1",
     "mocha": "^7.1.2",
     "sax": "^1.2.4",
     "should": "^13.2.1",
