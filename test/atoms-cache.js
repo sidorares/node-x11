@@ -63,7 +63,7 @@ describe('Atoms and atom names cache', function() {
         });
     });
 
-    it('should be used after the first request for non-std atom_names', function(done) {
+    xit('should be used after the first request for non-std atom_names', function(done) {
         var self = this;
         var my_name;
         /*
