@@ -44,7 +44,7 @@
     "mocha": "^7.1.2",
     "sax": "^1.2.4",
     "should": "^13.2.1",
-    "sinon": "^6.0.0"
+    "sinon": "^7.2.5"
   },
   "scripts": {
     "test": "node test-runner.js",
