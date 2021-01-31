@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "async": "^3.0.1",
-    "mocha": "^7.1.2",
+    "mocha": "^8.2.1",
     "sax": "^1.2.4",
     "should": "^13.2.1",
     "sinon": "^7.2.5"
