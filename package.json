@@ -41,6 +41,7 @@
   },
   "devDependencies": {
     "async": "^3.0.1",
+    "eslint": "^7.19.0",
     "mocha": "^7.1.2",
     "sax": "^1.2.4",
     "should": "^13.2.1",
