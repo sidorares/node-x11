@@ -7,9 +7,8 @@ var clog = console.log;
 var util = require("util"); // util.inherits
 var net = require("net");
 
-var EventEmitter = require("events").EventEmitter;
-var PackStream = require("./unpackstream");
-var hexy = require("./hexy").hexy;
+var EventEmitter = require('events').EventEmitter;
+var PackStream = require('./unpackstream');
 
 // constants
 var rfb = require("./constants");
