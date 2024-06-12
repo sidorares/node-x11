@@ -8,7 +8,7 @@ var util = require("util"); // util.inherits
 var net = require("net");
 
 var EventEmitter = require('events').EventEmitter;
-var PackStream = require('./unpackstream');
+var PackStream = require('./unpackstream').UnpackStream;
 
 // constants
 var rfb = require("./constants");

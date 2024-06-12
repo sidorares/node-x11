@@ -14,7 +14,7 @@ echo "
 
 \\* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-module.exports = {
+export const keysyms = {
 "
 
 sed -r '
@@ -30,6 +30,6 @@ echo -n '
   NoSymbol: 0
 };'
 
-) > "$(dirname "$0")/keysyms.js"
+) > "$(dirname "$0")/keysyms.ts"
 
 rm $keysymdef

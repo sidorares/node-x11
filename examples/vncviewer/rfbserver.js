@@ -1,7 +1,7 @@
 "use strict";
 var util = require("util");
 var net = require("net");
-var PackStream = require("./unpackstream");
+var PackStream = require("./unpackstream").UnpackStream;
 var EventEmitter = require("events").EventEmitter;
 var rfb = require("./constants");
 

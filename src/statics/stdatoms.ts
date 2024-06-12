@@ -1,6 +1,6 @@
 // pre-defined atoms. generated automatically with genstdatoms.js
 
-module.exports = {
+export const stdatoms = {
     PRIMARY: 1,
     SECONDARY: 2,
     ARC: 3,
@@ -68,5 +68,5 @@ module.exports = {
     FULL_NAME: 65,
     CAP_HEIGHT: 66,
     WM_CLASS: 67,
-    WM_TRANSIENT_FOR: 68
-}
+    WM_TRANSIENT_FOR: 68,
+};

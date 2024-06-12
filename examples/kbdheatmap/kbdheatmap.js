@@ -16,7 +16,7 @@ var kbdImg = require("./node-jpg").readJpeg(__dirname + "/keyboard.jpg");
 var keycoords = require("./coordinates");
 
 // from https://github.com/substack/node-keysym
-var keysyms = require("./keysyms").records;
+var keysyms = require("./keysyms").keysyms.records;
 var ks2name = {};
 for (var k in keysyms) ks2name[keysyms[k].keysym] = keysyms[k].names;
 var kk2name = {};

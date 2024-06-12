@@ -1,4 +1,4 @@
-module.exports.eventMask = {
+export const eventMask = {
     KeyPress: 0x00000001,
     KeyRelease: 0x00000002,
     ButtonPress: 0x00000004,
@@ -23,6 +23,6 @@ module.exports.eventMask = {
     FocusChange: 0x00200000,
     PropertyChange: 0x00400000,
     ColormapChange: 0x00800000,
-    OwnerGrabButton: 0x01000000
+    OwnerGrabButton: 0x01000000,
     // TODO: add more names for common masks combinations
-}
+};
