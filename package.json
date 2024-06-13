@@ -40,20 +40,23 @@
     "node": "*"
   },
   "devDependencies": {
+    "@types/node": "^20.14.2",
     "async": "^3.0.1",
+    "lodash.camelcase": "^4.3.0",
+    "lodash.partition": "^4.6.0",
     "mocha": "^7.1.2",
+    "prettier": "^3.3.2",
     "sax": "^1.2.4",
     "should": "^13.2.1",
     "sinon": "^7.2.5",
-    "prettier": "^3.3.2",
-    "@types/node": "^20.14.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "xml-js": "^1.6.11"
   },
   "scripts": {
     "test": "node test-runner.js",
     "prepublish": "npm prune",
     "format": "prettier -w **/*.{js,ts}",
-    "build": "tsc"
-  },
-  "dependencies": {}
+    "build": "tsc",
+    "autogen": "cd autogen && tsc && node ./lib/index.js && mv out/*.ts ../src/"
+  }
 }
