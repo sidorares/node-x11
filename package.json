@@ -44,11 +44,13 @@
     "mocha": "^7.1.2",
     "sax": "^1.2.4",
     "should": "^13.2.1",
-    "sinon": "^7.2.5"
+    "sinon": "^7.2.5",
+    "prettier": "^3.3.2"
   },
   "scripts": {
     "test": "node test-runner.js",
-    "prepublish": "npm prune"
+    "prepublish": "npm prune",
+    "format": "prettier -w **/**/*.js"
   },
   "dependencies": {}
 }

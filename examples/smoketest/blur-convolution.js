@@ -17,9 +17,13 @@ function hypotenuse(x1, y1, x2, y2) {
  *   to 1. Represents our gaussian blur kernel.
  */
 function generateGaussianKernel(dimension, sigma) {
-  if (!(dimension % 2) || Math.floor(dimension) !== dimension || dimension<3) {
+  if (
+    !(dimension % 2) ||
+    Math.floor(dimension) !== dimension ||
+    dimension < 3
+  ) {
     throw new Error(
-      'The dimension must be an odd integer greater than or equal to 3'
+      "The dimension must be an odd integer greater than or equal to 3",
     );
   }
   var kernel = [];
@@ -35,17 +39,21 @@ function generateGaussianKernel(dimension, sigma) {
       // wikipedia page [1].
       //
       // http://en.wikipedia.org/w/index.php?title=Gaussian_blur&oldid=608793634#Mechanics
-      var gaussian = (1 / Math.sqrt(
-        Math.PI * twoSigmaSquare
-      )) * Math.exp((-1) * (Math.pow(distance, 2) / twoSigmaSquare));
+      var gaussian =
+        (1 / Math.sqrt(Math.PI * twoSigmaSquare)) *
+        Math.exp(-1 * (Math.pow(distance, 2) / twoSigmaSquare));
 
       kernel.push(gaussian);
     }
   }
 
   // Returns the unit vector of the kernel array.
-  var sum = kernel.reduce(function (c, p) { return c + p; });
-  return kernel.map(function (e) { return e / sum; });
+  var sum = kernel.reduce(function (c, p) {
+    return c + p;
+  });
+  return kernel.map(function (e) {
+    return e / sum;
+  });
 }
 
 module.exports = generateGaussianKernel;
