@@ -33,7 +33,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "http://github.com/sidorares/node-x11.git"
+    "url": "git+https://github.com/sidorares/node-x11.git"
   },
   "main": "./lib",
   "engines": {
