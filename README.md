@@ -106,6 +106,7 @@ x11.createClient(function(err, display) {
 - Perl: http://search.cpan.org/~smccam/X11-Protocol-0.56/Protocol.pm
 - Go: https://github.com/BurntSushi/xgb
 - Java: https://github.com/xderoche/J11
+- Java: https://github.com/moaxcp/x11
 - Ruby: https://github.com/dj2/x-ruby-bindings
 - Clojure: https://github.com/noodlewiz/xcljb
 - Guile: https://github.com/mwitmer/guile-xcb
