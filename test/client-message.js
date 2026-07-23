@@ -1,5 +1,4 @@
 const x11 = require('../lib');
-const UnpackStream = require('../lib/unpackstream.js');
 const should = require('should');
 
 //Used Atoms

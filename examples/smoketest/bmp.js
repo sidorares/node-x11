@@ -1,10 +1,7 @@
 // http://atlc.sourceforge.net/bmp.html
 // Any better format documentation?
 
-const fs = require('fs');
 const Pixmap = require('./pixmap').Pixmap;
-const Buffer = require('buffer').Buffer;
-require('../../lib/unpackbuffer').addUnpack(Buffer);
 
 const reversed = Buffer.alloc(256);
 for (let i=0; i < 256; ++i)
@@ -18,23 +15,22 @@ for (let i=0; i < 256; ++i)
 }
 
 module.exports.decodeBuffer = buffer => {
-    const h = buffer.unpack('CCLxxxxLLLLSSLLLL');
+    // CCLxxxxLLLLSSLLLL
     const header = {};
-    header.filesize = h[2];
-    header.data_offset = h[3];
-    header.header_size = h[4];
-    header.width = h[5];
-    header.height = h[6];
-    header.num_planes = h[7];
-    header.bpp = h[8];
-    header.compression = h[9];
-    header.data_size = h[10];
-    header.hresolution = h[11]; // pixels per METER!
-    header.vresolution = h[12];
+    header.filesize = buffer.readUInt32LE(2);
+    header.data_offset = buffer.readUInt32LE(10);
+    header.header_size = buffer.readUInt32LE(14);
+    header.width = buffer.readUInt32LE(18);
+    header.height = buffer.readUInt32LE(22);
+    header.num_planes = buffer.readUInt16LE(26);
+    header.bpp = buffer.readUInt16LE(28);
+    header.compression = buffer.readUInt32LE(30);
+    header.data_size = buffer.readUInt32LE(34);
+    header.hresolution = buffer.readUInt32LE(38); // pixels per METER!
+    header.vresolution = buffer.readUInt32LE(42);
     // skipped: num colors, num important colors, palette
     const data = buffer.slice(header.data_offset, header.data_offset+header.data_size);
     // TODO: decode compressed bitmap
-    //console.log(header);
 
     // mirror bits & invert
     for (let i=0; i < data.length; ++i)

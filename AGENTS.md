@@ -45,7 +45,8 @@ Details the script handles for you:
 | `lib/xcore.js` | Client core: connection setup, request/reply/event dispatch |
 | `lib/corereqs.js` | Declarative pack/unpack templates for all core protocol requests |
 | `lib/handshake.js` | Connection setup block parsing |
-| `lib/unpackstream.js` | Binary read/write stream, request buffering |
+| `lib/framebuffer.js` | Binary framing + request pack/buffering |
+| `lib/generated/` | Auto-generated parsers from `autogen/proto/` (`npm run gen:protocol`) |
 | `lib/auth.js` | `~/.Xauthority` parsing / auth negotiation |
 | `lib/ext/*.js` | Protocol extensions (render, randr, glx, xtest, dpms, …) |
 | `lib/keysyms.js` | Generated keysym table (see `lib/keysyms.update.sh`) |
@@ -56,8 +57,8 @@ Details the script handles for you:
 
 ## Conventions
 
+- Request definitions in `corereqs.js` return a `Buffer` built with `writeUInt*` (plus optional reply unpacker) — study a neighbouring request before adding one.
+- Outbound I/O: `pack_stream.put(buf).flush()` via [`lib/framebuffer.js`](lib/framebuffer.js); length field must equal `buf.length / 4`.
 - Extensions self-register: `X.require('name', cb)` loads `lib/ext/name.js`.
-- Request definitions in `corereqs.js` are `[format-or-packfn, unpackfn]`
-  template pairs — study a neighbouring request before adding one.
 - Tests that talk to the server clean up after themselves (`X.terminate()`
   in `after`); leaked windows/clients make later files flaky.

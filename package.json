@@ -51,6 +51,9 @@
     "test": "node test-runner.js",
     "test:local": "./scripts/test-local.sh",
     "lint": "eslint .",
+    "gen:events": "node autogen/generate-events.js",
+    "gen:replies": "node autogen/generate-replies.js",
+    "gen:protocol": "npm run gen:events && npm run gen:replies",
     "prepublish": "npm prune"
   }
 }
