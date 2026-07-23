@@ -1,7 +1,5 @@
 const sax = require('sax');
 const fs = require('fs');
-const xml2js = require('xml2js');
-const assert = require('assert');
 
 let count = 0;
 

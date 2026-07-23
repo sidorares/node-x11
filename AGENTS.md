@@ -45,7 +45,8 @@ Details the script handles for you:
 | `lib/xcore.js` | Client core: connection setup, request/reply/event dispatch |
 | `lib/corereqs.js` | Declarative pack/unpack templates for all core protocol requests |
 | `lib/handshake.js` | Connection setup block parsing |
-| `lib/unpackstream.js` | Binary read/write stream, request buffering |
+| `lib/framebuffer.js` | Binary framing + request pack/buffering |
+| `lib/generated/` | Auto-generated parsers from `autogen/proto/` (`npm run gen:protocol`) |
 | `lib/auth.js` | `~/.Xauthority` parsing / auth negotiation |
 | `lib/ext/*.js` | Protocol extensions (render, randr, glx, xtest, dpms, …) |
 | `lib/keysyms.js` | Generated keysym table (see `lib/keysyms.update.sh`) |
