@@ -57,8 +57,8 @@ Details the script handles for you:
 
 ## Conventions
 
+- Request definitions in `corereqs.js` return a `Buffer` built with `writeUInt*` (plus optional reply unpacker) — study a neighbouring request before adding one.
+- Outbound I/O: `pack_stream.put(buf).flush()` via [`lib/framebuffer.js`](lib/framebuffer.js); length field must equal `buf.length / 4`.
 - Extensions self-register: `X.require('name', cb)` loads `lib/ext/name.js`.
-- Request definitions in `corereqs.js` are `[format-or-packfn, unpackfn]`
-  template pairs — study a neighbouring request before adding one.
 - Tests that talk to the server clean up after themselves (`X.terminate()`
   in `after`); leaked windows/clients make later files flaky.
