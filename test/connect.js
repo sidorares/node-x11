@@ -1,7 +1,6 @@
 var x11 = require('../lib');
 var should = require('should');
 var assert = require('assert');
-var util = require('util');
 
 describe('Client', function() {
 
@@ -54,7 +53,7 @@ describe('Client', function() {
   it('returns error when connecting to non existent display', function(done) {
     var errorCbCalled = false;
     var client = x11.createClient({ display : ':44' }, function(err, display) {
-        assert(util.isError(err));
+        assert(err instanceof Error);
 	errorCbCalled = true;
         done();
     });
