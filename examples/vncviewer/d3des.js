@@ -19,16 +19,16 @@
 
 /* D2_DES and D3_DES code removed, by Constantin Kaplinsky */
 
-var KnL = new Array(32);
-var EN0 = 0;
-var DE1 = 1; 
+const KnL = new Array(32);
+const EN0 = 0;
+const DE1 = 1; 
 
 /* The following array is reversed for VNC compatibility,
    by Constantin Kaplinsky */
 
-var bytebit = [01, 02, 04, 010, 020, 040, 0100, 0200];
+const bytebit = [0o1, 0o2, 0o4, 0o10, 0o20, 0o40, 0o100, 0o200];
 
-var bigbyte = [
+const bigbyte = [
 	0x800000,	0x400000,	0x200000,	0x100000,
 	0x80000,	0x40000,	0x20000,	0x10000,
 	0x8000,	0x4000,	0x2000,	0x1000,
@@ -38,16 +38,16 @@ var bigbyte = [
 
 /* Use the key schedule specified in the Standard (ANSI X3.92-1981). */
 
-var pc1 = [
+const pc1 = [
 	56, 48, 40, 32, 24, 16,  8,	 0, 57, 49, 41, 33, 25, 17,
 	 9,  1, 58, 50, 42, 34, 26,	18, 10,  2, 59, 51, 43, 35,
 	62, 54, 46, 38, 30, 22, 14,	 6, 61, 53, 45, 37, 29, 21,
 	13,  5, 60, 52, 44, 36, 28,	20, 12,  4, 27, 19, 11,  3 ];
 
-var totrot = [
+const totrot = [
 	1,2,4,6,8,10,12,14,15,17,19,21,23,25,27,28 ];
 
-var pc2 = [
+const pc2 = [
 	13, 16, 10, 23,  0,  4,  2, 27, 14,  5, 20,  9,
 	22, 18, 11,  3, 25,  7, 15,  6, 26, 19, 12,  1,
 	40, 51, 30, 36, 46, 54, 29, 39, 50, 44, 32, 47,
@@ -55,14 +55,14 @@ var pc2 = [
 
 function deskey(key, edf)
 {
-	var i, j, l, m, n;
-        var pc1m = Buffer.alloc(56);
-        var pcr = Buffer.alloc(56);
-	var kn = new Array(32);
+	let i, j, l, m, n;
+        const pc1m = Buffer.alloc(56);
+        const pcr = Buffer.alloc(56);
+	const kn = new Array(32);
 
 	for ( j = 0; j < 56; j++ ) {
 		l = pc1[j];
-		m = l & 07;
+		m = l & 0o7;
 		pc1m[j] = (key[l >>> 3] & bytebit[m]) ? 1 : 0;
 		}
 
@@ -96,9 +96,9 @@ function deskey(key, edf)
 
 function cookey(_raw1)
 {
-        var raw1 = 0;
-	var cook, raw0;
-	var i;
+        let raw1 = 0;
+	let cook, raw0;
+	let i;
 
 	cook = 0;
 	for( i = 0; i < 16; i++, raw1++ ) {
@@ -117,7 +117,7 @@ function cookey(_raw1)
 
 function des(inblock, outblock)
 {
-	var work = new Array(2);
+	const work = new Array(2);
 	scrunch(inblock, work);
 	desfunc(work, KnL);
 	unscrun(work, outblock);
@@ -154,7 +154,7 @@ function unscrun(outof, into)
 	return;
 	}
 
-var SP1 = [
+const SP1 = [
 	0x01010400, 0x00000000, 0x00010000, 0x01010404,
 	0x01010004, 0x00010404, 0x00000004, 0x00010000,
 	0x00000400, 0x01010400, 0x01010404, 0x00000400,
@@ -172,7 +172,7 @@ var SP1 = [
 	0x00000404, 0x01000400, 0x01000400, 0x00000000,
 	0x00010004, 0x00010400, 0x00000000, 0x01010004 ];
 
-var SP2 = [
+const SP2 = [
 	0x80108020, 0x80008000, 0x00008000, 0x00108020,
 	0x00100000, 0x00000020, 0x80100020, 0x80008020,
 	0x80000020, 0x80108020, 0x80108000, 0x80000000,
@@ -190,7 +190,7 @@ var SP2 = [
 	0x00108000, 0x00000000, 0x80008000, 0x00008020,
 	0x80000000, 0x80100020, 0x80108020, 0x00108000 ];
 
-var SP3 = [
+const SP3 = [
 	0x00000208, 0x08020200, 0x00000000, 0x08020008,
 	0x08000200, 0x00000000, 0x00020208, 0x08000200,
 	0x00020008, 0x08000008, 0x08000008, 0x00020000,
@@ -208,7 +208,7 @@ var SP3 = [
 	0x08020000, 0x08000208, 0x00000208, 0x08020000,
 	0x00020208, 0x00000008, 0x08020008, 0x00020200 ];
 
-var SP4 = [
+const SP4 = [
 	0x00802001, 0x00002081, 0x00002081, 0x00000080,
 	0x00802080, 0x00800081, 0x00800001, 0x00002001,
 	0x00000000, 0x00802000, 0x00802000, 0x00802081,
@@ -226,7 +226,7 @@ var SP4 = [
 	0x00002001, 0x00002080, 0x00800000, 0x00802001,
 	0x00000080, 0x00800000, 0x00002000, 0x00802080 ];
 
-var SP5 = [
+const SP5 = [
 	0x00000100, 0x02080100, 0x02080000, 0x42000100,
 	0x00080000, 0x00000100, 0x40000000, 0x02080000,
 	0x40080100, 0x00080000, 0x02000100, 0x40080100,
@@ -244,7 +244,7 @@ var SP5 = [
 	0x00080100, 0x02000100, 0x40000100, 0x00080000,
 	0x00000000, 0x40080000, 0x02080100, 0x40000100 ];
 
-var SP6 = [
+const SP6 = [
 	0x20000010, 0x20400000, 0x00004000, 0x20404010,
 	0x20400000, 0x00000010, 0x20404010, 0x00400000,
 	0x20004000, 0x00404010, 0x00400000, 0x20000010,
@@ -262,7 +262,7 @@ var SP6 = [
 	0x00004000, 0x00400010, 0x20004010, 0x00000000,
 	0x20404000, 0x20000000, 0x00400010, 0x20004010 ];
 
-var SP7 = [
+const SP7 = [
 	0x00200000, 0x04200002, 0x04000802, 0x00000000,
 	0x00000800, 0x04000802, 0x00200802, 0x04200800,
 	0x04200802, 0x00200000, 0x00000000, 0x04000002,
@@ -280,7 +280,7 @@ var SP7 = [
 	0x00000000, 0x00200802, 0x04200000, 0x00000800,
 	0x04000002, 0x04000800, 0x00000800, 0x00200002 ];
 
-var SP8 = [
+const SP8 = [
 	0x10001040, 0x00001000, 0x00040000, 0x10041040,
 	0x10000000, 0x10001040, 0x00000040, 0x10000000,
 	0x00040040, 0x10040000, 0x10041040, 0x00041000,
@@ -300,10 +300,10 @@ var SP8 = [
 
 function desfunc(block, keys)
 {
-	var  fval, work, right, leftt;
-	var round;
+	let fval, work, right, leftt;
+	let round;
 
-        var keysi=0;
+        let keysi=0;
 
 	leftt = block[0];
 	right = block[1];
@@ -386,19 +386,18 @@ function desfunc(block, keys)
  **********************************************************************/
 
 
-module.exports.response = function(challenge, password)
-{
-    var key = Buffer.alloc(8);
+module.exports.response = (challenge, password) => {
+    const key = Buffer.alloc(8);
     key.fill(0);
     key.write(password.substring(0,8));
-    var in1 = challenge.slice(0,8);
-    var in2 = challenge.slice(8,16);
-    var res1 = Buffer.alloc(8);
-    var res2 = Buffer.alloc(8);
+    const in1 = challenge.slice(0,8);
+    const in2 = challenge.slice(8,16);
+    const res1 = Buffer.alloc(8);
+    const res2 = Buffer.alloc(8);
     deskey(key, EN0);
     des(in1, res1);
     des(in2, res2);
-    var resp = Buffer.alloc(16);
+    const resp = Buffer.alloc(16);
     res1.copy(resp);
     res2.copy(resp, 8);
     return resp;
@@ -409,7 +408,7 @@ module.exports.response = function(challenge, password)
 
 /*
 // array to flip bits in byte
-var flip = [ 0, 128, 64, 192, 32, 160, 96, 224, 16, 144, 80, 208, 48, 176, 112, 240,
+const flip = [ 0, 128, 64, 192, 32, 160, 96, 224, 16, 144, 80, 208, 48, 176, 112, 240,
              8, 136, 72, 200, 40, 168, 104, 232, 24, 152, 88, 216, 56, 184, 120, 248,
              4, 132, 68, 196, 36, 164, 100, 228, 20, 148, 84, 212, 52, 180, 116, 244,
              12, 140, 76, 204, 44, 172, 108, 236, 28, 156, 92, 220, 60, 188, 124, 252,

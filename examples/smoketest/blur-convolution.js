@@ -2,8 +2,8 @@
 // (c) Matt Lockyer, https://github.com/mattlockyer
 
 function hypotenuse(x1, y1, x2, y2) {
-  var xSquare = Math.pow(x1 - x2, 2);
-  var ySquare = Math.pow(y1 - y2, 2);
+  const xSquare = Math.pow(x1 - x2, 2);
+  const ySquare = Math.pow(y1 - y2, 2);
   return Math.sqrt(xSquare + ySquare);
 }
 
@@ -22,20 +22,20 @@ function generateGaussianKernel(dimension, sigma) {
       'The dimension must be an odd integer greater than or equal to 3'
     );
   }
-  var kernel = [];
+  const kernel = [];
 
-  var twoSigmaSquare = 2 * sigma * sigma;
-  var centre = (dimension - 1) / 2;
+  const twoSigmaSquare = 2 * sigma * sigma;
+  const centre = (dimension - 1) / 2;
 
-  for (var i = 0; i < dimension; i++) {
-    for (var j = 0; j < dimension; j++) {
-      var distance = hypotenuse(i, j, centre, centre);
+  for (let i = 0; i < dimension; i++) {
+    for (let j = 0; j < dimension; j++) {
+      const distance = hypotenuse(i, j, centre, centre);
 
       // The following is an algorithm that came from the gaussian blur
       // wikipedia page [1].
       //
       // http://en.wikipedia.org/w/index.php?title=Gaussian_blur&oldid=608793634#Mechanics
-      var gaussian = (1 / Math.sqrt(
+      const gaussian = (1 / Math.sqrt(
         Math.PI * twoSigmaSquare
       )) * Math.exp((-1) * (Math.pow(distance, 2) / twoSigmaSquare));
 
@@ -44,8 +44,8 @@ function generateGaussianKernel(dimension, sigma) {
   }
 
   // Returns the unit vector of the kernel array.
-  var sum = kernel.reduce(function (c, p) { return c + p; });
-  return kernel.map(function (e) { return e / sum; });
+  const sum = kernel.reduce((c, p) => c + p);
+  return kernel.map(e => e / sum);
 }
 
 module.exports = generateGaussianKernel;

@@ -1,13 +1,13 @@
-var Buffer = require('buffer').Buffer;
-var x11 = require('../../lib');
+const Buffer = require('buffer').Buffer;
+const x11 = require('../../lib');
 
-var Exposure = x11.eventMask.Exposure;
-var PointerMotion = x11.eventMask.PointerMotion;
+const Exposure = x11.eventMask.Exposure;
+const PointerMotion = x11.eventMask.PointerMotion;
 
-var bitmap = Buffer.alloc(128*128*4); // 16384 bits, 2048 bytes bitmap
-for (var i=0; i < bitmap.length; ++i)
+const bitmap = Buffer.alloc(128*128*4); // 16384 bits, 2048 bytes bitmap
+for (let i=0; i < bitmap.length; ++i)
 {
-    var byteNum = i%4;
+    const byteNum = i%4;
     if (byteNum == 0)
         bitmap[i] = parseInt((i/512)%256);
     if (byteNum == 1)
@@ -19,18 +19,18 @@ for (var i=0; i < bitmap.length; ++i)
 
 }
 
-x11.createClient(function(err, display) {
+x11.createClient((err, display) => {
     if (err) throw err;
 
-    var X = display.client;
-X.require('render', function(err, Render) {
+    const X = display.client;
+X.require('render', (err, Render) => {
 
-    var root = display.screen[0].root;
-    var white = display.screen[0].white_pixel;
-    var black = display.screen[0].black_pixel;
+    const root = display.screen[0].root;
+    const white = display.screen[0].white_pixel;
+    const black = display.screen[0].black_pixel;
     //console.log(display.screen[0]);
 
-    var wid = X.AllocID();
+    const wid = X.AllocID();
     X.CreateWindow(
        wid, root,
        10, 10, 400, 300,
@@ -41,19 +41,19 @@ X.require('render', function(err, Render) {
     );
     X.MapWindow(wid);
 
-    var gc = X.AllocID();
+    const gc = X.AllocID();
     X.CreateGC(gc, wid, { foreground: black, background: white } );
 
-    var pixmap1 = X.AllocID();
+    const pixmap1 = X.AllocID();
     X.CreatePixmap(pixmap1, wid, 32, 128, 128);
-    var pic = X.AllocID();
+    const pic = X.AllocID();
     Render.CreatePicture(pic, pixmap1, Render.rgba32);
 
 
-    var pic1 = X.AllocID();
+    const pic1 = X.AllocID();
     Render.CreatePicture(pic1, wid, Render.rgb24);
 
-    X.on('event', function(ev) {
+    X.on('event', ev => {
         if (ev.type == 12) // expose
         {
             X.PutImage(2, wid, gc, 128, 128, 0, 0, 0, 24, bitmap);
@@ -62,7 +62,7 @@ X.require('render', function(err, Render) {
 
         }
     });
-    X.on('error', function(e) {
+    X.on('error', e => {
         console.log(e);
     });
 

@@ -6,24 +6,24 @@
 // 0.4.9pre: 23300 +/-200 
 
 
-var x11 = require('../../../lib');
+const x11 = require('../../../lib');
 
-var xclient = x11.createClient();
-var counter = 0;
-var t = +new Date();
-var t0 = t;
-var num = 100000;
+const xclient = x11.createClient();
+let counter = 0;
+let t = +new Date();
+const t0 = t;
+const num = 100000;
 xclient.on('connect', function(err, display) {
     console.log(display);
     process.exit(0);
-    var X = this;
-    for (var i=0; i < num; ++i)
+    const X = this;
+    for (let i=0; i < num; ++i)
     { 
-       var hello = 'Hello, node.js ' + i;
-       X.InternAtom(false, hello, function(atomId) {
+       const hello = `Hello, node.js ${i}`;
+       X.InternAtom(false, hello, atomId => {
            if (counter == 0)
            {
-               var t1 = +new Date();
+               const t1 = +new Date();
                console.log('first reply after sending %d atoms in %d ms', num, t1-t);
                t = t1;
            }
@@ -31,7 +31,7 @@ xclient.on('connect', function(err, display) {
            
            if ((counter % 10000) == 0)
            {
-               var t1 = +new Date();
+               const t1 = +new Date();
                console.log('received 10000 (up to %d) atom ids in %d ms', counter, t1 - t);
                t = t1;
            }
@@ -39,11 +39,11 @@ xclient.on('connect', function(err, display) {
            counter++;
            if (counter == (num-1))
            {
-              var t1 = +new Date();
-              var delta = t1 - t0;
+              const t1 = +new Date();
+              const delta = t1 - t0;
               console.log(delta);
-              console.log('reqs/msec: ' + num/delta);
-              console.log('msec per req: ' + delta/num);
+              console.log(`reqs/msec: ${num/delta}`);
+              console.log(`msec per req: ${delta/num}`);
               process.exit(0); // TODO: X.end() ?
            }
        });

@@ -40,14 +40,14 @@
 
 
 
-var view_rotx = 20.0, view_roty = 30.0, view_rotz = 0.0;
-var gear1, gear2, gear3;
-var angle = 0.0;
-var M_PI = Math.PI;
-var sin = Math.sin;
-var cos = Math.cos;
-var sqrt = Math.sqrt;
-var model = require('./teapot');
+const view_rotx = 20.0, view_roty = 30.0, view_rotz = 0.0;
+let gear1, gear2, gear3;
+let angle = 0.0;
+const M_PI = Math.PI;
+const sin = Math.sin;
+const cos = Math.cos;
+const sqrt = Math.sqrt;
+const model = require('./teapot');
 
 
 /*
@@ -64,10 +64,12 @@ var model = require('./teapot');
 
 function gear(gl, inner_radius, outer_radius, width, teeth, tooth_depth)
 {
-   var i;
-   var r0, r1, r2;
-   var angle, da;
-   var u, v, len;
+   let i;
+   let r0, r1, r2;
+   let angle, da;
+   let u;
+   let v;
+   let len;
 
    r0 = inner_radius;
    r1 = outer_radius - tooth_depth / 2.0;
@@ -187,16 +189,16 @@ function gear(gl, inner_radius, outer_radius, width, teeth, tooth_depth)
    gl.render();
 
    gl.Begin(gl.TRIANGLES);
-   var t = 0;
-   var v = 0;
+   let t = 0;
+   v = 0;
 
 
    for (t=0; t < model.indices.length; t+= 3) {
        for (v = 0; v < 3; ++v) {
-           var ind = model.indices[t + v]*3;
-           var x = 0.1*model.vertexPositions[ind + 0];
-           var y = 0.1*model.vertexPositions[ind + 1];
-           var z = 0.1*model.vertexPositions[ind + 2];
+           const ind = model.indices[t + v]*3;
+           let x = 0.1*model.vertexPositions[ind + 0];
+           let y = 0.1*model.vertexPositions[ind + 1];
+           let z = 0.1*model.vertexPositions[ind + 2];
            gl.Vertex3f(x, y, z);
            x = model.vertexNormals[ind + 0];
            y = model.vertexNormals[ind + 1];
@@ -246,7 +248,7 @@ function draw(gl)
 /* new window size or exposure */
 function reshape(gl, width, height)
 {
-   var h = height / width;
+   const h = height / width;
    gl.Viewport(0, 0, width, height);
    gl.MatrixMode(gl.PROJECTION);
    gl.LoadIdentity();
@@ -261,10 +263,10 @@ function reshape(gl, width, height)
 
 function init(gl, done)
 {
-   var pos = [5.0, 5.0, 10.0, 0.0]
-   var red = [ 0.8, 0.1, 0.0, 1.0 ];
-   var green = [ 0.0, 0.8, 0.2, 1.0 ];
-   var blue = [ 0.2, 0.2, 1.0, 1.0 ];
+   const pos = [5.0, 5.0, 10.0, 0.0];
+   const red = [ 0.8, 0.1, 0.0, 1.0 ];
+   const green = [ 0.0, 0.8, 0.2, 1.0 ];
+   const blue = [ 0.2, 0.2, 1.0, 1.0 ];
 
    gl.Lightfv(gl.LIGHT0, gl.POSITION, pos);
    gl.Enable(gl.CULL_FACE);
@@ -273,7 +275,7 @@ function init(gl, done)
    gl.Enable(gl.DEPTH_TEST);
 
    /* make the gears */
-   gl.GenLists(3, function(err, startIndex) {
+   gl.GenLists(3, (err, startIndex) => {
        gear1 = startIndex;
        gl.NewList(gear1, gl.COMPILE);
        gl.Materialfv(gl.FRONT, gl.AMBIENT_AND_DIFFUSE, red);
@@ -296,30 +298,30 @@ function init(gl, done)
    });
 }
 
-var x11 = require('../../lib');
-var eventmask = x11.eventMask.PointerMotion|x11.eventMask.ButtonPress|x11.eventMask.ButtonRelease|x11.eventMask.StructureNotify|x11.eventMask.Exposure;
+const x11 = require('../../lib');
+const eventmask = x11.eventMask.PointerMotion|x11.eventMask.ButtonPress|x11.eventMask.ButtonRelease|x11.eventMask.StructureNotify|x11.eventMask.Exposure;
 
-x11.createClient(function(err, display) {
-    var X = display.client;
-    var root = display.screen[0].root;
-    var width = 1000;
-    var height = 1000;
-    X.require('glx', function(err, GLX) {
-        var visual = 0xa1;
-        var win = X.AllocID();
+x11.createClient((err, display) => {
+    const X = display.client;
+    const root = display.screen[0].root;
+    let width = 1000;
+    let height = 1000;
+    X.require('glx', (err, GLX) => {
+        const visual = 0xa1;
+        const win = X.AllocID();
         X.CreateWindow(win, root, 0, 0, width, height, 0, 0, 0, 0, { eventMask: eventmask });
         X.MapWindow(win);
 
-        var ctx = X.AllocID();
+        const ctx = X.AllocID();
         GLX.CreateContext(ctx, 0xa1, 0, 0, 0);
-        GLX.MakeCurrent(win, ctx, 0, function() {});
-        var gl = GLX.renderPipeline(ctx);
+        GLX.MakeCurrent(win, ctx, 0, () => {});
+        const gl = GLX.renderPipeline(ctx);
 
-        var initialized = false;
-        init(gl, function() {
+        let initialized = false;
+        init(gl, () => {
           gl.render();
           initialized = true;
-          setInterval(function() {
+          setInterval(() => {
               angle += 0.4;
               reshape(gl, width, height);
               draw(gl);
@@ -327,7 +329,7 @@ x11.createClient(function(err, display) {
           }, 20);
         });
 
-        X.on('event', function(ev) {
+        X.on('event', ev => {
            switch(ev.type) {
            case 22:
               //reshape(gl, ev.width, ev.height);
@@ -343,6 +345,6 @@ x11.createClient(function(err, display) {
         });
 
     });
-    X.on('error', function(err) { console.log(err); });
+    X.on('error', err => { console.log(err); });
 });
 ;

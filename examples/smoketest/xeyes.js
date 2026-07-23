@@ -1,19 +1,19 @@
-var x11 = require('../../lib');
+const x11 = require('../../lib');
 
-var Exposure = x11.eventMask.Exposure;
-var PointerMotion = x11.eventMask.PointerMotion;
-var ButtonPress = x11.eventMask.ButtonPress;
-var ButtonRelease = x11.eventMask.ButtonRelease;
+const Exposure = x11.eventMask.Exposure;
+const PointerMotion = x11.eventMask.PointerMotion;
+const ButtonPress = x11.eventMask.ButtonPress;
+const ButtonRelease = x11.eventMask.ButtonRelease;
 
 //function drawEyes(w, h
 
-x11.createClient(function(err, display) {
-    var X = display.client;
-    var root = display.screen[0].root;
-    var white = display.screen[0].white_pixel;
-    var black = display.screen[0].black_pixel;
+x11.createClient((err, display) => {
+    const X = display.client;
+    const root = display.screen[0].root;
+    const white = display.screen[0].white_pixel;
+    const black = display.screen[0].black_pixel;
 
-    var wid = X.AllocID();
+    const wid = X.AllocID();
     X.CreateWindow(
        wid, root,
        10, 10, 400, 300,
@@ -24,14 +24,14 @@ x11.createClient(function(err, display) {
     );
     X.MapWindow(wid);
 
-    var gc = X.AllocID();
+    const gc = X.AllocID();
     X.CreateGC(gc, wid, { foreground: black, background: white } );
-    var gc1 = X.AllocID();
+    const gc1 = X.AllocID();
     X.CreateGC(gc1, wid, { foreground: white, background: black } );
 
-    var angle = 23040;
+    let angle = 23040;
 
-    X.on('event', function(ev) {
+    X.on('event', ev => {
         if (ev.type == 12)
         {
             X.PolyFillArc(wid, gc, [20, 30, 100, 100, 0, 180]);
@@ -55,7 +55,7 @@ x11.createClient(function(err, display) {
 
     });
 
-    X.on('error', function(e) {
+    X.on('error', e => {
         console.log(e);
     });
 });

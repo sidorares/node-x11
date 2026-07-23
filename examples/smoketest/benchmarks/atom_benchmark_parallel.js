@@ -9,41 +9,41 @@
 // 0.4.9pre:  16700 +/-300
 
 
-var x11 = require('../../../lib');
+const x11 = require('../../../lib');
 
-var xclient = x11.createClient();
-var reqcounter = 0;
-var rescounter = 0;
+const xclient = x11.createClient();
+let reqcounter = 0;
+let rescounter = 0;
 
-var num = 400000;
-var X;
+const num = 400000;
+let X;
 
-var t0 = +new Date();
+const t0 = +new Date();
 
 function benchmarkAtoms()
 {
     if (reqcounter > num)
         return;
 
-    X.InternAtom(false, 'test ' + reqcounter, function(atomId) {
+    X.InternAtom(false, `test ${reqcounter}`, atomId => {
         rescounter++;
         //console.log('%d received', rescounter);
         if ( (rescounter % 10000) == 0)
         { 
-            var t2 = X.t1;
+            const t2 = X.t1;
             X.t1 = +new Date();
-            var delta = X.t1 - t2;
+            const delta = X.t1 - t2;
             console.log(reqcounter - rescounter);
-            console.log('reqs/msec: ' + 10000/delta);
-            console.log('msec per req: ' + delta/10000);
+            console.log(`reqs/msec: ${10000/delta}`);
+            console.log(`msec per req: ${delta/10000}`);
         }
         if (rescounter == (num-2))
         {
-            var t1 = +new Date();
-            var delta = t1 - t0;
+            const t1 = +new Date();
+            const delta = t1 - t0;
             console.log(delta);
-            console.log('reqs/msec: ' + num/delta);
-            console.log('msec per req: ' + delta/num);
+            console.log(`reqs/msec: ${num/delta}`);
+            console.log(`msec per req: ${delta/num}`);
              
             process.exit(0);
         }

@@ -1,21 +1,19 @@
-var sax = require('sax');
-var fs = require('fs');
-var assert = require('assert');
-var oe = process.exit;
-process.exit = function() {
+const sax = require('sax');
+const fs = require('fs');
+const assert = require('assert');
+const oe = process.exit;
+process.exit = () => {
     console.trace();
     oe(0);
 }
 
-var keywords = {
+const keywords = {
     'class': 'windowClass'
 };
 
 function camelcase(name) {
-  name = name.split('_').reduce(function(str, word){
-    return str + word[0].toUpperCase() + word.slice(1);
-  });
-  var keyword = keywords[name];
+  name = name.split('_').reduce((str, word) => str + word[0].toUpperCase() + word.slice(1));
+  const keyword = keywords[name];
   return keyword ? keyword : name;
 }
 
@@ -24,7 +22,7 @@ function camelParam(a)
   return a[0].toLowerCase() + a.substr(1);
 }
 
-var baseTypeSize = {
+const baseTypeSize = {
    'enum': 1,
    'BOOL': 1,
    'UInt8': 1,
@@ -33,9 +31,9 @@ var baseTypeSize = {
    'Int16LE': 2,
    'UInt32LE': 4,
    'Int32LE': 4
-}
+};
 
-var types = {
+const types = {
   'BOOL': 'UInt8',
   'BYTE': 'Int8',
   'CARD8': 'UInt8',
@@ -44,17 +42,17 @@ var types = {
   'INT16': 'Int16LE',
   'CARD32': 'UInt32LE',
   'INT32': 'Int32LE'
-}
+};
 
 function readProto(index, protoname, structs) {
      
-    var name = index[protoname].file;
+    const name = index[protoname].file;
 
-var structs = {}
+structs = {}
 
-var parser = sax.createStream(true);
+const parser = sax.createStream(true);
 
-parser.startStruct = function(name, type) {
+parser.startStruct = (name, type) => {
    parser.offset = 0;
    if (structs[name]) {
       console.log(structs[name]);
@@ -75,7 +73,7 @@ parser.stack = [];
 fs.createReadStream(name).pipe(parser);
 
 parser.on('opentag', 
-  function(tag) {
+  tag => {
     if (parser.inDoc)
       return;
     parser.stack.push(tag.name);
@@ -102,14 +100,14 @@ parser.on('opentag',
        }
        parser.startStruct(tag.attributes.name, tag.name);
        if (tag.name == 'request') {
-         var op = parser.struct.opcode = parseInt(tag.attributes.opcode);
+         const op = parser.struct.opcode = parseInt(tag.attributes.opcode);
          assert.strictEqual(op.toString(), tag.attributes.opcode);
        }
        break;
     case 'field':
-       var f = {name: camelcase(tag.attributes.name), type: tag.attributes.type };
+       const f = {name: camelcase(tag.attributes.name), type: tag.attributes.type };
        // copy all values in this list from attr to result
-       ['expression'].forEach(function(ff) { if (tag.attributes[ff]) { f[ff] = tag.attributes[ff] }});
+       ['expression'].forEach(ff => { if (tag.attributes[ff]) { f[ff] = tag.attributes[ff] }});
        parser.active.push(f);
        break;
     case 'pad':
@@ -141,7 +139,7 @@ parser.on('opentag',
 );
 
 parser.on('closetag',
-  function(tag) {
+  tag => {
     parser.stack.pop();
     if (tag === 'doc')
     {
@@ -175,13 +173,13 @@ parser.on('closetag',
         //genWriteReq(structs.CreateWindow);
         //genWriteReq(structs.ConfigureWindow);
         //break;
-        console.log("var requests = {");
-        var reqsArr = []; //ugly
+        console.log("const requests = {");
+        const reqsArr = []; //ugly
         for (s in structs) {
           if (structs[s].type == 'request')
             reqsArr.push(structs[s]); 
         }
-        for (var i=0; i < reqsArr.length; ++i)
+        for (let i=0; i < reqsArr.length; ++i)
           genReq(reqsArr[i], i+1==reqsArr.length);
         break;
     }
@@ -189,8 +187,7 @@ parser.on('closetag',
 );
 
 parser.on('text', 
-  function(text) 
-  { 
+  text => { 
     parser.lastText = text 
   }
 );
@@ -205,11 +202,11 @@ function fieldLength(f)
      return 0;
    if (f.type === 'STRING8')
      return 0;
-   var len = baseTypeSize[types[f.type]]; 
+   const len = baseTypeSize[types[f.type]]; 
   if (!len)
    {
       console.log('unknown field:', f);
-      console.log('at input line: ' + parser._parser.line);
+      console.log(`at input line: ${parser._parser.line}`);
       process.exit(0);
    } 
    return len;
@@ -217,17 +214,17 @@ function fieldLength(f)
 
 function genReply(reply, result)
 {
-  var offset = 0;
+  const offset = 0;
   result.push('  },');
-  var rep0 = reply[0];
+  const rep0 = reply[0];
   if (rep0.type != 'pad') {
     assert.equal(fieldLength(rep0), 1);
-    result.push('  function(data, ' + rep0.name + ') {');
-    result.push('    var result = {};');
-    result.push('    result.' + rep0.name + ' = ' + rep0.name + ';');
+    result.push(`  function(data, ${rep0.name}) {`);
+    result.push('    const result = {};');
+    result.push(`    result.${rep0.name} = ${rep0.name};`);
   } else {
     result.push('  function(data) {');
-    result.push('    var result = {};');
+    result.push('    const result = {};');
   }
   // de-serealise fields array
   result.push('    // fields here');
@@ -238,11 +235,11 @@ function genReply(reply, result)
 
 function genReq(req, last)
 {
-   var result = [];
+   const result = [];
    // 1) calculate length
    //console.log(req.body);
-   var reqLen = 4; // byte 0 = opcode + 2,3= size (BigReq = off)
-   result.push(req.name + ': [');
+   let reqLen = 4; // byte 0 = opcode + 2,3= size (BigReq = off)
+   result.push(`${req.name}: [`);
   
    //
    // special cases for frequent cases: no parama, 1 4 byte param etc.
@@ -252,13 +249,13 @@ function genReq(req, last)
    if (req.body.length == 0)
    {       
        result.push('  function() {');
-       result.push('     return Buffer.from([' + req.opcode + ', 0, 1, 0]);');
+       result.push(`     return Buffer.from([${req.opcode}, 0, 1, 0]);`);
    } else {
    result.push('  function (args) {');
-   result.push('    var extraLength = 0;');
-   var extraLength = false;
-   for (var arg = 1; arg < req.body.length; ++arg) {
-      var field = req.body[arg];
+   result.push('    let extraLength = 0;');
+   let extraLength = false;
+   for (let arg = 1; arg < req.body.length; ++arg) {
+      const field = req.body[arg];
       reqLen += fieldLength(field);
       if (field.type === 'valueparam')
       {
@@ -266,7 +263,7 @@ function genReq(req, last)
           //console.log('valueparam field, ', field);
           // linear search, gives us n^2 performance in the worst case 
           // but for xcore and all extensions we don't have bad cases
-          for (var i=arg-1; i > 1; --i) // we don't support param0 as a valuemask
+          for (let i=arg-1; i > 1; --i) // we don't support param0 as a valuemask
           {
               if (req.body[i].name === field.maskRef)
               {
@@ -276,7 +273,7 @@ function genReq(req, last)
               }  
           }
 
-            result.push('    for (var i in ' + field.listRef + ') {');
+            result.push(`    for (const i in ${field.listRef}) {`);
             result.push('      if (args[i] != undefined) {');
             result.push('        extraLength += 4;'); //TODO: value list value type here
             result.push('      }');
@@ -284,28 +281,28 @@ function genReq(req, last)
 
       }
    }
-   var reqLen4 = ((reqLen + 3) >> 2);
+   const reqLen4 = ((reqLen + 3) >> 2);
 
    if (extraLength)
-     result.push('    var data = Buffer.alloc(' + reqLen + ' + extraLength);');
+     result.push(`    const data = Buffer.alloc(${reqLen} + extraLength);`);
    else {
      result.pop(); 
-     result.push('    var data = Buffer.alloc(' + reqLen + ');');
+     result.push(`    const data = Buffer.alloc(${reqLen});`);
    } 
-   result.push('    data[0] = ' + req.opcode + ';');
+   result.push(`    data[0] = ${req.opcode};`);
    if (req.body.length != 0) {
      if (req.body[0].type != 'pad')
-        result.push('    data[1] = args[\'' + req.body[0].name + '\'];'); 
-     var offset = 4;
-     for (var arg = 1; arg < req.body.length; ++arg)
+        result.push(`    data[1] = args['${req.body[0].name}'];`); 
+     let offset = 4;
+     for (let arg = 1; arg < req.body.length; ++arg)
 	     {
-        var f = req.body[arg];
+        const f = req.body[arg];
         if (f.type === 'pad') {
             offset += f.pad;
         } else if (f.valueList) {
-            var valueListStruct = structs[f.valueList.listRef];
+            const valueListStruct = structs[f.valueList.listRef];
             assert(valueListStruct, "undefined reference to valueList");
-            result.push('    // value mask for ' + valueListStruct.name + ' parameters');
+            result.push(`    // value mask for ${valueListStruct.name} parameters`);
             f.valueList.maskOffset = offset;
             offset += fieldLength(f);
         } else if (f.type === 'valueparam') {
@@ -317,27 +314,27 @@ function genReq(req, last)
             }
 
             // TODO: maybe is better to loop args and check if it present in listRef struct? instead of iterating listRef 
-            result.push('    // values for ' + f.listRef);
-            result.push('    var mask = 0;');
-            result.push('    var offset = ' + offset + ';');
-            result.push('    for (var i in ' + f.listRef + ') {');
+            result.push(`    // values for ${f.listRef}`);
+            result.push('    let mask = 0;');
+            result.push(`    let offset = ${offset};`);
+            result.push(`    for (const i in ${f.listRef}) {`);
             result.push('      if (args[i] != undefined) {');
-            result.push('        mask |= ' + f.listRef + '[i];');
+            result.push(`        mask |= ${f.listRef}[i];`);
             // TODO: list-item-type? or type for each listRef enum
             // currently hardcoded CARD32           
             result.push('        data.writeUInt32LE(args[i], offset);');
             result.push('        offset +=4;');
             result.push('      }');
             result.push('    }');
-            result.push('    data.write' + types[f.maskType] + '(mask, ' + f.maskOffset + ')');
+            result.push(`    data.write${types[f.maskType]}(mask, ${f.maskOffset})`);
         } else if (f.type === 'STRING8') {
-            result.push('    data.write(args[' + f.name + '], offset);');
-            result.push('    offset += args[' + f.name + '].lengt');
+            result.push(`    data.write(args[${f.name}], offset);`);
+            result.push(`    offset += args[${f.name}].lengt`);
         } else {
             if (f.expression)
-              result.push('    data.write' + types[f.type] + '(' + f.expression + ', ' + offset + ');');
+              result.push(`    data.write${types[f.type]}(${f.expression}, ${offset});`);
             else
-              result.push('    data.write' + types[f.type] + '(args[\'' + req.body[arg].name + '\'], ' + offset + ');');
+              result.push(`    data.write${types[f.type]}(args['${req.body[arg].name}'], ${offset});`);
             offset += fieldLength(f);
         }
      }
@@ -345,9 +342,9 @@ function genReq(req, last)
      result.push('    data[1] = 0;'); 
    }
    if (!extraLength)
-     result.push('    data.writeUInt16LE(' + reqLen4 + ', 2);');
+     result.push(`    data.writeUInt16LE(${reqLen4}, 2);`);
    else
-     result.push('    data.writeUInt16LE(' + reqLen4 + '+(extraLength+3)>>2, 2);');
+     result.push(`    data.writeUInt16LE(${reqLen4}+(extraLength+3)>>2, 2);`);
    result.push('    return data;');
   
    } // if no params
@@ -357,14 +354,14 @@ function genReq(req, last)
    } else {
        genReply(req.reply, result);
   }
-   result.push(']' + (last ? '}' : ','))
+   result.push(`]${last ? '}' : ','}`)
    console.log(result.join('\n'));
 }
 
 }
 
-var index = require('./makeindex');
-index('./proto/', function(index) {
+const index = require('./makeindex');
+index('./proto/', index => {
   readProto(index, 'xproto');
 });
 

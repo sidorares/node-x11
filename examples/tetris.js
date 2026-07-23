@@ -1,4 +1,4 @@
-var figs = [
+const figs = [
     //[ 0, 0, 4, 0],
 
     //  0 0
@@ -21,20 +21,20 @@ var figs = [
     [ 0, 0, -1, 0, -2, 0, 0, -1 ]
 ];
 
-var Buffer = require('buffer').Buffer;
+const Buffer = require('buffer').Buffer;
 
-var startpos = [4, 15];
-var cupsize = [10, 20];
-var cup = Buffer.alloc(cupsize[0]*cupsize[1]);
-var moveInterval;
+const startpos = [4, 15];
+const cupsize = [10, 20];
+const cup = Buffer.alloc(cupsize[0]*cupsize[1]);
+let moveInterval;
 
 function clearCup()
 {
-    for (var i=0; i <cup.length; ++i)
+    for (let i=0; i <cup.length; ++i)
         cup[i] = 0;
 }
 
-var anglecoeff = [1, 0,  0, 1,
+const anglecoeff = [1, 0,  0, 1,
                   0, -1, 1, 0,
                   -1, 0, 0, -1,
                   0, 1, -1, 0];
@@ -47,11 +47,11 @@ var anglecoeff = [1, 0,  0, 1,
 function intersects(num, pos, angle)
 {
     angle %= 4;
-    var fig = getTransformedFigure(num, angle, pos);
-    for (var i=0; i < fig.length; i+= 2)
+    const fig = getTransformedFigure(num, angle, pos);
+    for (let i=0; i < fig.length; i+= 2)
     {
-        var x = fig[i];
-        var y = fig[i+1]
+        const x = fig[i];
+        const y = fig[i+1];
         if (y < 0)
             return true;
         if (x < 0)
@@ -69,35 +69,34 @@ function intersects(num, pos, angle)
 function putfig(num, pos, angle)
 {
     angle %= 4;
-    var fig = getTransformedFigure(num, angle, pos);
-    for (var i=0; i < fig.length; i+= 2)
+    const fig = getTransformedFigure(num, angle, pos);
+    for (let i=0; i < fig.length; i+= 2)
     {
-        var x = fig[i];
-        var y = fig[i+1]
-        var ind = x + y*cupsize[0];
+        const x = fig[i];
+        const y = fig[i+1];
+        const ind = x + y*cupsize[0];
         cup[ind] = 1;
     }
 }
 
 function deleteLines()
 {
-    for (var y=0; y < cupsize[1]; ++y)
+    for (let y=0; y < cupsize[1]; ++y)
     {
-        var count = 0;
-        for (var x=0; x < cupsize[0]; ++x)
+        let count = 0;
+        for (let x=0; x < cupsize[0]; ++x)
         {
-           var i = x + y*cupsize[0];
+           const i = x + y*cupsize[0];
            if (cup[i] == 1)
                count++;
         }
         if (count == cupsize[0]) // full line;
         {
-            var count = 0;
-            for (var yy=y; yy < cupsize[1] - 1; ++yy)
+            for (let yy=y; yy < cupsize[1] - 1; ++yy)
             {
-                for (var xx=0; xx < cupsize[0]; ++xx)
+                for (let xx=0; xx < cupsize[0]; ++xx)
                 {
-                   var ii = xx + yy*cupsize[0];
+                   const ii = xx + yy*cupsize[0];
                    cup[ii] = cup[ii+cupsize[0]];
                 }
             }
@@ -106,21 +105,21 @@ function deleteLines()
     }
 }
 
-var x11 = require('../lib');
-var Exposure = x11.eventMask.Exposure;
-var KeyPress = x11.eventMask.KeyPress;
-var sqsize = 15;
-var wid, cidBlack, cidWhite;
-var angle = 0;
-var gamestate = 'stopped';
-var timer;
-var X;
-var pos = [4, 13];
-var fignum = 0;
+const x11 = require('../lib');
+const Exposure = x11.eventMask.Exposure;
+const KeyPress = x11.eventMask.KeyPress;
+const sqsize = 15;
+let wid, cidBlack, cidWhite;
+let angle = 0;
+const gamestate = 'stopped';
+let timer;
+let X;
+let pos = [4, 13];
+let fignum = 0;
 
 function timerMove()
 {
-    var newpos = [pos[0], pos[1]];
+    const newpos = [pos[0], pos[1]];
     newpos[1]--;
     if (intersects(fignum, newpos, angle))
     {
@@ -151,14 +150,14 @@ function startGame()
 
 function getTransformedFigure(num, angle, pos)
 {
-    var tfig = [];
-    var fig = figs[num];
-    for (var i=0; i < fig.length; i+=2)
+    const tfig = [];
+    const fig = figs[num];
+    for (let i=0; i < fig.length; i+=2)
     {
-        var figx = fig[i];
-        var figy = fig[i+1]
-        var x = pos[0] + anglecoeff[angle*4]*figx + anglecoeff[angle*4+1]*figy;
-        var y = pos[1] + anglecoeff[angle*4+2]*figx + anglecoeff[angle*4+3]*figy;
+        const figx = fig[i];
+        const figy = fig[i+1];
+        const x = pos[0] + anglecoeff[angle*4]*figx + anglecoeff[angle*4+1]*figy;
+        const y = pos[1] + anglecoeff[angle*4+2]*figx + anglecoeff[angle*4+3]*figy;
         tfig.push(x);
         tfig.push(y);
     }
@@ -167,25 +166,25 @@ function getTransformedFigure(num, angle, pos)
 
 function draw()
 {
-    var whiterects = [];
-    var blackrects = [];
-    for (var x=0; x < cupsize[0]; ++x)
+    let whiterects = [];
+    let blackrects = [];
+    for (let x=0; x < cupsize[0]; ++x)
     {
-        for (var y=0; y < cupsize[1]; ++y)
+        for (let y=0; y < cupsize[1]; ++y)
         {
-            var index = x + y*cupsize[0];
-            var rect = [x*sqsize, (cupsize[1]-1)*sqsize - y*sqsize, sqsize, sqsize];
+            const index = x + y*cupsize[0];
+            const rect = [x*sqsize, (cupsize[1]-1)*sqsize - y*sqsize, sqsize, sqsize];
             if (cup[index] != 0)
                 blackrects = blackrects.concat(rect);
             else
                 whiterects = whiterects.concat(rect);
         }
     }
-    var fig = getTransformedFigure(fignum, angle, pos);
-    for (var i=0; i < fig.length; i+=2)
+    const fig = getTransformedFigure(fignum, angle, pos);
+    for (let i=0; i < fig.length; i+=2)
     {
-        var x = fig[i];
-        var y = fig[i+1]
+        const x = fig[i];
+        const y = fig[i+1]
         blackrects = blackrects.concat([x*sqsize, (cupsize[1]-1)*sqsize - y*sqsize, sqsize, sqsize]);
     }
     X.PolyFillRectangle(wid, cidWhite, whiterects);
@@ -194,7 +193,7 @@ function draw()
 
 function rotate(v)
 {
-    var newangle = angle + v;
+    let newangle = angle + v;
     if (newangle < 0)
         newangle = 3;
     if (newangle >= 4)
@@ -218,7 +217,7 @@ function rotateDown()
 
 function moveX(v)
 {
-    var newpos = [pos[0] + v, pos[1]];
+    const newpos = [pos[0] + v, pos[1]];
     if (intersects(fignum, newpos, angle))
         return;
     pos = [newpos[0], newpos[1]];
@@ -237,7 +236,7 @@ function moveRight()
 
 function drop()
 {
-    var newpos = [pos[0], pos[1]];
+    const newpos = [pos[0], pos[1]];
     while (!intersects(fignum, newpos, angle))
         newpos[1]--;
     newpos[1]++;
@@ -246,27 +245,27 @@ function drop()
 }
 
 
-x11.createClient(function(err, display) {
-    var ks = x11.keySyms;
-    var ks2Name = {};
-    for (var key in ks)
+x11.createClient((err, display) => {
+    const ks = x11.keySyms;
+    const ks2Name = {};
+    for (const key in ks)
         ks2Name[ ks[key].code ] = key;
-    var kk2Name = {};
-    var min = display.min_keycode;
-    var max = display.max_keycode;
+    const kk2Name = {};
+    const min = display.min_keycode;
+    const max = display.max_keycode;
     X = display.client;
-    X.GetKeyboardMapping(min, max-min, function(err, list) {
-        for (var i=0; i < list.length; ++i)
+    X.GetKeyboardMapping(min, max-min, (err, list) => {
+        for (let i=0; i < list.length; ++i)
         {
-            var name = kk2Name[i+min] = [];
-            var sublist = list[i];
-            for (var j =0; j < sublist.length; ++j)
+            const name = kk2Name[i+min] = [];
+            const sublist = list[i];
+            for (let j =0; j < sublist.length; ++j)
                 name.push(ks2Name[sublist[j]]);
         }
 
-    var root = display.screen[0].root;
-    var white = display.screen[0].white_pixel;
-    var black = display.screen[0].black_pixel;
+    const root = display.screen[0].root;
+    const white = display.screen[0].white_pixel;
+    const black = display.screen[0].black_pixel;
     wid = X.AllocID();
     X.CreateWindow(wid, root, 0, 0, cupsize[0]*sqsize, cupsize[1]*sqsize, 0, 0, 0, 0, { backgroundPixel: white, eventMask: KeyPress|Exposure });
     cidBlack = X.AllocID();
@@ -278,14 +277,14 @@ x11.createClient(function(err, display) {
     clearCup();
     startGame();
 
-    X.on('event', function(ev) {
+    X.on('event', ev => {
          switch(ev.type) {
          case 6:
               break;
          case 12: // expose
               draw(); break;
          case 2:
-              var key = kk2Name[ev.keycode][0];
+              const key = kk2Name[ev.keycode][0];
               console.log(key);
               switch(key) {
                   case 'XK_Up': rotateUp(); break;
@@ -300,7 +299,7 @@ x11.createClient(function(err, display) {
          }
     });
 
-    X.on('end', function() {
+    X.on('end', () => {
         clearInterval(moveInterval);
     });
 

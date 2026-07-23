@@ -1,12 +1,12 @@
-var x11 = require('../../lib');
+const x11 = require('../../lib');
 
-var Expose = 12;
+const Expose = 12;
 
-x11.createClient(function(err, display) {
-    var X = display.client;
-    var root = display.screen[0].root;
-    X.require('shape', function(err, Shape) {
-        var win = X.AllocID();
+x11.createClient((err, display) => {
+    const X = display.client;
+    const root = display.screen[0].root;
+    X.require('shape', (err, Shape) => {
+        const win = X.AllocID();
         X.CreateWindow(win, root, 0, 0, 200, 200);
         X.ChangeWindowAttributes(win, { backgroundPixel: display.screen[0].black_pixel });
         X.MapWindow(win);
@@ -17,6 +17,6 @@ x11.createClient(function(err, display) {
             [50, 160, 100, 20]
         ]);
     });
-    X.on('error', function(err) { console.log(err); });
+    X.on('error', err => { console.log(err); });
 
 });

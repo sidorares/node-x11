@@ -40,13 +40,16 @@
 
 
 
-var view_rotx = 20.0, view_roty = 30.0, view_rotz = 0.0;
-var gear1, gear2, gear3;
-var angle = 0.0;
-var M_PI = Math.PI;
-var sin = Math.sin;
-var cos = Math.cos;
-var sqrt = Math.sqrt;
+let view_rotx = 20.0;
+
+let view_roty = 30.0;
+const view_rotz = 0.0;
+let gear1, gear2, gear3;
+let angle = 0.0;
+const M_PI = Math.PI;
+const sin = Math.sin;
+const cos = Math.cos;
+const sqrt = Math.sqrt;
 
 /*
  *
@@ -62,10 +65,10 @@ var sqrt = Math.sqrt;
 
 function gear(gl, inner_radius, outer_radius, width, teeth, tooth_depth)
 {
-   var i;
-   var r0, r1, r2;
-   var angle, da;
-   var u, v, len;
+   let i;
+   let r0, r1, r2;
+   let angle, da;
+   let u, v, len;
 
    r0 = inner_radius;
    r1 = outer_radius - tooth_depth / 2.0;
@@ -218,7 +221,7 @@ function draw(gl)
 /* new window size or exposure */
 function reshape(gl, width, height)
 {
-   var h = height / width;
+   const h = height / width;
    gl.Viewport(0, 0, width, height);
    gl.MatrixMode(gl.PROJECTION);
    gl.LoadIdentity();
@@ -232,10 +235,10 @@ function reshape(gl, width, height)
 
 function init(gl, done)
 {
-   var pos = [5.0, 5.0, 10.0, 0.0]
-   var red = [ 0.8, 0.1, 0.0, 1.0 ];
-   var green = [ 0.0, 0.8, 0.2, 1.0 ];
-   var blue = [ 0.2, 0.2, 1.0, 1.0 ];
+   const pos = [5.0, 5.0, 10.0, 0.0];
+   const red = [ 0.8, 0.1, 0.0, 1.0 ];
+   const green = [ 0.0, 0.8, 0.2, 1.0 ];
+   const blue = [ 0.2, 0.2, 1.0, 1.0 ];
 
    gl.Lightfv(gl.LIGHT0, gl.POSITION, pos);
    gl.Enable(gl.CULL_FACE);
@@ -244,7 +247,7 @@ function init(gl, done)
    gl.Enable(gl.DEPTH_TEST);
 
    /* make the gears */
-   gl.GenLists(3, function(err, startIndex) {
+   gl.GenLists(3, (err, startIndex) => {
        if (err)
        {
            console.log(err);
@@ -272,14 +275,14 @@ function init(gl, done)
    });
 }
 
-var x11 = require('../../lib');
+const x11 = require('../../lib');
 //var eventmask = x11.eventMask.PointerMotion|x11.eventMask.PointerMotionHint|x11.eventMask.ButtonPress|x11.eventMask.ButtonRelease|x11.eventMask.StructureNotify|x11.eventMask.Exposure;
-var eventmask = x11.eventMask.PointerMotion;
+const eventmask = x11.eventMask.PointerMotion;
 //var eventmask = x11.eventMask.PointerMotion|x11.eventMask.ButtonPress|x11.eventMask.ButtonRelease|x11.eventMask.StructureNotify|x11.eventMask.Exposure;
-var exec = require('child_process').exec;
+const exec = require('child_process').exec;
 
 function findBestVisual(display, done) {
-    exec('glxinfo -i -b', function(error, stdout, stderr) {
+    exec('glxinfo -i -b', (error, stdout, stderr) => {
         console.log(stdout);
         if (error)
             return done(error);
@@ -289,14 +292,14 @@ function findBestVisual(display, done) {
 }
 
 
-x11.createClient(function(error, display) {
-    var X = display.client;
-    var root = display.screen[0].root;
-    var width = 500;
-    var height = 500;
-    X.require('glx', function(err, GLX) {
-        var depth = 24;
-        findBestVisual(display, function(err, visual) {
+x11.createClient((error, display) => {
+    const X = display.client;
+    const root = display.screen[0].root;
+    let width = 500;
+    let height = 500;
+    X.require('glx', (err, GLX) => {
+        const depth = 24;
+        findBestVisual(display, (err, visual) => {
 
         /*
         var visual = 147;
@@ -313,22 +316,22 @@ x11.createClient(function(error, display) {
         }
         */
 
-        var cmid = X.AllocID();
+        const cmid = X.AllocID();
         X.CreateColormap(cmid, root, visual, 0);
-        var win = X.AllocID();
+        const win = X.AllocID();
         console.log(eventmask);
         X.CreateWindow(win, root, 0, 0, width, height, 0, depth, 0, visual, { eventMask: eventmask, colormap: cmid, backgroundPixel: 0, borderPixel: 0 });
         X.MapWindow(win);
 
-        var ctx = X.AllocID();
+        const ctx = X.AllocID();
         GLX.CreateContext(ctx, visual, 0, 0, 0);
-        GLX.MakeCurrent(win, ctx, 0, function() {});
-        var gl = GLX.renderPipeline(ctx);
+        GLX.MakeCurrent(win, ctx, 0, () => {});
+        const gl = GLX.renderPipeline(ctx);
 
-        var initialized = false;
-        init(gl, function() {
+        let initialized = false;
+        init(gl, () => {
           initialized = true;
-          setInterval(function() {
+          setInterval(() => {
               angle += 2;
               reshape(gl, width, height);
               draw(gl);
@@ -336,7 +339,7 @@ x11.createClient(function(error, display) {
           }, 50);
         });
 
-        X.on('event', function(ev) {
+        X.on('event', ev => {
            console.log(ev);
            switch(ev.type) {
            case 22:
@@ -345,7 +348,7 @@ x11.createClient(function(error, display) {
               height = ev.height;
               break;
            case 6:
-              X.QueryPointer(win, function(err, pointer) {
+              X.QueryPointer(win, (err, pointer) => {
                 view_rotx = pointer.childX;
                 view_roty = pointer.childY;
                 reshape(gl, width, height);
@@ -364,6 +367,5 @@ x11.createClient(function(error, display) {
  }); // findBestVisual
 
     });
-    X.on('error', function(err) { console.log(err); });
+    X.on('error', err => { console.log(err); });
 });
-;

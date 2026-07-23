@@ -1,15 +1,15 @@
-var x11 = require('../../lib');
-var EventEmitter = require('events').EventEmitter;
+const x11 = require('../../lib');
+const EventEmitter = require('events').EventEmitter;
 
-var X, root, white;
-var events = x11.eventMask.Button1Motion|x11.eventMask.ButtonPress|x11.eventMask.ButtonRelease|x11.eventMask.SubstructureNotify|x11.eventMask.SubstructureRedirect|x11.eventMask.Exposure;
-var frames = {};
-var dragStart = null;
+let X, root, white;
+const events = x11.eventMask.Button1Motion|x11.eventMask.ButtonPress|x11.eventMask.ButtonRelease|x11.eventMask.SubstructureNotify|x11.eventMask.SubstructureRedirect|x11.eventMask.Exposure;
+const frames = {};
+let dragStart = null;
 
 function ManageWindow(wid)
 {
-    console.log("MANAGE WINDOW: " + wid);
-    X.GetWindowAttributes(wid, function(err, attrs) {
+    console.log(`MANAGE WINDOW: ${wid}`);
+    X.GetWindowAttributes(wid, (err, attrs) => {
 
         if (attrs[8]) // override-redirect flag
         {
@@ -19,17 +19,17 @@ function ManageWindow(wid)
             return;
         }
 
-    var fid = X.AllocID();
+    const fid = X.AllocID();
     frames[fid] = 1;
-    var winX, winY;
+    let winX, winY;
     winX = parseInt(Math.random()*300);
     winY = parseInt(Math.random()*300);
 
-    X.GetGeometry(wid, function(err, clientGeom) {
+    X.GetGeometry(wid, (err, clientGeom) => {
 
         console.log("window geometry: ", clientGeom);
-        var width = clientGeom.width + 4;
-        var height = clientGeom.height + 24;
+        const width = clientGeom.width + 4;
+        const height = clientGeom.height + 24;
         console.log("CreateWindow", fid, root, winX, winY, width, height);
         X.CreateWindow(fid, root, winX, winY, width, height, 0, 0, 0, 0,
         {
@@ -37,27 +37,26 @@ function ManageWindow(wid)
             eventMask: events
         });
 
-         var bggrad = X.AllocID();
+         const bggrad = X.AllocID();
          X.Render.LinearGradient(bggrad, [0,0], [0,24],
                 [
                   [0,   [0,0,0xffff,0xffffff ] ],
                   [1,   [0x00ff, 0xff00, 0, 0xffffff] ]
                 ]);
 
-        var framepic = X.AllocID();
+        const framepic = X.AllocID();
         X.Render.CreatePicture(framepic, fid, X.Render.rgb24);
 
 
-        var ee = new EventEmitter();
+        const ee = new EventEmitter();
         X.event_consumers[fid] = ee;
-        ee.on('event', function(ev)
-        {
+        ee.on('event', ev => {
             console.log(['event', ev]);
             if (ev.type === 17) // DestroyNotify
             {
                X.DestroyWindow(fid);
             } else if (ev.type == 4) {
-                dragStart = { rootx: ev.rootx, rooty: ev.rooty, x: ev.x, y: ev.y, winX: winX, winY: winY };
+                dragStart = { rootx: ev.rootx, rooty: ev.rooty, x: ev.x, y: ev.y, winX, winY };
             } else if (ev.type == 5) {
                 dragStart = null;
             } else if (ev.type == 6) {
@@ -78,22 +77,22 @@ function ManageWindow(wid)
     });
 }
 
-x11.createClient(function(err, display) {
+x11.createClient((err, display) => {
     X = display.client;
-    X.require('render', function(err, Render) {
+    X.require('render', (err, Render) => {
     X.Render = Render;
 
     root = display.screen[0].root;
     white = display.screen[0].white_pixel;
-    console.log('root = ' + root);
-    X.ChangeWindowAttributes(root, { eventMask: x11.eventMask.Exposure|x11.eventMask.SubstructureRedirect }, function(err) {
+    console.log(`root = ${root}`);
+    X.ChangeWindowAttributes(root, { eventMask: x11.eventMask.Exposure|x11.eventMask.SubstructureRedirect }, err => {
         if (err.error == 10)
         {
             console.error('Error: another window manager already running.');
             process.exit(1);
         }
     });
-    X.QueryTree(root, function(err, tree) {
+    X.QueryTree(root, (err, tree) => {
         tree.children.forEach(ManageWindow);
     });
 
@@ -113,9 +112,9 @@ x11.createClient(function(err, display) {
     Render.CreatePicture(X.rootpic, root, Render.rgb24);
 })
 
-}).on('error', function(err) {
+}).on('error', err => {
     console.error(err);
-}).on('event', function(ev) {
+}).on('event', ev => {
     console.log(ev);
     if (ev.type === 20)        // MapRequest
     {

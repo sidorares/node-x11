@@ -1,10 +1,10 @@
 //var clog = clog;
-var clog = function() {};
+const clog = () => {};
 
-var EventEmitter = require('events').EventEmitter;
-var util = require('util');
+const EventEmitter = require('events').EventEmitter;
+const util = require('util');
 
-var argument_length = {};
+const argument_length = {};
 argument_length.C = 1;
 argument_length.S = 2;
 argument_length.s = 2;
@@ -51,15 +51,15 @@ ReadFixedRequest.prototype.execute = function(bufferlist)
     // [ b1 b2 b3 b4 b5 ]
     
     
-    var to_receive = this.length - this.received_bytes;
+    let to_receive = this.length - this.received_bytes;
     //clog([bufferlist.offset, bufferlist.length, to_receive]);
     
-    var buffs = bufferlist.readlist;
-    var off = bufferlist.offset;
+    const buffs = bufferlist.readlist;
+    const off = bufferlist.offset;
     if (buffs.length == 0)
         return false;
 
-    var curbuff = buffs[0];
+    const curbuff = buffs[0];
 
     // first buffer is bigger than request
     if (curbuff.length - bufferlist.offset >= to_receive)
@@ -96,8 +96,8 @@ ReadFixedRequest.prototype.execute = function(bufferlist)
     
     if (0)//bufferlist.readlist.length == 1)
     {
-        var to_receive = this.length - this.received_bytes;
-        var buff = bufferlist.readlist[0];
+        to_receive = this.length - this.received_bytes;
+        const buff = bufferlist.readlist[0];
         if ( (buff.length-bufferlist.offset) >= to_receive){
             clog(["using Buffer.copy", buff.length]);
             buff.copy(this.data, to_receive, bufferlist.offset, bufferlist.offset + to_receive);
@@ -110,9 +110,9 @@ ReadFixedRequest.prototype.execute = function(bufferlist)
     }
     //clog([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
     //clog(["byte by byte copy", bufferlist.length]);
-    var to_receive = this.length - this.received_bytes;
+    to_receive = this.length - this.received_bytes;
     clog([bufferlist.readlist.length, bufferlist.offset, bufferlist.length, to_receive]);
-    for(var i=0 ; i < to_receive; ++i)
+    for(let i=0 ; i < to_receive; ++i)
     {
         if (bufferlist.length == 0)
             return false;
@@ -126,7 +126,7 @@ ReadFormatRequest.prototype.execute = function(bufferlist)
 {
     while (this.current_arg < this.format.length)
     {
-        var arg = this.format[this.current_arg];
+        const arg = this.format[this.current_arg];
         if (bufferlist.length < argument_length[arg])
             return false; // need to wait for more data to prcess this argument
 
@@ -139,36 +139,38 @@ ReadFormatRequest.prototype.execute = function(bufferlist)
             this.data.push(bufferlist.getbyte());
             break;
         case 'S':
-        case 's':
-            var b1 = bufferlist.getbyte();
-            var b2 = bufferlist.getbyte();
+        case 's': {
+            const b1 = bufferlist.getbyte();
+            const b2 = bufferlist.getbyte();
             if (bufferlist.serverBigEndian)
                 this.data.push(b2*256+b1);
             else
                 this.data.push(b1*256+b2);
             break;
+        }
         case 'l':
-        case 'L':
-            var b1 = bufferlist.getbyte();
-            var b2 = bufferlist.getbyte();
-            var b3 = bufferlist.getbyte();
-            var b4 = bufferlist.getbyte();
-            var res;
+        case 'L': {
+            const b1 = bufferlist.getbyte();
+            const b2 = bufferlist.getbyte();
+            const b3 = bufferlist.getbyte();
+            const b4 = bufferlist.getbyte();
+            let res;
             if (bufferlist.serverBigEndian)
                 res = (((b4*256+b3)*256 + b2)*256 + b1);
             else
                 res = (((b1*256+b2)*256 + b3)*256 + b4);
             
             if (arg == 'l') {
-                var neg = res & 0x80000000; 
+                const neg = res & 0x80000000; 
                 if (!neg) {
                     this.data.push(res);
                 } else 
                     this.data.push((0xffffffff - res + 1) * - 1);
             } else
                 this.data.push(res);
-            
+
             break;
+        }
         case 'x':
             bufferlist.getbyte();
             break;
@@ -202,8 +204,7 @@ UnpackStream.prototype.write = function(buf)
 UnpackStream.prototype.pipe = function(stream)
 {
     // TODO: ondrain & pause
-    this.on('data', function(data)
-    {
+    this.on('data', data => {
         stream.write(data);
     });
 }
@@ -216,12 +217,12 @@ UnpackStream.prototype.unpack = function(format, callback)
 
 UnpackStream.prototype.unpackTo = function(destination, names_formats, callback)
 {
-    var names = [];
-    var format = '';
+    const names = [];
+    let format = '';
     
-    for (var i=0; i < names_formats.length; ++i)
+    for (let i=0; i < names_formats.length; ++i)
     {
-        var off = 0;
+        let off = 0;
         while(off < names_formats[i].length && names_formats[i][off] == 'x')
         {
             format += 'x';
@@ -231,15 +232,15 @@ UnpackStream.prototype.unpackTo = function(destination, names_formats, callback)
         if (off < names_formats[i].length)
         {
             format += names_formats[i][off];
-            var name = names_formats[i].substr(off+2);
+            const name = names_formats[i].substr(off+2);
             names.push(name);
         }
     }
 
-    this.unpack(format, function(data) {
+    this.unpack(format, data => {
         if (data.length != names.length)
-            throw 'Number of arguments mismatch, ' + names.length + ' fields and ' + data.length + ' arguments';
-        for (var fld = 0; fld < data.length; ++fld)
+            throw `Number of arguments mismatch, ${names.length} fields and ${data.length} arguments`;
+        for (let fld = 0; fld < data.length; ++fld)
         {
             destination[names[fld]] = data[fld];
         }
@@ -287,8 +288,8 @@ UnpackStream.prototype.resume = function()
 
 UnpackStream.prototype.getbyte = function()
 {   
-    var res = 0;
-    var b = this.readlist[0];
+    let res = 0;
+    const b = this.readlist[0];
     if (this.offset + 1 < b.length)
     {
         res = b[this.offset];
@@ -309,12 +310,12 @@ UnpackStream.prototype.getbyte = function()
 // TODO: measure node 0.5+ buffer serialisers performance
 UnpackStream.prototype.pack = function(format, args)
 {
-    var packetlength = 0;
+    let packetlength = 0;
  
-    var arg = 0;
-    for (var i = 0; i < format.length; ++i)
+    let arg = 0;
+    for (let i = 0; i < format.length; ++i)
     {
-        var f = format[i];
+        const f = format[i];
         if (f == 'x')
         {
             packetlength++;
@@ -328,23 +329,24 @@ UnpackStream.prototype.pack = function(format, args)
         }
     }
 
-    var buf = Buffer.alloc(packetlength);
-    var offset = 0;
-    var arg = 0;
-    for (var i = 0; i < format.length; ++i)
+    const buf = Buffer.alloc(packetlength);
+    let offset = 0;
+    arg = 0;
+    for (let i = 0; i < format.length; ++i)
     {
         switch(format[i])
         {
-            case 'x': 
+            case 'x':
                 buf[offset++] = 0;
                 break;
-            case 'C':
-                var n = args[arg++];
+            case 'C': {
+                const n = args[arg++];
                 buf[offset++] = n;
                 break;
+            }
             case 's': // TODO: implement signed INT16!!!
-            case 'S':
-                var n = args[arg++];
+            case 'S': {
+                const n = args[arg++];
                 if (this.clientBigEndian)
                 {
                     buf[offset++] = n & 0xff;
@@ -354,9 +356,10 @@ UnpackStream.prototype.pack = function(format, args)
                     buf[offset++] = n & 0xff;
                 }
                 break;
+            }
             case 'l': // TODO: implement signed INT32!!!
-            case 'L':
-                var n = args[arg++];
+            case 'L': {
+                const n = args[arg++];
                 if (this.clientBigEndian)
                 {
                     buf[offset++] = n & 0xff;
@@ -370,29 +373,32 @@ UnpackStream.prototype.pack = function(format, args)
                     buf[offset++] = n & 0xff;
                 }
                 break;
-            case 'a':  // string or buffer
-                var str = args[arg++];
+            }
+            case 'a': {  // string or buffer
+                const str = args[arg++];
                 if (Buffer.isBuffer(str))
                 {
                     str.copy(buf, offset);
                     offset += str.length;
                 } else {
                     // TODO: buffer.write could be faster
-                    for (var c = 0; c < str.length; ++c)
+                    for (let c = 0; c < str.length; ++c)
                         buf[offset++] = str.charCodeAt(c);
                 }
                 break;
-            case 'p':  // padded string
-                var str = args[arg++];
-                var len = xutil.padded_length(str.length);
+            }
+            case 'p': {  // padded string
+                const str = args[arg++];
+                const len = xutil.padded_length(str.length);
                 // TODO: buffer.write could be faster
-                var c = 0;
+                let c = 0;
                 for (; c < str.length; ++c)
                     buf[offset++] = str.charCodeAt(c);
                 for (; c < len; ++c)
                     buf[offset++] = 0;
                 break;
-        }         
+            }
+        }
     }
     this.write_queue.push(buf);
     this.write_length += buf.length;
@@ -406,7 +412,7 @@ UnpackStream.prototype.flush = function(stream)
 
     // TODO: check write result
     // pause/resume streaming
-    for (var i=0; i < this.write_queue.length; ++i)
+    for (let i=0; i < this.write_queue.length; ++i)
     {
          //stream.write(this.write_queue[i])
          this.emit('data', this.write_queue[i]);

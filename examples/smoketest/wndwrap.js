@@ -1,20 +1,20 @@
-var x11 = require('../../lib');
-var Exposure = x11.eventMask.Exposure;
-var PointerMotion = x11.eventMask.PointerMotion;
-var ButtonPress = x11.eventMask.ButtonPress;
-var ButtonRelease = x11.eventMask.ButtonRelease;
-var SubstructureNotify = x11.eventMask.SubstructureNotify;
-var StructureNotify = x11.eventMask.StructureNotify;
+const x11 = require('../../lib');
+const Exposure = x11.eventMask.Exposure;
+const PointerMotion = x11.eventMask.PointerMotion;
+const ButtonPress = x11.eventMask.ButtonPress;
+const ButtonRelease = x11.eventMask.ButtonRelease;
+const SubstructureNotify = x11.eventMask.SubstructureNotify;
+const StructureNotify = x11.eventMask.StructureNotify;
 
-var EventEmitter = require('events').EventEmitter;
-var util = require('util'); // util.inherits
+const EventEmitter = require('events').EventEmitter;
+const util = require('util'); // util.inherits
 
 function GraphicContext(win)
 {
     this.win = win;
     this.xclient = win.xclient;
     this.id = this.xclient.AllocID();
-    var screen = this.xclient.display.screen[0];
+    const screen = this.xclient.display.screen[0];
     //win.xclient.CreateGC(this.id, win.id, { foreground: screen.black_pixel, background: screen.white_pixel});
     this.xclient.CreateGC(this.id, win.id, { foreground: screen.white_pixel, background: screen.black_pixel});
 }
@@ -24,8 +24,7 @@ GraphicContext.prototype.polyLine = function(points)
     this.xclient.PolyLine(0, this.win.id, this.id, points);    
 }
 
-GraphicContext.prototype.noop = function()
-{
+GraphicContext.prototype.noop = () => {
     //testing triggering gc creation
 }
 
@@ -41,7 +40,7 @@ GraphicContext.prototype.text = function(x, y, text)
 
 GraphicContext.prototype.polyLine = function(points, opts)
 {
-    var coordinateMode = 0;
+    let coordinateMode = 0;
     if (opts && opts.coordinateMode === 'previous')
         coordinateMode = 1;                         
     this.xclient.PolyLine(coordinateMode, this.win.id, this.id, points);
@@ -49,7 +48,7 @@ GraphicContext.prototype.polyLine = function(points, opts)
 
 GraphicContext.prototype.points = function(points, opts)
 {
-    var coordinateMode = 0;
+    let coordinateMode = 0;
     if (opts && opts.coordinateMode === 'previous')
         coordinateMode = 1;                         
     this.xclient.PolyPoint(coordinateMode, this.win.id, this.id, points);
@@ -69,7 +68,7 @@ function Window(parent, x, y, w, h, bg)
         if (!this.xclient.rootWindow)
         {
             // quick hack
-            var rootWnd = { 
+            const rootWnd = { 
                 id: this.xclient.display.screen[0].root,
                 xclient: this.xclient
             };
@@ -94,10 +93,10 @@ function Window(parent, x, y, w, h, bg)
     if (!bg)
        bg = this.white;
 
-    var borderWidth = 1;
-    var _class = 1; // InputOutput
-    var visual = 0; // CopyFromParent
-    var depth = 0;
+    const borderWidth = 1;
+    const _class = 1; // InputOutput
+    const visual = 0; // CopyFromParent
+    const depth = 0;
     this.xclient.CreateWindow(
         this.id, this.parent.id, this.x, this.y, this.w, this.h, 
         borderWidth, depth, _class, visual, 
@@ -108,7 +107,7 @@ function Window(parent, x, y, w, h, bg)
     );
 
     //this.map();
-    var wnd = this;
+    const wnd = this;
     eventType2eventName = {
         4: 'mousedown',
         5: 'mouseup',
@@ -118,11 +117,10 @@ function Window(parent, x, y, w, h, bg)
        19: 'map'
     };
 
-    var ee = new EventEmitter();
+    const ee = new EventEmitter();
     this.xclient.event_consumers[wnd.id] = ee;
     // TODO: do we need to have wnd as EventEmitter AND EventEmitter stored in event_consumers ?
-    ee.on('event', function( ev )
-    {
+    ee.on('event', ev => {
         if (ev.type == 12) //Expose
             ev.gc = wnd.gc;
         wnd.emit(eventType2eventName[ev.type], ev); // convert to mousemove? (ev is already event-spacific)               
@@ -163,7 +161,7 @@ Window.prototype.unmap = function() {
 Window.prototype.handle = function(handlers) {
     // TODO: compare event mask with events names and issue 
     // one ChangeWindowAttributes request adding missing events
-    for (var eventName in handlers) {
+    for (const eventName in handlers) {
         this.on(eventName, handlers[eventName]);
     }
     return this;
@@ -171,7 +169,7 @@ Window.prototype.handle = function(handlers) {
 
 Window.prototype.getProperty = function(name, cb) {
     this.xclient.InternAtom(true, nam, function(nameAtom) {
-        this.xclient.GetProperty(0, this.id, nameAtom, 0, 1000000000, function(prop) {
+        this.xclient.GetProperty(0, this.id, nameAtom, 0, 1000000000, prop => {
             cb(prop);
         });
     });
@@ -180,10 +178,10 @@ Window.prototype.getProperty = function(name, cb) {
 
 Window.prototype.createPixmap = function(width, height)
 {
-    var pid = this.xclient.AllocID();
+    const pid = this.xclient.AllocID();
     //  function(depth, pid, drawable, width, height) {
     this.xclient.CreatePixmap( this.xclient.display.screen[0].root_depth, pid, this.id, width, height);
-    var pixmap = {};
+    const pixmap = {};
     pixmap.id = pid;
     pixmap.__defineGetter__('gc', function()
     {

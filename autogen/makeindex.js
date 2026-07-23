@@ -1,24 +1,24 @@
-var sax = require('sax');
-var fs = require('fs');
-var xml2js = require('xml2js')
-var assert = require('assert');
+const sax = require('sax');
+const fs = require('fs');
+const xml2js = require('xml2js');
+const assert = require('assert');
 
-var count = 0;
+let count = 0;
 
 function addToIndex(dir, index, callback, name) {
 
   count++;
-  var header;
+  let header;
 
-  var parser = sax.createStream(true);
-  var stream = fs.createReadStream(dir + '/' + name).pipe(parser);
-  parser.on('end', function() {
+  const parser = sax.createStream(true);
+  const stream = fs.createReadStream(`${dir}/${name}`).pipe(parser);
+  parser.on('end', () => {
      count--;
      if (count == 0)
          callback(index);
   });
   parser.on('opentag', 
-    function(tag) {
+    tag => {
        if (tag.name == 'xcb') {
           header = tag.attributes.header;
           index[header] = tag.attributes;
@@ -29,7 +29,7 @@ function addToIndex(dir, index, callback, name) {
     }
   );
   parser.on('closetag',
-    function(tag) {
+    tag => {
        if (tag == 'import')
        {
           index[header].depends.push(parser.lastText);
@@ -38,7 +38,7 @@ function addToIndex(dir, index, callback, name) {
   );
 
   parser.on('text', 
-    function(text) { 
+    text => { 
        parser.lastText = text;
     }
   );
@@ -51,7 +51,7 @@ function grep(re, str)
 }
 
 function makeIndex(dir, callback) {
-  var index = {};
+  const index = {};
   fs.readdirSync(dir)
     .filter(grep.bind(null, /xml$/))
     .forEach(addToIndex.bind(null, dir, index, callback));

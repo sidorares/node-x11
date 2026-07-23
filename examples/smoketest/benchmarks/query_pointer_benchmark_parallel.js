@@ -13,25 +13,25 @@
 // x11perf -sync -pointer  :
 // x11perf -pointer        :
 
-var x11 = require('../../../lib');
-var X = x11.createClient();
+const x11 = require('../../../lib');
+const X = x11.createClient();
 
-var total = 50000;
-var num_qp_resp_left = total;
-var num_qp_req_left = total;
-var start = +new Date();
-var wid;
+const total = 50000;
+let num_qp_resp_left = total;
+let num_qp_req_left = total;
+const start = +new Date();
+let wid;
 
 function benchmarkQP()
 {
     num_qp_req_left--;          
-    X.QueryPointer(wid, function(res) {
+    X.QueryPointer(wid, res => {
         num_qp_resp_left--;
         if (num_qp_resp_left == 0)
         {
-            var end = +new Date();
-            var delta = (end - start)/1000
-            console.error( 'Finished ' + total + ' requests in ' + delta + ' sec, ' + total/delta + ' req/sec');
+            const end = +new Date();
+            const delta = (end - start)/1000;
+            console.error( `Finished ${total} requests in ${delta} sec, ${total/delta} req/sec`);
             X.terminate();
         }
     });
@@ -40,14 +40,14 @@ function benchmarkQP()
         process.nextTick(benchmarkQP);
 }
 
-X.on('connect', function(err, display) {
-    var screen = display.screen[0];
+X.on('connect', (err, display) => {
+    const screen = display.screen[0];
     wid = X.AllocID();
     X.CreateWindow(wid, screen.root, 10, 10, 400, 300, 1, 1, 0, { backgroundPixel: screen.white_pixel });
     X.MapWindow(wid);
     benchmarkQP(wid);
 });
 
-X.on('error', function(err) {
+X.on('error', err => {
     console.log(err);
 });

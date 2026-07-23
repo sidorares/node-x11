@@ -1,21 +1,21 @@
 "use strict";
-var util = require('util');
-var net = require('net');
-var PackStream = require('./unpackstream');
-var EventEmitter = require('events').EventEmitter;
-var rfb = require('./constants');
+const util = require('util');
+const net = require('net');
+const PackStream = require('./unpackstream');
+const EventEmitter = require('events').EventEmitter;
+const rfb = require('./constants');
 
 function RfbServer(stream, params)
 {
      EventEmitter.call(this);
      this.params = params;
-     var serv = this;
+     const serv = this;
      serv.stream = stream;
      serv.pack_stream = new PackStream();
-     serv.pack_stream.on('data', function( data ) {
+     serv.pack_stream.on('data', data => {
          serv.stream.write(data);
      });
-     stream.on('data', function( data ) {
+     stream.on('data', data => {
          serv.pack_stream.write(data);
      });
      serv.writeServerVersion();
@@ -26,9 +26,9 @@ util.inherits(RfbServer, EventEmitter);
 
 RfbServer.prototype.writeServerVersion = function()
 {
-    var serv = this;
+    const serv = this;
     this.stream.write(rfb.versionstring.V3_008);
-    this.pack_stream.get(12, function(buf) {
+    this.pack_stream.get(12, buf => {
         serv.emit('clientversion', buf.toString('ascii'));
         console.log(['client version', buf]);
         serv.writeSecurityTypes();
@@ -38,14 +38,14 @@ RfbServer.prototype.writeServerVersion = function()
 RfbServer.prototype.writeSecurityTypes = function()
 {
     console.log("RfbServer.prototype.writeSecurityTypes");
-    var serv = this;
-    var sectypes = [rfb.security.VNC];
+    const serv = this;
+    const sectypes = [rfb.security.VNC];
     serv.pack_stream.pack('C', [sectypes.length]);
     serv.pack_stream.flush();
-    for (var i=0; i < sectypes.length; ++i)
+    for (let i=0; i < sectypes.length; ++i)
         serv.pack_stream.pack('C', [sectypes[i]]);
     serv.pack_stream.flush();
-    serv.pack_stream.unpack('C', function(cliSecType) {
+    serv.pack_stream.unpack('C', cliSecType => {
         serv.securityType = cliSecType[0];
         serv.processSecurity();
     });
@@ -54,7 +54,7 @@ RfbServer.prototype.writeSecurityTypes = function()
 RfbServer.prototype.processSecurity = function()
 {
     console.log("RfbServer.prototype.processSecurity");
-    var serv = this;
+    const serv = this;
     switch(serv.securityType)
     {
     case rfb.security.None:
@@ -66,10 +66,9 @@ RfbServer.prototype.processSecurity = function()
         serv.challenge.write('1234567890abcdef');
         console.log(['sending challenge', serv.challenge]);
         serv.pack_stream.pack('a', [serv.challenge]).flush();
-        serv.pack_stream.get(16, function(clientResponseBuf)
-        {
-            var response = require('./d3des').response(serv.challenge, serv.params.password).toString('binary');
-            var clientResponse = clientResponseBuf.toString('binary');
+        serv.pack_stream.get(16, clientResponseBuf => {
+            const response = require('./d3des').response(serv.challenge, serv.params.password).toString('binary');
+            const clientResponse = clientResponseBuf.toString('binary');
             console.log([response, clientResponse]);
             if (response === clientResponse) {
                 serv.pack_stream.pack('L', [0]).flush();
@@ -87,8 +86,8 @@ RfbServer.prototype.processSecurity = function()
 RfbServer.prototype.readClientInit = function()
 {
     // TODO: read options, add 'disconnect others' code
-    var serv = this;
-    serv.pack_stream.unpack('C', function(isShared) {
+    const serv = this;
+    serv.pack_stream.unpack('C', isShared => {
         console.log([isShared]);
         serv.writeServerInit();
     });
@@ -96,8 +95,8 @@ RfbServer.prototype.readClientInit = function()
 
 RfbServer.prototype.writeServerInit = function()
 {
-    var serv = this;
-    var title = 'Param-pam-pam';
+    const serv = this;
+    const title = 'Param-pam-pam';
     serv.pack_stream.pack('SSCCCCSSSCCCxxxLa', [
         800, //serv.width,
         600, //serv.height,
@@ -120,35 +119,34 @@ RfbServer.prototype.writeServerInit = function()
 
 function repeat(str, num)
 {
-    var res = '';
-    for (var i=0; i < num; ++i)
+    let res = '';
+    for (let i=0; i < num; ++i)
         res += str;
     return res;
 }
 
 RfbServer.prototype.expectMessage = function()
 {
-    var serv = this;
-    serv.pack_stream.get(1, function(msgType) {
+    const serv = this;
+    serv.pack_stream.get(1, msgType => {
         switch(msgType[0]) {
         case rfb.clientMsgTypes.setPixelFormat:
         case rfb.clientMsgTypes.fbUpdate:
-            var updateRequest = {};
+            const updateRequest = {};
             serv.pack_stream.unpackTo(updateRequest, [
                 'C incremental',
                 'S width',
                 'S height', 
                 'S x', 
                 'S y'], 
-            function() {
+            () => {
                 serv.emit('fbUpdate', updateRequest);
                 serv.expectMessage();
             });
             break;
         case rfb.clientMsgTypes.setEncodings:
-            serv.pack_stream.unpack('xS', function(numEnc)
-            {
-                serv.pack_stream.unpack(repeat('L', numEnc), function(res) {
+            serv.pack_stream.unpack('xS', numEnc => {
+                serv.pack_stream.unpack(repeat('L', numEnc), res => {
                     serv.emit('setEncodings', res);
                     console.log(['setEncodings', res]);
                     serv.expectMessage();
@@ -156,8 +154,8 @@ RfbServer.prototype.expectMessage = function()
             });
             break;
         case rfb.clientMsgTypes.pointerEvent:
-             serv.pack_stream.unpack('CSS', function(res) {
-	        var pointerEvent = {
+             serv.pack_stream.unpack('CSS', res => {
+	        const pointerEvent = {
                     buttons: res[0],
                     x: res[1],
                     y: res[2]
@@ -168,8 +166,8 @@ RfbServer.prototype.expectMessage = function()
             });
             break;
         case rfb.clientMsgTypes.keyEvent:
-             serv.pack_stream.unpack('CxxL', function(res) {
-	        var keyEvent = {
+             serv.pack_stream.unpack('CxxL', res => {
+	        const keyEvent = {
                     isDown: res[0],
                     keysym: res[1]
                 };
@@ -180,14 +178,14 @@ RfbServer.prototype.expectMessage = function()
             break;
         case rfb.clientMsgTypes.cutText:
             break;
-            console.log('Got message from client: ' + msgType[0]);
+            console.log(`Got message from client: ${msgType[0]}`);
         }
         
     });   
 }
 
 
-var s = net.createServer(function(conn) {
-    var rfbserv = new RfbServer(conn);
+const s = net.createServer(conn => {
+    const rfbserv = new RfbServer(conn);
 });
 s.listen(5910);
