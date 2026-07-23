@@ -1,12 +1,12 @@
-var x11 = require('../lib');
-var should = require('should');
-var assert = require('assert');
+const x11 = require('../lib');
+const should = require('should');
+const assert = require('assert');
 
 // This test was ported from X Test Suite @ http://cgit.freedesktop.org/xorg/test/xts/
 
 function warp_pointer(wid, x, y, cb) {
-    var self = this;
-    this.X.QueryPointer(wid, function(err, old_pointer) {
+    const self = this;
+    this.X.QueryPointer(wid, (err, old_pointer) => {
         if (err) {
             return cb(err);
         }
@@ -20,7 +20,7 @@ function warp_pointer(wid, x, y, cb) {
                            x,
                            y);
 
-        self.X.QueryPointer(wid, function(err, new_pointer) {
+        self.X.QueryPointer(wid, (err, new_pointer) => {
             if (err) {
                 return cb(err);
             }
@@ -36,13 +36,13 @@ function warp_pointer(wid, x, y, cb) {
 }
 
 function is_pointer_frozen(cb) {
-    var self = this;
-    warp_pointer.call(this, this.wid, 0, 0, function(err) {
+    const self = this;
+    warp_pointer.call(this, this.wid, 0, 0, err => {
         if (err) {
             return cb(err);
         }
 
-        warp_pointer.call(self, self.wid, 1, 1, function(err, data) {
+        warp_pointer.call(self, self.wid, 1, 1, (err, data) => {
             if (err) {
                 return cb(err);
             }
@@ -52,10 +52,10 @@ function is_pointer_frozen(cb) {
     });
 }
 
-describe('AllowEvents', function() {
+describe('AllowEvents', () => {
     before(function(done) {
-        var self = this;
-        var client = x11.createClient(function(err, dpy) {
+        const self = this;
+        const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
             self.X = dpy.client;
             self.screen = dpy.screen[0];
@@ -71,13 +71,13 @@ describe('AllowEvents', function() {
             done();
         });
 
-        client.on('error', function (err) {
+        client.on('error', err => {
             console.error('Error : ', err);
         });
     });
 
     it('if pointer is frozen by the client calling AllowEvents with AsyncPointer should resume the processing', function(done) {
-        var self = this;
+        const self = this;
         this.X.GrabPointer(
             this.wid,
             false,
@@ -89,11 +89,11 @@ describe('AllowEvents', function() {
             0
         );
 
-        is_pointer_frozen.call(this, function(err, frozen) {
+        is_pointer_frozen.call(this, (err, frozen) => {
             should.not.exist(err);
             frozen.should.equal(true);
             self.X.AllowEvents(0, 0);
-            is_pointer_frozen.call(self, function(err, frozen) {
+            is_pointer_frozen.call(self, (err, frozen) => {
                 should.not.exist(err);
                 frozen.should.equal(false);
                 done();

@@ -1,12 +1,12 @@
-var x11 = require('../lib');
-var should = require('should');
-var assert = require('assert');
+const x11 = require('../lib');
+const should = require('should');
+const assert = require('assert');
 
-describe('Client', function() {
+describe('Client', () => {
 
-  var display;
-  beforeEach(function(done) {
-      var client = x11.createClient(function(err, dpy) {
+  let display;
+  beforeEach(done => {
+      const client = x11.createClient((err, dpy) => {
           if (!err) {
               display = dpy;
               done();
@@ -19,7 +19,7 @@ describe('Client', function() {
       client.on('error', done);
   });
 
-  it('calls first createClient parameter with display object', function(done) {
+  it('calls first createClient parameter with display object', done => {
       should.exist(display);
       should.exist(display.screen);
       should.exist(display.screen[0]);
@@ -28,21 +28,21 @@ describe('Client', function() {
       done();
   });
 
-  it('uses display variable from parameter if present ignoring anvironment $DISPLAY', function(done) {
-     var disp = process.env.DISPLAY;
+  it('uses display variable from parameter if present ignoring anvironment $DISPLAY', done => {
+     const disp = process.env.DISPLAY;
      process.env.DISPLAY = 'BOGUS DISPLAY';
-     var client = x11.createClient({ display : disp }, done);
+     const client = x11.createClient({ display : disp }, done);
      client.on('error', done);
      process.env.DISPLAY=disp;
   });
 
-  it('throws error if $DISPLAY is bogus', function(done) {
+  it('throws error if $DISPLAY is bogus', done => {
      try {
-     assert.throws(function() {
-        var client = x11.createClient({ display : 'BOGUS DISPLAY' }, function(err, display) {
+     assert.throws(() => {
+        const client = x11.createClient({ display : 'BOGUS DISPLAY' }, (err, display) => {
           done('Should not reach here');
         });
-        client.on('error', function(err) { done(); });
+        client.on('error', err => { done(); });
      }, /Cannot parse display/);
      done();
      } catch(e) {
@@ -50,15 +50,15 @@ describe('Client', function() {
     }
   });
 
-  it('returns error when connecting to non existent display', function(done) {
-    var errorCbCalled = false;
-    var client = x11.createClient({ display : ':44' }, function(err, display) {
+  it('returns error when connecting to non existent display', done => {
+    let errorCbCalled = false;
+    const client = x11.createClient({ display : ':44' }, (err, display) => {
         assert(err instanceof Error);
 	errorCbCalled = true;
         done();
     });
     // TODO: stop writing to socket after first error
-    client.on('error', function() {
+    client.on('error', () => {
       if (!errorCbCalled)
         done('should not reach here before first done()');
     });

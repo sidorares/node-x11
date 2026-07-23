@@ -1,13 +1,13 @@
-var fs = require('fs');
-var assert = require('assert');
+const fs = require('fs');
+const assert = require('assert');
 
-describe('all extension modules', function() {
-  it('should not throw when require\'d', function(done) {
-    var extFolder = __dirname + '/../lib/ext';
-    fs.readdir(extFolder, function(err, list) {
+describe('all extension modules', () => {
+  it('should not throw when require\'d', done => {
+    const extFolder = `${__dirname}/../lib/ext`;
+    fs.readdir(extFolder, (err, list) => {
       assert.ifError(err);
-      list.forEach(function(name) {
-        var m = require(extFolder + '/' + name);
+      list.forEach(name => {
+        const m = require(`${extFolder}/${name}`);
       });
       done();
     });

@@ -1,41 +1,41 @@
-var x11 = require('../lib');
-var should = require('should');
-var assert = require('assert');
+const x11 = require('../lib');
+const should = require('should');
+const assert = require('assert');
 
-describe('KillKlient request', function() {
+describe('KillKlient request', () => {
 
-  var display;
-  var X;
-  beforeEach(function(done) {
-      var client = x11.createClient(function(err, dpy) {
+  let display;
+  let X;
+  beforeEach(done => {
+      const client = x11.createClient((err, dpy) => {
           should.not.exist(err);
           display = dpy;
           X = display.client;
-          var root = display.screen[0].root;
-          var eventMask = x11.eventMask.SubstructureNotify;
-          X.ChangeWindowAttributes(root, { eventMask: eventMask });
+          const root = display.screen[0].root;
+          const eventMask = x11.eventMask.SubstructureNotify;
+          X.ChangeWindowAttributes(root, { eventMask });
           done();
       });
 
       client.on('error', done);
   });
 
-  afterEach(function(done) {
+  afterEach(done => {
       X.on('end', done);
       X.terminate();
   });
 
-  it('should exist as client member', function() {
+  it('should exist as client member', () => {
       should.exist(X.KillKlient);
       assert.equal(typeof X.KillKlient, 'function');
   });
 
-  it('should terminate other client connection', function(done) {
-      x11.createClient(function(err, dpy) {
+  it('should terminate other client connection', done => {
+      x11.createClient((err, dpy) => {
           should.not.exist(err);
-          var otherclient = dpy.client;
-          var wnd = otherclient.AllocID();
-          X.once('event', function(ev) {
+          const otherclient = dpy.client;
+          const wnd = otherclient.AllocID();
+          X.once('event', ev => {
               ev.name.should.equal('CreateNotify');
               ev.wid.should.equal(wnd);
               X.KillKlient(wnd);

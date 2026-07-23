@@ -1,18 +1,18 @@
-var x11 = require('../lib');
-var should = require('should');
-var assert = require('assert');
-var util = require('util');
+const x11 = require('../lib');
+const should = require('should');
+const assert = require('assert');
+const util = require('util');
 
-describe('XTEST extension', function() {
-    var display;
-    var X;
-    var xtest;
-    before(function(done) {
-        var client = x11.createClient(function(err, dpy) {
+describe('XTEST extension', () => {
+    let display;
+    let X;
+    let xtest;
+    before(done => {
+        const client = x11.createClient((err, dpy) => {
             if (!err) {
                 display = dpy;
                 X = display.client;
-                X.require('xtest', function(err, ext) {
+                X.require('xtest', (err, ext) => {
                     should.not.exist(err);
                     xtest = ext;
                     done();
@@ -25,16 +25,16 @@ describe('XTEST extension', function() {
         client.on('error', done);
     });
 
-    describe('GetVersion', function() {
-        it('should return version 2.2', function(done) {
-            xtest.GetVersion(2, 2, function(err, version) {
+    describe('GetVersion', () => {
+        it('should return version 2.2', done => {
+            xtest.GetVersion(2, 2, (err, version) => {
                 version.should.eql([2, 2]);
                 done();
             });
         });
     });
 
-    after(function(done) {
+    after(done => {
         X.terminate();
         X.on('end', done);
     });

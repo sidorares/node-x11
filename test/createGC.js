@@ -1,10 +1,10 @@
-var x11 = require('../lib');
-var should = require('should');
+const x11 = require('../lib');
+const should = require('should');
 
-describe('CreateGC', function() {
+describe('CreateGC', () => {
     before(function(done) {
-        var self = this;
-        this.client = x11.createClient(function(err, dpy) {
+        const self = this;
+        this.client = x11.createClient((err, dpy) => {
             should.not.exist(err);
             self.X = dpy.client;
             self.root = dpy.screen[0].root;
@@ -13,7 +13,7 @@ describe('CreateGC', function() {
             self.wid = self.X.AllocID();
             self.X.CreateWindow(self.wid, self.root, 0, 0, 1, 1); // 1x1 pixel window
             self.X.MapWindow(self.wid);
-            self.X.QueryTree(self.root, function(err, list) {
+            self.X.QueryTree(self.root, (err, list) => {
                 should.not.exist(err);
                 list.children.indexOf(self.wid).should.not.equal(-1);
                 done();
@@ -22,8 +22,8 @@ describe('CreateGC', function() {
     });
 
     it('should create a Graphic Context correctly', function() {
-        var self = this;
-        this.client.on('error', function(err) {
+        const self = this;
+        this.client.on('error', err => {
             should.not.exist(err);
         });
 
