@@ -16,7 +16,8 @@ No build step, no transpilation: `lib/` is what ships.
 ## Running tests (do this on every change)
 
 ```sh
-./scripts/test-local.sh
+npm run test:local   # = ./scripts/test-local.sh
+npm run lint         # eslint: no-var / prefer-const / no-redeclare
 ```
 
 Full suite takes ~2 s. It starts (or reuses) a private Xvfb on display `:99`

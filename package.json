@@ -37,10 +37,11 @@
   },
   "main": "./lib",
   "engines": {
-    "node": "*"
+    "node": ">=18"
   },
   "devDependencies": {
     "async": "^3.0.1",
+    "eslint": "^10.7.0",
     "mocha": "^7.1.2",
     "sax": "^1.2.4",
     "should": "^13.2.1",
@@ -48,7 +49,8 @@
   },
   "scripts": {
     "test": "node test-runner.js",
+    "test:local": "./scripts/test-local.sh",
+    "lint": "eslint .",
     "prepublish": "npm prune"
-  },
-  "dependencies": {}
+  }
 }

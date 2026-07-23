@@ -24,9 +24,9 @@ x11.createClient((err, display) => {
 
 function main(root, X, Render, display) {
 
-  let win, picWin, pic, gc;
+  let picWin, pic;
 
-  win = X.AllocID();
+  const win = X.AllocID();
   X.CreateWindow(
      win, root,
      0, 0, logo.width, logo.height,
@@ -35,7 +35,7 @@ function main(root, X, Render, display) {
   );
   X.MapWindow(win);
 
-  gc = X.AllocID();
+  const gc = X.AllocID();
   X.CreateGC(gc, win);
 
   const logoPixmap = X.AllocID();

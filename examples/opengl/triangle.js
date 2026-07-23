@@ -35,7 +35,7 @@ gl.End();
 gl.render(ctx);
 GLX.EndList(ctx);
 
-            let i = 0.0; // animation phase
+            const i = 0.0; // animation phase
             X.on('event', ev => {
                 const gl = GLX.renderPipeline();
 

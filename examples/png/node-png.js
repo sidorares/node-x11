@@ -508,12 +508,12 @@ const FlateStream = (() => {
   */ 
 
     const __bind = (fn, me) => (function() { return fn.apply(me, arguments); });
-    let APNG_BLEND_OP_OVER, APNG_BLEND_OP_SOURCE, APNG_DISPOSE_OP_BACKGROUND, APNG_DISPOSE_OP_NONE, APNG_DISPOSE_OP_PREVIOUS, makeImage, scratchCanvas, scratchCtx;
-    APNG_DISPOSE_OP_NONE = 0;
-    APNG_DISPOSE_OP_BACKGROUND = 1;
-    APNG_DISPOSE_OP_PREVIOUS = 2;
-    APNG_BLEND_OP_SOURCE = 0;
-    APNG_BLEND_OP_OVER = 1;
+    let makeImage, scratchCanvas, scratchCtx;
+    const APNG_DISPOSE_OP_NONE = 0;
+    const APNG_DISPOSE_OP_BACKGROUND = 1;
+    const APNG_DISPOSE_OP_PREVIOUS = 2;
+    const APNG_BLEND_OP_SOURCE = 0;
+    const APNG_BLEND_OP_OVER = 1;
     function PNG(data) {
       let chunkSize, colors, delayDen, delayNum, frame, i, section, short, _ref;
       this.data = data;
@@ -526,8 +526,7 @@ const FlateStream = (() => {
       while (true) {
         chunkSize = this.readUInt32();
         section = ((function() {
-          let _results;
-          _results = [];
+          const _results = [];
           for (i = 0; i < 4; i++) {
             _results.push(String.fromCharCode(this.data[this.pos++]));
           }
@@ -637,29 +636,27 @@ const FlateStream = (() => {
       return;
     }
     PNG.prototype.read = function(bytes) {
-      let i, _results;
-      _results = [];
+      let i;
+      const _results = [];
       for (i = 0; 0 <= bytes ? i < bytes : i > bytes; 0 <= bytes ? i++ : i--) {
         _results.push(this.data[this.pos++]);
       }
       return _results;
     };
     PNG.prototype.readUInt32 = function() {
-      let b1, b2, b3, b4;
-      b1 = this.data[this.pos++] << 24;
-      b2 = this.data[this.pos++] << 16;
-      b3 = this.data[this.pos++] << 8;
-      b4 = this.data[this.pos++];
+      const b1 = this.data[this.pos++] << 24;
+      const b2 = this.data[this.pos++] << 16;
+      const b3 = this.data[this.pos++] << 8;
+      const b4 = this.data[this.pos++];
       return b1 | b2 | b3 | b4;
     };
     PNG.prototype.readUInt16 = function() {
-      let b1, b2;
-      b1 = this.data[this.pos++] << 8;
-      b2 = this.data[this.pos++];
+      const b1 = this.data[this.pos++] << 8;
+      const b2 = this.data[this.pos++];
       return b1 | b2;
     };
     PNG.prototype.decodePixels = function(data) {
-      let byte, col, filter, i, left, length, p, pa, paeth, pb, pc, pixelBytes, pixels, pos, row, rowData, s, scanlineLength, upper, upperLeft, _ref, _step;
+      let byte, col, filter, i, left, p, pa, paeth, pb, pc, pos, row, rowData, s, upper, upperLeft, _ref, _step;
       if (data == null) {
         data = this.imgData;
       }
@@ -668,11 +665,11 @@ const FlateStream = (() => {
       }
       data = new FlateStream(data);
       data = data.getBytes();
-      pixelBytes = this.pixelBitlength / 8;
-      scanlineLength = pixelBytes * this.width;
+      const pixelBytes = this.pixelBitlength / 8;
+      const scanlineLength = pixelBytes * this.width;
       row = 0;
-      pixels = [];
-      length = data.length;
+      const pixels = [];
+      const length = data.length;
       pos = 0;
       while (pos < length) {
         filter = data[pos++];
@@ -746,10 +743,10 @@ const FlateStream = (() => {
       return pixels;
     };
     PNG.prototype.decodePalette = function() {
-      let alpha, decodingMap, i, index, palette, pixel, transparency, _ref, _ref2, _ref3, _step;
-      palette = this.palette;
-      transparency = (_ref = this.transparency.indexed) != null ? _ref : [];
-      decodingMap = [];
+      let alpha, i, index, pixel, _ref, _ref2, _ref3, _step;
+      const palette = this.palette;
+      const transparency = (_ref = this.transparency.indexed) != null ? _ref : [];
+      const decodingMap = [];
       index = 0;
       for (i = 0, _ref2 = palette.length, _step = 3; 0 <= _ref2 ? i < _ref2 : i > _ref2; i += _step) {
         alpha = (_ref3 = transparency[index++]) != null ? _ref3 : 255;
@@ -760,7 +757,7 @@ const FlateStream = (() => {
     };
     PNG.prototype.copyToImageData = function(imageData, pixels) {
       //console.log(this);
-      let alpha, byte, colors, data, i, palette, pixel, row, v, _i, _j, _k, _len, _len2, _len3, _ref;
+      let alpha, byte, colors, i, palette, pixel, row, v, _i, _j, _k, _len, _len2, _len3, _ref;
       colors = this.colors;
       palette = null;
       alpha = this.hasAlphaChannel;
@@ -769,7 +766,7 @@ const FlateStream = (() => {
         colors = 4;
         alpha = true;
       }
-      data = imageData.data;
+      const data = imageData.data;
       i = 0;
       for (_i = 0, _len = pixels.length; _i < _len; _i++) {
         row = pixels[_i];
@@ -808,12 +805,12 @@ const FlateStream = (() => {
       }
     };
     PNG.prototype.decodeFrames = function(ctx) {
-      let frame, i, imageData, pixels, _len, _ref, _results;
+      let frame, i, imageData, pixels, _len;
       if (!this.animation) {
         return;
       }
-      _ref = this.animation.frames;
-      _results = [];
+      const _ref = this.animation.frames;
+      const _results = [];
       for (i = 0, _len = _ref.length; i < _len; i++) {
         frame = _ref[i];
         imageData = ctx.createImageData(frame.width, frame.height);
@@ -825,10 +822,9 @@ const FlateStream = (() => {
       return _results;
     };
     PNG.prototype.renderFrame = function(ctx, number) {
-      let frame, frames, prev;
-      frames = this.animation.frames;
-      frame = frames[number];
-      prev = frames[number - 1];
+      const frames = this.animation.frames;
+      const frame = frames[number];
+      const prev = frames[number - 1];
       if (number === 0) {
         ctx.clearRect(0, 0, this.width, this.height);
       }
@@ -847,9 +843,8 @@ const FlateStream = (() => {
       frameNumber = 0;
       _ref = this.animation, numFrames = _ref.numFrames, frames = _ref.frames, numPlays = _ref.numPlays;
       return (doFrame = __bind(function() {
-        let f, frame;
-        f = frameNumber++ % numFrames;
-        frame = frames[f];
+        const f = frameNumber++ % numFrames;
+        const frame = frames[f];
         this.renderFrame(ctx, f);
         if (numFrames > 1 && frameNumber / numFrames < numPlays) {
           return this.animation._timeout = setTimeout(doFrame, frame.delay);

@@ -65,15 +65,14 @@ const model = require('./teapot');
 function gear(gl, inner_radius, outer_radius, width, teeth, tooth_depth)
 {
    let i;
-   let r0, r1, r2;
    let angle, da;
    let u;
    let v;
    let len;
 
-   r0 = inner_radius;
-   r1 = outer_radius - tooth_depth / 2.0;
-   r2 = outer_radius + tooth_depth / 2.0;
+   const r0 = inner_radius;
+   const r1 = outer_radius - tooth_depth / 2.0;
+   const r2 = outer_radius + tooth_depth / 2.0;
 
    da = 2.0 * M_PI / teeth / 4.0;
 
