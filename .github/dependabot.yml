@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Dev dependencies only — runtime `dependencies` is empty and must stay that way.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      dev-dependencies:
+        dependency-type: development
+    # Belt and braces: never open PRs adding/bumping runtime dependencies.
+    allow:
+      - dependency-type: development
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
