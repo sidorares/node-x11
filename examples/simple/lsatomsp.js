@@ -1,28 +1,28 @@
-var x11 = require('../../lib');
-x11.createClient(function(err, display) {
-  var maxstd = 0;
-  var atomName;
+const x11 = require('../../lib');
+x11.createClient((err, display) => {
+  let maxstd = 0;
+  let atomName;
   for (atomName in display.client.atoms)
   {
-    var id = display.client.atoms[atomName];
-    console.log(id + '\t' + atomName);
+    const id = display.client.atoms[atomName];
+    console.log(`${id}\t${atomName}`);
     if (id > maxstd)
        maxstd = id;
   }
   (
     function getAtoms(atomIdStart, atomIdEnd)
     {
-        var atomId;
-        var numInBatch = atomIdEnd - atomIdStart;
+        let atomId;
+        let numInBatch = atomIdEnd - atomIdStart;
         for (atomId = atomIdStart; atomId < atomIdEnd; atomId++)
         {
-            (function(id) {
-            display.client.GetAtomName(id, function(err, atom) {
+            (id => {
+            display.client.GetAtomName(id, (err, atom) => {
                 if (err) {
                     display.client.terminate();
                     return true;
                 } else {
-                    console.log(id + '\t' +  atom);
+                    console.log(`${id}\t${atom}`);
                     numInBatch--;
                     if (numInBatch === 0) { 
                         getAtoms(atomIdStart + 100, atomIdEnd+ 100);

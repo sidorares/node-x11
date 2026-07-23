@@ -1,24 +1,24 @@
-var x11 = require('../lib');
-var should = require('should');
-var assert = require('assert');
+const x11 = require('../lib');
+const should = require('should');
+const assert = require('assert');
 
-describe('Client', function() {
+describe('Client', () => {
 
-  var display;
-  before(function(done) {
-      var client = x11.createClient({ debug: false }, function(err, dpy) {
+  let display;
+  before(done => {
+      const client = x11.createClient({ debug: false }, (err, dpy) => {
           should.not.exist(err);
           display = dpy;
           done();
       });
   });
 
-  it('should emit error which is instance of Error with sequence number corresponding to source request', function(done) {
-    var times = 0;
+  it('should emit error which is instance of Error with sequence number corresponding to source request', done => {
+    let times = 0;
     //id, parentId, x, y, width, height, borderWidth, depth, _class, visual, values
     display.client.CreateWindow(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {});
-    var seq = display.client.seq_num;
-    display.client.on('error', function(err) {
+    let seq = display.client.seq_num;
+    display.client.on('error', err => {
       switch (++ times) {
         case 11:
           display.client.removeAllListeners('error');

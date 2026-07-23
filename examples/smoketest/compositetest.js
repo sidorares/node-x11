@@ -1,28 +1,28 @@
-var x11 = require('../../lib');
+const x11 = require('../../lib');
 
-x11.createClient(function(err, display) {
-    var X = display.client;
-    var root = display.screen[0].root;
-    X.require('composite', function(err, Composite) {
-      X.require('damage', function(err, Damage) {
-        var wid = parseInt(process.argv[2]);
+x11.createClient((err, display) => {
+    const X = display.client;
+    const root = display.screen[0].root;
+    X.require('composite', (err, Composite) => {
+      X.require('damage', (err, Damage) => {
+        const wid = parseInt(process.argv[2]);
         //Composite.GetOverlayWindow(wid, function(err, overlayid) {
         //  console.log("OVERLAY:", err, overlayid);
         //});
         //Composite.RedirectWindow(wid, Composite.Redirect.Automatic);
-        var pixmap = X.AllocID();
+        const pixmap = X.AllocID();
         Composite.NameWindowPixmap(wid, pixmap);
-        var damage = X.AllocID();
+        const damage = X.AllocID();
         Damage.Create(damage, wid, Damage.ReportLevel.NonEmpty);
 
 
-        var newwin = X.AllocID();
+        const newwin = X.AllocID();
         X.CreateWindow(newwin, display.screen[0].root, 200, 200, 200, 200, 0, 0, 0, 0, { eventMask: x11.eventMask.Exposure})
-        var gc = X.AllocID();
+        const gc = X.AllocID();
         X.CreateGC(gc, newwin);
         X.MapWindow(newwin);
 
-        X.on('event', function(ev) {
+        X.on('event', ev => {
           console.log(ev);
           if (ev.type == 13)
              return;
@@ -33,6 +33,6 @@ x11.createClient(function(err, display) {
         });
       });
     });
-    X.on('error', function(err) { console.log(err); });
+    X.on('error', err => { console.log(err); });
 
 });

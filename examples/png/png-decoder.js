@@ -3,7 +3,7 @@
  * https://github.com/b37t1td/png-decoder
  */
 
-var CRCTable = new Int32Array([
+const CRCTable = new Int32Array([
   0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
   0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
   0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91, 0x1db71064, 0x6ab020f2,
@@ -49,9 +49,9 @@ var CRCTable = new Int32Array([
   0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 ]);
 
-var crc32 = function(buf) {
-  var crc = -1;
-  for (var i = 0; i < buf.length; i++) {
+const crc32 = buf => {
+  let crc = -1;
+  for (let i = 0; i < buf.length; i++) {
     crc = CRCTable[(crc ^ buf[i]) & 0xff] ^ (crc >>> 8);
   }
   return crc ^ -1;
@@ -63,55 +63,53 @@ var crc32 = function(buf) {
  */
 
 /* eslint no-undef: 0 */
-var byteArray = Uint8Array;
+const byteArray = Uint8Array;
 
-var cmp = function(a, b) {
+const cmp = function(a, b) {
   if (!b) b = a; a = this;
-  return a.filter(function(c,i) { return c === b[i]; }).length === a.length;
+  return a.filter((c, i) => c === b[i]).length === a.length;
 };
 
-var toInt = function(a) {
+const toInt = function(a) {
   if (!a) a = this.slice(this.off, 4);
   return (a[0] << 24) | (a[1] << 16) | (a[2] << 8) | a[3];
   //return a[0] | (a[1] << 8) | (a[2] << 16) | (a[3] << 24);
 };
 
-var toBytes = function(int) {
-  return new byteArray([
-    (int >> 24) & 0xff,
-    (int >> 16) & 0xff,
-    (int >> 8) & 0xff,
-    int & 0xff
-  ]);
-};
+const toBytes = int => new byteArray([
+  (int >> 24) & 0xff,
+  (int >> 16) & 0xff,
+  (int >> 8) & 0xff,
+  int & 0xff
+]);
 
-var nextInt = function() {
+const nextInt = function() {
   return this.toInt(this.slice(this.off, (this.off += 4)));
 };
 
-var nextIntBytes = function() {
+const nextIntBytes = function() {
   return this.nextBytes(4);
 };
 
-var nextBytes = function(size) {
+const nextBytes = function(size) {
   return this.slice(this.off, (this.off += size));
 };
 
-var nextByte = function() {
+const nextByte = function() {
   return this.nextBytes(1)[0];
 };
 
-var insertInt = function(int) {
+const insertInt = function(int) {
   this.insertBytes(this.toBytes(int));
 };
 
-var insertBytes = function(bytes, length) {
+const insertBytes = function(bytes, length) {
   length = length || 4;
   this.set(bytes, this.off, length);
   this.off += length;
 };
 
-var insertByte = function(byte) {
+const insertByte = function(byte) {
   this.set([byte], this.off, (this.off += 1));
 };
 
@@ -134,23 +132,21 @@ Object.defineProperty(byteArray.prototype , 'off', {
 });
 
 
-var SIGNATURE = new byteArray([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-var IHDR = new byteArray([0x49, 0x48, 0x44, 0x52]);
-var IDAT = new byteArray([0x49, 0x44, 0x41, 0x54]);
-var IEND = new byteArray([0x49, 0x45, 0x4e, 0x44]);
+const SIGNATURE = new byteArray([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const IHDR = new byteArray([0x49, 0x48, 0x44, 0x52]);
+const IDAT = new byteArray([0x49, 0x44, 0x41, 0x54]);
+const IEND = new byteArray([0x49, 0x45, 0x4e, 0x44]);
 
 
 /*
  * Decoder
  */
-var zlib = require('zlib');
+const zlib = require('zlib');
 
-var inflateFunction = function(data) {
-  return zlib.inflateSync(Buffer.from(data));
-};
+const inflateFunction = data => zlib.inflateSync(Buffer.from(data));
 
 
-var Decoder = function() { };
+const Decoder = () => { };
 
 Decoder.prototype.parse = function(data) {
   if (!(data instanceof byteArray)) {
@@ -162,8 +158,8 @@ Decoder.prototype.parse = function(data) {
   }
 
   while (data.off < data.length) {
-    var len = data.nextInt();
-    var hdr = data.nextBytes(len + 4);
+    const len = data.nextInt();
+    const hdr = data.nextBytes(len + 4);
 
     if (crc32(hdr) !== data.nextInt()) {
       throw new Error('Crc error');
@@ -216,9 +212,9 @@ Decoder.prototype.parse = function(data) {
 };
 
 Decoder.prototype._chunkIEND = function() {
-  var tmp = [];
-  for (var i = 0; i < this.chunks.length; i++) {
-    for (var j = 0; j < this.chunks[i].length; j++) {
+  const tmp = [];
+  for (let i = 0; i < this.chunks.length; i++) {
+    for (let j = 0; j < this.chunks[i].length; j++) {
       tmp.push(this.chunks[i][j]);
     }
   }
@@ -229,31 +225,31 @@ Decoder.prototype._chunkIDAT = function(chunk) {
   this.chunks.push(chunk);
 };
 
-Decoder.prototype._chunkIHDR = function(chunk) {
-  return {
-    width : chunk.nextInt(),
-    height : chunk.nextInt(),
-    palette : chunk.nextByte(),
-    colorType : chunk.nextByte(),
-    compression : chunk.nextByte(),
-    filter : chunk.nextByte(),
-    interlace : chunk.nextByte()
-  };
-};
+Decoder.prototype._chunkIHDR = chunk => ({
+  width : chunk.nextInt(),
+  height : chunk.nextInt(),
+  palette : chunk.nextByte(),
+  colorType : chunk.nextByte(),
+  compression : chunk.nextByte(),
+  filter : chunk.nextByte(),
+  interlace : chunk.nextByte()
+});
 
 Decoder.prototype.filter = function(data) {
-  var bpp = this.bpp;
-  var width = this._IHDR.width, height = this._IHDR.height;
-  var pixels = new byteArray((width * height) * bpp);
-  var filter, line, left, leftup, up, pixel;
-  var lineWidth = width * bpp, byte, off;
+  const bpp = this.bpp;
+  const width = this._IHDR.width, height = this._IHDR.height;
+  const pixels = new byteArray((width * height) * bpp);
+  let filter, line, left, leftup, up, pixel;
+  const lineWidth = width * bpp;
+  let byte;
+  let off;
 
-  for (var y = 0; y < height; y++) {
+  for (let y = 0; y < height; y++) {
 
     filter = data.nextByte();
     line = data.nextBytes(lineWidth);
 
-    for (var x = 0; x < lineWidth; x++) {
+    for (let x = 0; x < lineWidth; x++) {
 
       if (filter !== 0) {
         off = (y * lineWidth) + x;
@@ -315,10 +311,7 @@ Decoder.prototype.filter = function(data) {
           left =  pixels[off - bpp];
           leftup = pixels[(off - lineWidth) - bpp];
 
-          var p = left + up - leftup,
-            pleft = Math.abs(p - left),
-            pup = Math.abs(p - up),
-            pleftup = Math.abs(p - leftup);
+          const p = left + up - leftup, pleft = Math.abs(p - left), pup = Math.abs(p - up), pleftup = Math.abs(p - leftup);
 
           if (pleft <= pup && pleft <= pleftup){
             pixel = byte + left & 0xff;
@@ -331,7 +324,7 @@ Decoder.prototype.filter = function(data) {
           pixel = byte + leftup & 0xff;
           break;
         default:
-          throw new Error('Filter error: ' + filter);
+          throw new Error(`Filter error: ${filter}`);
       }
 
       pixels.insertByte(pixel);

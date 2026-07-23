@@ -1,32 +1,32 @@
-var x11 = require('../../lib');
+const x11 = require('../../lib');
 
-var randomarr = [];
-for(var i=0; i < 20000; ++i) {
+const randomarr = [];
+for(let i=0; i < 20000; ++i) {
     randomarr.push([Math.random()*30-15, Math.random()*30-15, Math.random()*30-15]);
 }
 
-var xclient = x11.createClient(function(err, display) {
-    var X = display.client;
-    var root = display.screen[0].root;
-    X.require('glx', function(err, GLX) {
-        var screen = 0;
-        var isDirect = 0;
-        var ctx = X.AllocID();
-        var visual = 0xa1;
-        var shareListCtx = 0;
-        var width = 800;
-        var height = 800;
+const xclient = x11.createClient((err, display) => {
+    const X = display.client;
+    const root = display.screen[0].root;
+    X.require('glx', (err, GLX) => {
+        const screen = 0;
+        const isDirect = 0;
+        const ctx = X.AllocID();
+        const visual = 0xa1;
+        const shareListCtx = 0;
+        const width = 800;
+        const height = 800;
         GLX.CreateContext(ctx, visual, screen, shareListCtx, isDirect);
-        var win = X.AllocID();
+        const win = X.AllocID();
         X.CreateWindow(win, root, 0, 0, width, height, 0, 0, 0, 0, { eventMask: x11.eventMask.PointerMotion });
         X.MapWindow(win);
-        GLX.MakeCurrent(win, ctx, 0, function(err, res) {
+        GLX.MakeCurrent(win, ctx, 0, (err, res) => {
 
 
 GLX.NewList(ctx, 1, 0x00001300);
-var gl = GLX.renderPipeline();
+const gl = GLX.renderPipeline();
 gl.Begin(0x0004);
-for (var i=0; i < 10000; ++i)
+for (let i=0; i < 10000; ++i)
 {
     gl.Vertex3f(randomarr[i][0], randomarr[i][1], randomarr[i][2]);
     gl.Color3f((randomarr[i+10000][0]+15/30), (randomarr[i+10000][1]+15)/30, (randomarr[i+10000][2]+15)/30);
@@ -35,9 +35,9 @@ gl.End();
 gl.render(ctx);
 GLX.EndList(ctx);
 
-            var i = 0.0;
-            X.on('event', function(ev) {
-                var gl = GLX.renderPipeline();
+            const i = 0.0; // animation phase
+            X.on('event', ev => {
+                const gl = GLX.renderPipeline();
 
   gl.Viewport(0, 0, 800, 800);
   gl.MatrixMode(0x1701);
@@ -63,11 +63,11 @@ GLX.EndList(ctx);
   gl.Color3f(0.0, 0.0, 1.0);
   gl.Vertex3f(0.0, 30.0, 0);
 
-  var list = false;
+  const list = false;
   if (list) {
     gl.CallList(1);
   } else {
-    for (var i=0; i < 500; ++i)
+    for (let i=0; i < 500; ++i)
     {
       gl.Vertex3f(randomarr[i][0], randomarr[i][1], randomarr[i][2]);
       gl.Color3f((randomarr[i+500][0]+15/30), (randomarr[i+500][1]+15)/30, (randomarr[i+500][2]+15)/30);
@@ -81,5 +81,5 @@ GLX.EndList(ctx);
             });
         });
     });
-    X.on('error', function(err) { console.log(err); });
+    X.on('error', err => { console.log(err); });
 });

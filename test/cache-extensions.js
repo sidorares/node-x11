@@ -1,25 +1,25 @@
-var x11 = require('../lib');
-var should = require('should');
+const x11 = require('../lib');
+const should = require('should');
 
-describe('requiring an X11 extension on same connection', function() {
+describe('requiring an X11 extension on same connection', () => {
     before(function(done) {
-        var self = this;
-        var client = x11.createClient(function(err, dpy) {
+        const self = this;
+        const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
             self.X = dpy.client;
             done();
         });
 
-        client.on('error', function (err) {
+        client.on('error', err => {
             console.error('Error : ', err);
         });
     });
 
     it('should be cached', function(done) {
-        var self = this;
-        this.X.require('xtest', function(err, randr) {
+        const self = this;
+        this.X.require('xtest', (err, randr) => {
             should.not.exist(err);
-            self.X.require('xtest', function(err, randr1) {
+            self.X.require('xtest', (err, randr1) => {
                 should.not.exist(err);
                 randr.should.equal(randr1);
                 done();

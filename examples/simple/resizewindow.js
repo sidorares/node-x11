@@ -1,15 +1,15 @@
-var x11 = require('../../lib');
-x11.createClient(function(err, display) {
-    var X = display.client;
-    var root = display.screen[0].root;
-    var wid = X.AllocID();
+const x11 = require('../../lib');
+x11.createClient((err, display) => {
+    const X = display.client;
+    const root = display.screen[0].root;
+    const wid = X.AllocID();
     X.CreateWindow(wid, root, 10, 10, 400, 300);
     X.MapWindow(wid);
-    setInterval( function() { 
+    setInterval( () => { 
          X.ResizeWindow(wid, 800, 200);
     }, 1200);
-    var interval = setInterval( function() { 
+    const interval = setInterval( () => { 
          X.ResizeWindow(wid, 400, 300);
     }, 510);
-    X.on('end', function() { clearInterval(interval)});
+    X.on('end', () => { clearInterval(interval)});
 });

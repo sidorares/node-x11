@@ -13,36 +13,36 @@
 // x11perf -sync -pointer  :
 // x11perf -pointer        :
 
-var x11 = require('../../../lib');
-var X = x11.createClient();
+const x11 = require('../../../lib');
+const X = x11.createClient();
 
-var total = 50000;
-var num_qp_left = total;
-var start = +new Date();
+const total = 50000;
+let num_qp_left = total;
+const start = +new Date();
 
 function benchmarkQP(wid)
 {
-    X.QueryPointer(wid, function(res) {
+    X.QueryPointer(wid, res => {
         num_qp_left--;
         if (num_qp_left > 0)
             benchmarkQP(wid);
         else {
-            var end = +new Date();
-            var delta = (end - start)/1000
-            console.log( 'Finished ' + total + ' requests in ' + delta + ' sec, ' + total/delta + ' req/sec');
+            const end = +new Date();
+            const delta = (end - start)/1000;
+            console.log( `Finished ${total} requests in ${delta} sec, ${total/delta} req/sec`);
             X.terminate();
         }
     });
 }
 
-X.on('connect', function(err, display) {
-    var screen = display.screen[0];
-    var wid = X.AllocID();
+X.on('connect', (err, display) => {
+    const screen = display.screen[0];
+    const wid = X.AllocID();
     X.CreateWindow(wid, screen.root, 10, 10, 400, 300, 1, 1, 0, { backgroundPixel: screen.white_pixel });
     X.MapWindow(wid);
     benchmarkQP(wid);
 });
 
-X.on('error', function(err) {
+X.on('error', err => {
     console.log(err);
 });

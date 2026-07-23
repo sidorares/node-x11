@@ -1,12 +1,12 @@
-var x11 = require('../lib');
-var should = require('should');
-var assert = require('assert');
+const x11 = require('../lib');
+const should = require('should');
+const assert = require('assert');
 
-describe('Client', function() {
+describe('Client', () => {
 
-  var display;
-  beforeEach(function(done) {
-      var client = x11.createClient(function(err, dpy) {
+  let display;
+  beforeEach(done => {
+      const client = x11.createClient((err, dpy) => {
           if (!err) {
               display = dpy;
               done();
@@ -18,20 +18,20 @@ describe('Client', function() {
       client.on('error', done);
   });
 
-  it('should handle more than 65535 requests in one connection', function(done) {
+  it('should handle more than 65535 requests in one connection', done => {
       should.exist(display);
       should.exist(display.screen);
-      var total = 70000;
-      var left = total;
-      var start = Date.now();
+      const total = 70000;
+      let left = total;
+      const start = Date.now();
       function test(err, str) {
          if (err)
             return done(err);
 
          if (left == 0) {
-            var end = Date.now();
-            var dur = end - start;
-            console.log(total + ' requests finished in ' + dur + ' ms, ' + 1000*total/dur + ' req/sec');
+            const end = Date.now();
+            const dur = end - start;
+            console.log(`${total} requests finished in ${dur} ms, ${1000*total/dur} req/sec`);
             return done();
          }
          left--;

@@ -1,20 +1,20 @@
-var x11 = require('../lib');
-var UnpackStream = require('../lib/unpackstream.js');
-var should = require('should');
+const x11 = require('../lib');
+const UnpackStream = require('../lib/unpackstream.js');
+const should = require('should');
 
 //Used Atoms
-var ATOM = {};
+const ATOM = {};
 
-describe('ClientMessage', function() {
+describe('ClientMessage', () => {
     before(function(done) {
-      var self = this;
-      var client = x11.createClient(function(err, dpy) {
+      const self = this;
+      const client = x11.createClient((err, dpy) => {
           should.not.exist(err);
           self.X = dpy.client;
           self.wid = self.X.AllocID();
           self.X.CreateWindow(self.wid, dpy.screen[0].root, 0, 0, 1, 1); // 1x1 pixel window
 
-          self.X.InternAtom(false, 'TEST_ATOM_1', function(err, atom) {
+          self.X.InternAtom(false, 'TEST_ATOM_1', (err, atom) => {
               should.not.exist(err);
               ATOM['TEST_ATOM_1'] = atom;
 
@@ -26,11 +26,11 @@ describe('ClientMessage', function() {
     });
 
     it('should receive client message with format=8', function(done) {
-        var self = this;
+        const self = this;
 
-        var client = x11.createClient(function(err, dpy) {
+        const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X.once('event', function(ev) {
+            self.X.once('event', ev => {
                 ev.name.should.equal('ClientMessage');
                 ev.wid.should.equal(self.wid);
                 ev.message_type.should.equal(ATOM.TEST_ATOM_1);
@@ -39,8 +39,8 @@ describe('ClientMessage', function() {
                 done();
             });
 
-            var X = dpy.client;
-            var eventData = Buffer.alloc(32);
+            const X = dpy.client;
+            const eventData = Buffer.alloc(32);
             eventData.writeInt8(33, 0);                          //Event Type 33 = ClientMessage
             eventData.writeInt8(8,  1);                          //Format
             eventData.writeInt32LE(self.wid, 4);                 //Window ID
@@ -53,11 +53,11 @@ describe('ClientMessage', function() {
     });
 
     it('should receive client message with format=16', function(done) {
-        var self = this;
+        const self = this;
 
-        var client = x11.createClient(function(err, dpy) {
+        const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X.once('event', function(ev) {
+            self.X.once('event', ev => {
                 ev.name.should.equal('ClientMessage');
                 ev.wid.should.equal(self.wid);
                 ev.message_type.should.equal(ATOM.TEST_ATOM_1);
@@ -66,8 +66,8 @@ describe('ClientMessage', function() {
                 done();
             });
 
-            var X = dpy.client;
-            var eventData = Buffer.alloc(32);
+            const X = dpy.client;
+            const eventData = Buffer.alloc(32);
             eventData.writeInt8(33, 0);                          //Event Type 33 = ClientMessage
             eventData.writeInt8(16,  1);                          //Format
             eventData.writeInt32LE(self.wid, 4);                 //Window ID
@@ -80,11 +80,11 @@ describe('ClientMessage', function() {
     });
 
     it('should receive client message with format=32', function(done) {
-        var self = this;
+        const self = this;
 
-        var client = x11.createClient(function(err, dpy) {
+        const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X.once('event', function(ev) {
+            self.X.once('event', ev => {
                 ev.name.should.equal('ClientMessage');
                 ev.wid.should.equal(self.wid);
                 ev.message_type.should.equal(ATOM.TEST_ATOM_1);
@@ -93,8 +93,8 @@ describe('ClientMessage', function() {
                 done();
             });
 
-            var X = dpy.client;
-            var eventData = Buffer.alloc(32);
+            const X = dpy.client;
+            const eventData = Buffer.alloc(32);
             eventData.writeInt8(33, 0);                          //Event Type 33 = ClientMessage
             eventData.writeInt8(32,  1);                         //Format
             eventData.writeInt32LE(self.wid, 4);                 //Window ID

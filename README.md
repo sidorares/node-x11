@@ -3,7 +3,7 @@
 X11 protocol client for Node.js: implements the core X11 protocol, as well as Xrender, Damage, Composite, Big-Requests, Dpms, Screensaver, XFixes, Shape, XTest, XC-Misc, GLX, and Apple-WM extensions.
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/sidorares/node-x11?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Build Status](https://secure.travis-ci.org/sidorares/node-x11.png)](http://travis-ci.org/sidorares/node-x11)
+[![CI](https://github.com/sidorares/node-x11/actions/workflows/ci.yml/badge.svg)](https://github.com/sidorares/node-x11/actions/workflows/ci.yml)
 
 ## Install
 
@@ -19,50 +19,47 @@ Windows users:
 Core requests usage:
 
 ```js
-var x11 = require('x11');
+const x11 = require('x11');
 
-var Exposure = x11.eventMask.Exposure;
-var PointerMotion = x11.eventMask.PointerMotion;
+const { Exposure, PointerMotion } = x11.eventMask;
 
-x11.createClient(function(err, display) {
-  if (!err) {
-    var X = display.client;
-    var root = display.screen[0].root;
-    var wid = X.AllocID();
-    X.CreateWindow(
-      wid,
-      root, // new window id, parent
-      0,
-      0,
-      500,
-      500, // x, y, w, h
-      0,
-      0,
-      0,
-      0, // border, depth, class, visual
-      { eventMask: Exposure | PointerMotion } // other parameters
-    );
-    X.MapWindow(wid);
-    var gc = X.AllocID();
-    X.CreateGC(gc, wid);
-    var white = display.screen[0].white_pixel;
-    var black = display.screen[0].black_pixel;
-    cidBlack = X.AllocID();
-    cidWhite = X.AllocID();
-    X.CreateGC(cidBlack, wid, { foreground: black, background: white });
-    X.CreateGC(cidWhite, wid, { foreground: white, background: black });
-    X.on('event', function(ev) {
-      if (ev.type == 12) {
-        X.PolyFillRectangle(wid, cidWhite, [0, 0, 500, 500]);
-        X.PolyText8(wid, cidBlack, 50, 50, ['Hello, Node.JS!']);
-      }
-    });
-    X.on('error', function(e) {
-      console.log(e);
-    });
-  } else {
+x11.createClient((err, display) => {
+  if (err) {
     console.log(err);
+    return;
   }
+  const X = display.client;
+  const root = display.screen[0].root;
+  const wid = X.AllocID();
+  X.CreateWindow(
+    wid,
+    root, // new window id, parent
+    0,
+    0,
+    500,
+    500, // x, y, w, h
+    0,
+    0,
+    0,
+    0, // border, depth, class, visual
+    { eventMask: Exposure | PointerMotion } // other parameters
+  );
+  X.MapWindow(wid);
+  const white = display.screen[0].white_pixel;
+  const black = display.screen[0].black_pixel;
+  const cidBlack = X.AllocID();
+  const cidWhite = X.AllocID();
+  X.CreateGC(cidBlack, wid, { foreground: black, background: white });
+  X.CreateGC(cidWhite, wid, { foreground: white, background: black });
+  X.on('event', ev => {
+    if (ev.type === 12) {
+      X.PolyFillRectangle(wid, cidWhite, [0, 0, 500, 500]);
+      X.PolyText8(wid, cidBlack, 50, 50, ['Hello, Node.JS!']);
+    }
+  });
+  X.on('error', e => {
+    console.log(e);
+  });
 });
 ```
 

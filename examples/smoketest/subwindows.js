@@ -1,28 +1,28 @@
-var x11 = require('../../lib');
-var Window = require('./wndwrap');
+const x11 = require('../../lib');
+const Window = require('./wndwrap');
 
-x11.createClient(function(err, display) {
+x11.createClient((err, display) => {
 
-    var pts = [];
+    const pts = [];
     new Window(display.client, 0, 0, 600, 400, display.screen[0].white_pixel)
         .handle({
 
-            create: function(ev) {
+            create(ev) {
                 console.log(eve);
             },
 
-            map: function(ev) {
+            map(ev) {
                 console.log(ev);
 
-                for (var i=0; i < 29; ++i)
-                    for (var j=0; j < 19; ++j)
+                for (let i=0; i < 29; ++i)
+                    for (let j=0; j < 19; ++j)
                     {
                         new Window( this, 10+i*20, 10+j*20, 17, 17, display.screen[0].black_pixel)
                            .handle({
-                               mousemove: function() {
-                                   var self = this;
+                               mousemove() {
+                                   const self = this;
                                    self.unmap();
-                                   setTimeout(function() {
+                                   setTimeout(() => {
                                        self.map();
                                    }, 500);
                                }
@@ -32,10 +32,10 @@ x11.createClient(function(err, display) {
                     }
             },
 
-            mousemove: function(ev) {
+            mousemove(ev) {
                 if (this.pressed)
                 {
-                    var lastpoly = pts[pts.length - 1];
+                    const lastpoly = pts[pts.length - 1];
                     lastpoly.push(ev.x); 
                     lastpoly.push(ev.y);
                     if (lastpoly.length > 3)
@@ -43,7 +43,7 @@ x11.createClient(function(err, display) {
                 }
             },
 
-            mousedown: function(ev) {
+            mousedown(ev) {
                 if (ev.keycode == 1) // left button
                 {
                     this.pressed = true;
@@ -51,12 +51,12 @@ x11.createClient(function(err, display) {
 		}            
             },
 
-            mouseup: function(ev) {
+            mouseup(ev) {
                 if (ev.keycode == 1) // left button
                    this.pressed = false;
             },
 
-            expose: function(ev) {        
+            expose(ev) {        
                 //for (var i=0; i < pts.length ; ++i) {
                 //    this.gc.polyLine(pts[i]);
                 //}

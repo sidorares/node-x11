@@ -1,8 +1,8 @@
-var x11 = require('../../lib');
-x11.createClient(function(err, display) {
+const x11 = require('../../lib');
+x11.createClient((err, display) => {
     console.log(display.screen[0])
-    var X = display.client;
-    var wid = X.AllocID();
+    const X = display.client;
+    const wid = X.AllocID();
     X.CreateWindow(wid, display.screen[0].root, 100, 100, 400, 300,
     11,
     32,
@@ -10,5 +10,5 @@ x11.createClient(function(err, display) {
     613
     );
     X.MapWindow(wid);
-    X.on('error', function(err) { console.log(err) });
+    X.on('error', err => { console.log(err) });
 });

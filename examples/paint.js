@@ -1,28 +1,28 @@
-var x11 = require('../lib');
-var PointerMotion = x11.eventMask.PointerMotion;
-var ButtonPress = x11.eventMask.ButtonPress;
-var ButtonRelease = x11.eventMask.ButtonRelease;
+const x11 = require('../lib');
+const PointerMotion = x11.eventMask.PointerMotion;
+const ButtonPress = x11.eventMask.ButtonPress;
+const ButtonRelease = x11.eventMask.ButtonRelease;
 
-var X, Render;
-var pressed = false;
-var gradNo = 0;
+let X, Render;
+let pressed = false;
+let gradNo = 0;
 
-var xclient = x11.createClient(function(err, display) {
+const xclient = x11.createClient((err, display) => {
     X = display.client;
-    var root = display.screen[0].root;
-    X.require('render', function(err, rendExt) {
+    const root = display.screen[0].root;
+    X.require('render', (err, rendExt) => {
         Render = rendExt;
-        var wid = X.AllocID();
+        const wid = X.AllocID();
 
-        var white = display.screen[0].white_pixel;
-        var black = display.screen[0].black_pixel;
+        const white = display.screen[0].white_pixel;
+        const black = display.screen[0].black_pixel;
         X.CreateWindow(wid, root, 10, 10, 400, 300, 0, 0, 0, 0, { backgroundPixel: white, eventMask: PointerMotion|ButtonPress|ButtonRelease });
         X.MapWindow(wid);
 
-        var pict = X.AllocID();
+        const pict = X.AllocID();
         Render.CreatePicture(pict, wid, Render.rgb24);
-        var pictGrad = [];
-        for (var i=0; i < 10; ++i)
+        const pictGrad = [];
+        for (let i=0; i < 10; ++i)
         {
             pictGrad[i] = X.AllocID();
             Render.RadialGradient(pictGrad[i], [50,56], [50,50], 0, 50,
@@ -38,7 +38,7 @@ var xclient = x11.createClient(function(err, display) {
             Render.Composite(3, pictGrad[gradNo], 0, pict, 0, 0, 0, 0, x-50, y-50, 100, 100);
         }
 
-        X.on('event', function(ev) {
+        X.on('event', ev => {
             if (ev.type == 4 && ev.keycode == 1)
                 pressed = true;
             else if (ev.type == 5 && ev.keycode == 1)

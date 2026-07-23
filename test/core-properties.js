@@ -1,19 +1,19 @@
-var x11 = require('../lib');
-var should = require('should');
-var assert = require('assert');
+const x11 = require('../lib');
+const should = require('should');
+const assert = require('assert');
 
   // keep for a while: this snippet helps to track global leak
-  global.__defineSetter__('valueName', function(v) {
+  global.__defineSetter__('valueName', v => {
       console.trace();
   });
 
-describe('Window property', function() {
+describe('Window property', () => {
 
-  var display;
-  var X;
-  var wid;
-  beforeEach(function(done) {
-      var client = x11.createClient(function(err, dpy) {
+  let display;
+  let X;
+  let wid;
+  beforeEach(done => {
+      const client = x11.createClient((err, dpy) => {
           if (!err) {
               display = dpy;
               X = display.client;
@@ -28,30 +28,30 @@ describe('Window property', function() {
       client.on('error', done);
   });
 
-  afterEach(function(done) {
+  afterEach(done => {
       X.terminate();
       X.on('end', done);
       X = null;
       display = null;
   });
 
-  it('shuld exist after set with ChangeProperty', function(done) {
+  it('shuld exist after set with ChangeProperty', done => {
       X.on('error', done);
-      var propvalset = "some property value";
+      const propvalset = "some property value";
       X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, propvalset);
-      X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 10000000, function(err, prop) {
+      X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 10000000, (err, prop) => {
           if (err) return done(err);
-          var propvalget = prop.data.toString();
+          const propvalget = prop.data.toString();
           assert.equal(propvalset, propvalget, 'get property result different from set property value');
           done();
       });
   });
 
-  it('should generate PropertyNotify event', function(done) {
+  it('should generate PropertyNotify event', done => {
       X.on('error', done);
-      var propvalset = "some property value";
+      const propvalset = "some property value";
       X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, propvalset);
-      X.on('event', function(ev) {
+      X.on('event', ev => {
           if (ev.name === 'PropertyNotify')
           {
               assert.equal(ev.atom, X.atoms.WM_NAME, 'atom in notification should be same as in ChangeProperty');
@@ -65,16 +65,16 @@ describe('Window property', function() {
       });
   });
 
-  it('should not exist after DeleteProperty called', function(done) {
+  it('should not exist after DeleteProperty called', done => {
       X.on('error', done);
-      var propvalset = "some property value";
+      const propvalset = "some property value";
       X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, propvalset);
-      X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 10000000, function(err, prop) {
+      X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 10000000, (err, prop) => {
           if (err) return done(err);
-          var propvalget = prop.data.toString();
+          const propvalget = prop.data.toString();
           assert.equal(propvalset, propvalget, 'get property result different from set property value');
           X.DeleteProperty(wid, X.atoms.WM_NAME);
-          X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 10000000, function(err, prop) {
+          X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 10000000, (err, prop) => {
               assert.equal(prop.type, 0, 'non-existent property type should be 0');
               assert.equal(prop.data.length, 0, 'non-existent property data length should be 0');
               done();

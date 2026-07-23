@@ -1,19 +1,19 @@
-var x11 = require('../../lib');
+const x11 = require('../../lib');
 
-var xclient = x11.createClient({debug: true});
-var Exposure = x11.eventMask.Exposure;
-var PointerMotion = x11.eventMask.PointerMotion;
-var pts = [];
+const xclient = x11.createClient({debug: true});
+const Exposure = x11.eventMask.Exposure;
+const PointerMotion = x11.eventMask.PointerMotion;
+const pts = [];
 
 xclient.on('connect', function(display) {
-    var X = this;
-    var root = display.screen[0].root;
-    var white = display.screen[0].white_pixel;
-    var black = display.screen[0].black_pixel;
+    const X = this;
+    const root = display.screen[0].root;
+    const white = display.screen[0].white_pixel;
+    const black = display.screen[0].black_pixel;
 
     function createWindow()
     {
-      var wid = X.AllocID();
+      const wid = X.AllocID();
       // id, parentId, x, y, width, height, borderWidth, depth, _class, visual, values
       X.CreateWindow(
         wid, root, 
@@ -25,13 +25,13 @@ xclient.on('connect', function(display) {
       return wid;
     }
 
-    var wid = createWindow();
-    var wid1 = createWindow();
+    const wid = createWindow();
+    const wid1 = createWindow();
   
-    var gc = X.AllocID();
+    const gc = X.AllocID();
     X.CreateGC(gc, wid, { foreground: black, background: white } );
     
-    X.on('event', function(ev) {
+    X.on('event', ev => {
         //console.log(ev);
         if (ev.type == 12)
         {
@@ -42,9 +42,9 @@ xclient.on('connect', function(display) {
             if (ev.wid == wid) // don't send it from second window
             {
                 // set window in the event we are sending
-                var n = wid1;
-                var offset = 12;
-                var buf = ev.rawData;
+                const n = wid1;
+                let offset = 12;
+                const buf = ev.rawData;
                 buf[offset++] = n & 0xff;
                 buf[offset++] = (n >> 8) & 0xff;
                 buf[offset++] = (n >> 16) & 0xff;

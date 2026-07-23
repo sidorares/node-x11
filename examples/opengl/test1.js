@@ -1,35 +1,35 @@
-var x11 = require('../../lib');
+const x11 = require('../../lib');
 
-var randomarr = [];
-for(var i=0; i < 2000; ++i) {
+const randomarr = [];
+for(let i=0; i < 2000; ++i) {
     randomarr.push([Math.random()*30-15, Math.random()*30-15, Math.random()*30-15]);
 }
 
-var width = 500;
-var height = 500;
-var eventmask = x11.eventMask.PointerMotion;
-var listId = 1;
+const width = 500;
+const height = 500;
+const eventmask = x11.eventMask.PointerMotion;
+let listId = 1;
 
-x11.createClient(function(err, display) {
-    var X = display.client;
-    var root = display.screen[0].root;
-    X.require('glx', function(err, GLX) {
-        var visual = 0;
-        var visuals = display.screen[0].depths[24];
+x11.createClient((err, display) => {
+    const X = display.client;
+    const root = display.screen[0].root;
+    X.require('glx', (err, GLX) => {
+        const visual = 0;
+        const visuals = display.screen[0].depths[24];
         for (visual in visuals) {
           if (visuals[visual].class == 4 || visuals[visual].class == 5)
             break;
         }
 
-        var win = X.AllocID();
+        const win = X.AllocID();
         X.CreateWindow(win, root, 0, 0, width, height, 0, 0, 0, visual, { eventMask: eventmask });
         X.MapWindow(win);
-        var ctx = X.AllocID();
+        const ctx = X.AllocID();
         GLX.CreateContext(ctx, visual, 0, 0, 0);
-        GLX.MakeCurrent(win, ctx, 0, function(err, ctx) {}); // do we need to wait for reply here?
+        GLX.MakeCurrent(win, ctx, 0, (err, ctx) => {}); // do we need to wait for reply here?
 
         function draw(ev) {
-            var gl = GLX.renderPipeline();
+            const gl = GLX.renderPipeline();
             gl.Enable(0x0B71);
             gl.Viewport(0, 0, 800, 800);
             gl.MatrixMode(0x1701);
@@ -49,12 +49,12 @@ x11.createClient(function(err, display) {
             GLX.SwapBuffers(ctx, win);
         }
 
-        GLX.GenLists(ctx, 1, function(err, startListIndex) {
+        GLX.GenLists(ctx, 1, (err, startListIndex) => {
             listId = startListIndex;
             GLX.NewList(ctx, listId, 0x00001300);
-            var gl = GLX.renderPipeline();
+            const gl = GLX.renderPipeline();
             gl.Begin(0x0004);
-            for (var i=0; i < 1000; ++i)
+            for (let i=0; i < 1000; ++i)
             {
                gl.Vertex3f(randomarr[i][0], randomarr[i][1], randomarr[i][2]);
                gl.Color3f((randomarr[i+1000][0]+15/30), (randomarr[i+1000][1]+15)/30, (randomarr[i+1000][2]+15)/30);
@@ -67,6 +67,6 @@ x11.createClient(function(err, display) {
 
         X.on('event', draw);
     });
-    X.on('error', function(err) { console.log(err); });
+    X.on('error', err => { console.log(err); });
 });
 
