@@ -56,6 +56,22 @@ describe('Colormap requests', () => {
       });
   });
 
+  it('AllocColor should return closest rgb and a queryable pixel', done => {
+      X.AllocColor(defaultCmap, 0xffff, 0x8080, 0, (err, color) => {
+          should.not.exist(err);
+          color.red.should.equal(0xffff);
+          color.green.should.be.approximately(0x8080, 0x200);
+          color.blue.should.equal(0);
+          X.QueryColors(defaultCmap, [color.pixel], (err2, colors) => {
+              should.not.exist(err2);
+              colors[0].red.should.equal(color.red);
+              colors[0].green.should.equal(color.green);
+              colors[0].blue.should.equal(color.blue);
+              done();
+          });
+      });
+  });
+
   it('AllocNamedColor should allocate named color "blue"', done => {
       X.AllocNamedColor(defaultCmap, 'blue', (err, color) => {
           should.not.exist(err);
