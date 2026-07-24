@@ -8,6 +8,13 @@ const should = require('should');
 describe('RECORD extension', () => {
     before(function(done) {
         const self = this;
+        let setupFinished = false;
+        const setupError = err => {
+            if (!setupFinished) {
+                setupFinished = true;
+                done(err);
+            }
+        };
         // control connection: owns the context, issues the recorded requests
         const c1 = x11.createClient((err, dpy) => {
             should.not.exist(err);
@@ -22,13 +29,14 @@ describe('RECORD extension', () => {
                     self.Xenable.require('record', (err3, ext2) => {
                         should.not.exist(err3);
                         self.recordEnable = ext2;
+                        setupFinished = true;
                         done();
                     });
                 });
-                c2.on('error', done);
+                c2.on('error', setupError);
             });
         });
-        c1.on('error', done);
+        c1.on('error', setupError);
     });
 
     it('QueryVersion should report at least 1.13', function() {
@@ -80,7 +88,15 @@ describe('RECORD extension', () => {
         let started = false;
         let sawInternAtom = false;
 
-        this.recordEnable.EnableContext(context, reply => {
+        // EnableContext goes over a different connection than CreateContext;
+        // the server may process the connections in either order, so sync the
+        // control connection first to make sure the context exists
+        this.record.GetContext(context, err => {
+            should.not.exist(err);
+            enable();
+        });
+
+        const enable = () => this.recordEnable.EnableContext(context, reply => {
             if (reply.category === self.record.Category.StartOfData) {
                 started = true;
                 // recording is now live: issue a known request on the control connection

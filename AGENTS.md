@@ -64,6 +64,24 @@ Details the script handles for you:
 | `examples/` | Runnable demos (need a real X server / XQuartz) |
 | `test/` | Mocha specs, driven by `test-runner.js` |
 
+## PR descriptions
+
+Write for a library user deciding whether/how to upgrade, not as a log of
+your working session:
+
+- Structure by topic (setup/context, bug fixes, new API, breaking changes,
+  examples, testing) — never by commit ("first commit", "second commit");
+  the commit history already tells that story.
+- Lead with the context a reader needs to interpret the change (e.g. "this
+  never worked because servers ship with X disabled"), then what changed.
+- Describe bugs by user-visible symptom ("every perspective scene was
+  actually orthographic"), not by diff ("opcode 182 → 175").
+- Breaking changes get their own clearly-scoped section.
+- State investigated dead ends / scope limits explicitly (e.g. "no shaders
+  over indirect GLX — documented") so readers don't mistake them for gaps.
+- Say how the change was verified (which servers, pixel-level tests, suite
+  totals).
+
 ## Conventions
 
 - Request definitions in `corereqs.js` return a `Buffer` built with `writeUInt*` (plus optional reply unpacker) — study a neighbouring request before adding one.
