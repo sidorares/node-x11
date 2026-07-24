@@ -80,9 +80,23 @@ X.require('glx', (err, GLX) => {
 });
 ```
 
-See [`examples/opengl/triangle.js`](../../examples/opengl/triangle.js)
-(minimal) and [`examples/opengl/glxgears.js`](../../examples/opengl/glxgears.js)
-(display lists, lighting, animation) for complete programs.
+Complete example programs in [`examples/opengl/`](../../examples/opengl/):
+
+- `triangle.js` — minimal: visual selection, context, one frame
+- `glxgears.js` — display lists, lighting, animation (port of the classic)
+- `reflection-shadow.js` — stencil-buffer planar reflection, projected
+  planar shadow, sphere-map environment mapping (TexGen), and a dynamic
+  texture re-uploaded every frame with `TexImage2D`
+- `pbuffer-interop.js` — GLX/core-X interop: an off-screen pbuffer renders,
+  `ReadPixels` pulls the frame back, and core `PutImage` displays it in an
+  ordinary non-GL window (works with any visual, no GLX drawable attached
+  to the visible window)
+
+Note on shaders: there is no GLSL (and on current servers no ARB
+vertex/fragment program) support over indirect GLX — the GL extension
+string exposed to indirect contexts is nearly empty. Fixed-function GL 1.4
+(display lists, lighting, texturing, TexGen, stencil, blending) is the
+practical feature set, which is what the examples above use.
 
 ## Contexts vs. context tags
 
@@ -348,14 +362,15 @@ Serialized commands: `Begin/End`, `Vertex2f`, `Vertex3f/Vertex3fv`,
 `Color3f`, `Color4f`, `Normal3f/Normal3fv`, `TexCoord2f`, `RasterPos2f`,
 `Rectf`, `ClearColor`, `ClearDepth`, `ClearStencil`, `Clear`,
 `Enable/Disable`, `ShadeModel`, `AlphaFunc`, `BlendFunc`, `LogicOp`,
-`StencilFunc/StencilOp/StencilMask`, `DepthFunc`, `DepthMask`, `LineWidth`,
-`LineStipple`, `PointSize`, `PolygonMode`, `Scissor`, `DrawBuffer`,
-`ReadBuffer`, `Hint`, `ColorMaterial`, `CullFace`, `FrontFace`,
-`Fogf/Fogfv`, `Lightfv`, `LightModelf`, `Materialfv` (both `*fv` accept a
-4-element array or 4 scalars), `MatrixMode`, `LoadIdentity`,
+`StencilFunc/StencilOp/StencilMask`, `ColorMask`, `DepthFunc`, `DepthMask`,
+`LineWidth`, `LineStipple`, `PointSize`, `PolygonMode`, `Scissor`,
+`DrawBuffer`, `ReadBuffer`, `Hint`, `ColorMaterial`, `CullFace`,
+`FrontFace`, `Fogf/Fogfv`, `Lightfv`, `LightModelf`, `Materialfv` (both
+`*fv` accept a 4-element array or 4 scalars), `MatrixMode`, `LoadIdentity`,
 `LoadMatrixf/MultMatrixf` (16-element arrays), `PushMatrix/PopMatrix`,
 `Rotatef`, `Scalef`, `Translatef`, `Ortho`, `Frustum`, `Viewport`,
 `CallList`, `ListBase`, `BindTexture`, `TexEnvf/TexEnvi`,
+`TexGeni/TexGenfv` (sphere/eye-plane texture coordinate generation),
 `TexParameterf/fv/i`, `ProgramString/BindProgram` (ARB program objects) and
 `TexImage2D(target, level, internalFormat, width, height, border, format,
 type, data)` (`type` must be `FLOAT`, `BYTE` or `UNSIGNED_BYTE`; `data` a
