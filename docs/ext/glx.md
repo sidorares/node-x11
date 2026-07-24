@@ -44,6 +44,16 @@ fails with `GLXBadContext`. Query requests (`QueryVersion`, `GetFBConfigs`,
   already do this. On Xorg, `Option "AllowIndirectGLX" "on"` in the config
   works too.
 
+One more server-support caveat: on current **Linux** distro X servers
+(debian bookworm, ubuntu 24.04) indirect contexts are *accepted* but the GL
+engine behind them is gone — `GetString` returns empty strings, state
+queries return zeros and nothing rasterizes (`glxinfo -i` shows the same).
+Ubuntu 24.04's Xvfb even segfaults on indirect `MakeCurrent`, which is why
+CI runs the suite in a debian bookworm container. **XQuartz (and its
+bundled Xvfb) still ships a fully working indirect GL path** — macOS is
+currently the best place to actually run the rendering examples. The test
+suite detects a GL-less server and skips execution-dependent tests.
+
 XQuartz quirks worth knowing:
 
 - `MakeCurrent` must happen **after the window is actually mapped**: wait
