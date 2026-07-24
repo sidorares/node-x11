@@ -218,12 +218,13 @@ describe('GLX extension', function() {
                     tag.should.be.above(0);
                     self.tag = tag;
                     // modern Linux X servers accept indirect contexts but no
-                    // longer execute GL behind them (empty strings, zeroed
-                    // state, no rasterization) - XQuartz's Xvfb still does.
-                    // Detect that so GL-execution tests can skip.
-                    GLX.GetIntegerv(tag, GLX.MAX_TEXTURE_SIZE, guard(done, (err, size) => {
+                    // longer execute GL behind them (no rasterization, state
+                    // queries return uninitialized garbage) - XQuartz's Xvfb
+                    // still does. An empty GL_VERSION string is the reliable
+                    // tell; detect it so GL-execution tests can skip.
+                    GLX.GetString(tag, GLX.VERSION, guard(done, (err, version) => {
                         should.not.exist(err);
-                        self.glExecutes = size > 0;
+                        self.glExecutes = version.length > 0;
                         done();
                     }));
                 }));
