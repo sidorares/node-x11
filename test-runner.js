@@ -17,6 +17,7 @@ const extensionTests = {
     'dpms.js': 'DPMS',
     'fixes.js': 'XFIXES',
     'ge.js': 'Generic Event Extension',
+    'glx.js': 'GLX',
     'present.js': 'Present',
     'randr.js': 'RANDR',
     'record.js': 'RECORD',

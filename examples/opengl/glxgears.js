@@ -228,7 +228,6 @@ function reshape(gl, width, height)
    gl.MatrixMode(gl.MODELVIEW);
    gl.LoadIdentity();
    gl.Translatef(0.0, 0.0, -40.0);
-   gl.Scalef(0.1, 0.1, 0.1);
 }
 
 
@@ -275,21 +274,8 @@ function init(gl, done)
 }
 
 const x11 = require('../../lib');
-//var eventmask = x11.eventMask.PointerMotion|x11.eventMask.PointerMotionHint|x11.eventMask.ButtonPress|x11.eventMask.ButtonRelease|x11.eventMask.StructureNotify|x11.eventMask.Exposure;
-const eventmask = x11.eventMask.PointerMotion;
-//var eventmask = x11.eventMask.PointerMotion|x11.eventMask.ButtonPress|x11.eventMask.ButtonRelease|x11.eventMask.StructureNotify|x11.eventMask.Exposure;
-const exec = require('child_process').exec;
-
-function findBestVisual(display, done) {
-    exec('glxinfo -i -b', (error, stdout, stderr) => {
-        console.log(stdout);
-        if (error)
-            return done(error);
-        done(null, parseInt(stdout)+1);
-        //done(null, 0xb1);
-    })
-}
-
+const eventmask = x11.eventMask.PointerMotion | x11.eventMask.StructureNotify |
+    x11.eventMask.Exposure;
 
 x11.createClient((error, display) => {
     const X = display.client;
@@ -297,74 +283,77 @@ x11.createClient((error, display) => {
     let width = 500;
     let height = 500;
     X.require('glx', (err, GLX) => {
-        const depth = 24;
-        findBestVisual(display, (err, visual) => {
+        if (err) throw err;
+        // pick an RGBA double-buffered GL visual with a depth buffer
+        GLX.GetVisualConfigs(0, (err, configs) => {
+            if (err) throw err;
+            const cfg = configs.find(c => c.rgbMode && c.doubleBufferMode && c.depthBits > 0);
+            if (!cfg)
+                throw new Error('no double-buffered RGBA GL visual on this server');
+            const visual = cfg.visualID;
+            let depth = 24;
+            const depths = display.screen[0].depths;
+            for (const d in depths)
+                if (Object.keys(depths[d]).indexOf(String(visual)) !== -1)
+                    depth = parseInt(d);
 
-        /*
-        var visual = 147;
-        var rgbaVisuals = Object.keys(display.screen[0].depths[depth]);
-        for (v in rgbaVisuals)
-        {
-           var vid = rgbaVisuals[v];
-           var visualClass = display.screen[0].depths[depth][vid].class;
-           if (visualClass == 4 || visualClass == 5)
-           {
-              visual = vid;
-              break;
-           }
-        }
-        */
+            const cmid = X.AllocID();
+            X.CreateColormap(cmid, root, visual, 0);
+            const win = X.AllocID();
+            X.CreateWindow(win, root, 0, 0, width, height, 0, depth, 1, visual,
+                { eventMask: eventmask, colormap: cmid, backgroundPixel: 0, borderPixel: 0 });
+            X.MapWindow(win);
 
-        const cmid = X.AllocID();
-        X.CreateColormap(cmid, root, visual, 0);
-        const win = X.AllocID();
-        console.log(eventmask);
-        X.CreateWindow(win, root, 0, 0, width, height, 0, depth, 0, visual, { eventMask: eventmask, colormap: cmid, backgroundPixel: 0, borderPixel: 0 });
-        X.MapWindow(win);
+            // wait until the window is mapped before MakeCurrent - XQuartz
+            // binds a zero-sized drawable otherwise
+            let gl = null;
+            let initialized = false;
 
-        const ctx = X.AllocID();
-        GLX.CreateContext(ctx, visual, 0, 0, 0);
-        GLX.MakeCurrent(win, ctx, 0, () => {});
-        const gl = GLX.renderPipeline(ctx);
+            function start() {
+                const ctx = X.AllocID();
+                GLX.CreateContext(ctx, visual, 0, 0, 0);
+                GLX.MakeCurrent(win, ctx, 0, (err, tag) => {
+                    if (err) throw err;
+                    gl = GLX.renderPipeline(tag);
+                    init(gl, () => {
+                        initialized = true;
+                        setInterval(() => {
+                            angle += 2;
+                            reshape(gl, width, height);
+                            draw(gl);
+                            gl.SwapBuffers(win);
+                        }, 50);
+                    });
+                });
+            }
 
-        let initialized = false;
-        init(gl, () => {
-          initialized = true;
-          setInterval(() => {
-              angle += 2;
-              reshape(gl, width, height);
-              draw(gl);
-              gl.SwapBuffers(win);
-          }, 50);
-        });
-
-        X.on('event', ev => {
-           console.log(ev);
-           switch(ev.type) {
-           case 22:
-              reshape(gl, ev.width, ev.height);
-              width = ev.width;
-              height = ev.height;
-              break;
-           case 6:
-              X.QueryPointer(win, (err, pointer) => {
-                view_rotx = pointer.childX;
-                view_roty = pointer.childY;
+            X.on('event', ev => {
+                if (ev.name === 'MapNotify' && !gl) {
+                    setTimeout(start, 100);
+                    return;
+                }
+                if (!initialized)
+                    return;
+                switch (ev.type) {
+                case 22: // ConfigureNotify
+                    width = ev.width;
+                    height = ev.height;
+                    break;
+                case 6: // MotionNotify
+                    X.QueryPointer(win, (err, pointer) => {
+                        view_rotx = pointer.childX;
+                        view_roty = pointer.childY;
+                        reshape(gl, width, height);
+                        draw(gl);
+                        gl.SwapBuffers(win);
+                    });
+                    return;
+                }
                 reshape(gl, width, height);
-                if (initialized)
-                  draw(gl);
+                draw(gl);
                 gl.SwapBuffers(win);
-              });
-              return;
-           }
-           reshape(gl, width, height);
-           if (initialized)
-              draw(gl);
-           gl.SwapBuffers(win);
+            });
         });
-
- }); // findBestVisual
-
     });
     X.on('error', err => { console.log(err); });
 });

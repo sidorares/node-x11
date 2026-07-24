@@ -19,7 +19,9 @@ find_xvfb() {
 
 if [ ! -S "$SOCKET" ]; then
     XVFB=$(find_xvfb)
-    "$XVFB" ":$DISPLAY_NUM" -nolisten tcp 2>/tmp/xvfb-$DISPLAY_NUM.log &
+    # +iglx enables indirect GLX contexts (off by default in modern servers),
+    # needed by the GLX tests
+    "$XVFB" ":$DISPLAY_NUM" -nolisten tcp +iglx 2>/tmp/xvfb-$DISPLAY_NUM.log &
     for _ in 1 2 3 4 5 6 7 8 9 10; do
         [ -S "$SOCKET" ] && break
         sleep 0.5
