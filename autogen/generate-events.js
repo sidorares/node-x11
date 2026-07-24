@@ -56,7 +56,14 @@ const EVENT_FIELD_ALIAS = {
   ConfigureRequest: { window: 'wid', value_mask: 'mask', stack_mode: 'stackMode' },
   PropertyNotify: { window: 'wid' },
   ClientMessage: { window: 'wid' },
-  MappingNotify: { first_keycode: 'firstKeyCode' }
+  MappingNotify: { first_keycode: 'firstKeyCode' },
+  VisibilityNotify: { window: 'wid' },
+  ReparentNotify: { event: 'event', window: 'wid' },
+  GravityNotify: { event: 'event', window: 'wid' },
+  ResizeRequest: { window: 'wid' },
+  CirculateNotify: { event: 'event', window: 'wid' },
+  CirculateRequest: { event: 'event', window: 'wid' },
+  ColormapNotify: { window: 'wid' }
 };
 
 const TYPE_SIZE = {
@@ -225,7 +232,7 @@ function readExpr(typedefs, f, bufExpr, offset) {
 function genEventParser(typedefs, ev) {
   // Special-case ClientMessage (format-dependent data) and MappingNotify / KeymapNotify
   if (ev.name === 'KeymapNotify')
-    return null;
+    return genKeymapNotify();
   if (ev.name === 'ClientMessage')
     return genClientMessage();
   if (ev.name === 'MappingNotify')
@@ -357,6 +364,18 @@ function genMappingNotify() {
   return { name: 'MappingNotify', number: 34, code: lines.join('\n') };
 }
 
+function genKeymapNotify() {
+  // no-sequence-number event: bytes 1..31 are the key bit vector
+  // (keys for keycodes 8..255; QueryKeymap byte K corresponds to keys[K-1])
+  const lines = [];
+  lines.push('function parseKeymapNotify(type, seq, extra, code, raw, headerBuf) {');
+  lines.push('  const event = { type: type & 0x7F, name: \'KeymapNotify\' };');
+  lines.push('  event.keys = Buffer.concat([headerBuf.slice(1, 8), raw]);');
+  lines.push('  return event;');
+  lines.push('}');
+  return { name: 'KeymapNotify', number: 11, code: lines.join('\n') };
+}
+
 function main() {
   parseProto((err, { typedefs, events }) => {
     if (err)
@@ -365,11 +384,13 @@ function main() {
     // Generate parsers for events we currently handle in xcore + common ones
     const wanted = [
       'KeyPress', 'KeyRelease', 'ButtonPress', 'ButtonRelease', 'MotionNotify',
-      'EnterNotify', 'LeaveNotify', 'FocusIn', 'FocusOut',
-      'Expose', 'CreateNotify', 'DestroyNotify', 'UnmapNotify', 'MapNotify',
-      'MapRequest', 'ConfigureNotify', 'ConfigureRequest',
+      'EnterNotify', 'LeaveNotify', 'FocusIn', 'FocusOut', 'KeymapNotify',
+      'Expose', 'GraphicsExposure', 'NoExposure', 'VisibilityNotify',
+      'CreateNotify', 'DestroyNotify', 'UnmapNotify', 'MapNotify',
+      'MapRequest', 'ReparentNotify', 'ConfigureNotify', 'ConfigureRequest',
+      'GravityNotify', 'ResizeRequest', 'CirculateNotify', 'CirculateRequest',
       'PropertyNotify', 'SelectionClear', 'SelectionRequest', 'SelectionNotify',
-      'ClientMessage', 'MappingNotify'
+      'ColormapNotify', 'ClientMessage', 'MappingNotify'
     ];
 
     const parsers = [];
