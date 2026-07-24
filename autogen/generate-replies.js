@@ -46,7 +46,7 @@ const REPLY_ALIASES = {
     override_redirect: 'overrideRedirect',
     all_event_masks: 'allEventMasks',
     your_event_mask: 'myEventMasks',
-    do_not_propagate_mask: 'doNotPropogateMask'
+    do_not_propagate_mask: 'doNotPropagateMask'
   },
   QueryPointer: {
     root_x: 'rootX', root_y: 'rootY',

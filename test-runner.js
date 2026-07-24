@@ -9,6 +9,31 @@ const mocha = new Mocha({
     reporter : 'spec'
 });
 
+// Extension-specific test files are only added when the server advertises the
+// extension (checked with QueryExtension by on-the-wire name).
+const extensionTests = {
+    'damage.js': 'DAMAGE',
+    'dbe.js': 'DOUBLE-BUFFER',
+    'dpms.js': 'DPMS',
+    'fixes.js': 'XFIXES',
+    'ge.js': 'Generic Event Extension',
+    'present.js': 'Present',
+    'randr.js': 'RANDR',
+    'record.js': 'RECORD',
+    'render.js': 'RENDER',
+    'res.js': 'X-Resource',
+    'screen-saver.js': 'MIT-SCREEN-SAVER',
+    'shape.js': 'SHAPE',
+    'shm.js': 'MIT-SHM',
+    'sync.js': 'SYNC',
+    'xc-misc.js': 'XC-MISC',
+    'xinerama.js': 'XINERAMA',
+    'xinput.js': 'XInputExtension',
+    'xkb.js': 'XKEYBOARD',
+    'xtest.js': 'XTEST',
+    'xv.js': 'XVideo'
+};
+
 // To be able to perform the tests we need the server:
 // 1 - to support the dpms extension.
 // 2 - dpms version is 1.1.
@@ -30,13 +55,6 @@ const run_dpms_test = (X, cb) => {
         } else {
             cb(false);
         }
-    });
-};
-
-const run_xtest_test = (X, cb) => {
-    X.require('xtest', err => {
-        if (!err) cb(true);
-        else cb(false);
     });
 };
 
@@ -68,33 +86,24 @@ x11.createClient((err, display) => {
     async.forEach(
         fs.readdirSync('./test'),
         (file, cb) => {
+            const addIf = run => {
+                if (run) {
+                    mocha.addFile(path.join('./test', file));
+                }
+
+                cb();
+            };
+
             if (file === 'dpms.js') {
-                run_dpms_test(X, run => {
-                    if (run) {
-                        mocha.addFile(path.join('./test', file));
-                    }
-
-                    cb();
-                });
-            } else if (file === 'xtest.js') {
-                run_xtest_test(X, run => {
-                    if (run) {
-                        mocha.addFile(path.join('./test', file));
-                    }
-
-                    cb();
-                });
+                run_dpms_test(X, addIf);
             } else if (file === 'randr.js') {
-                run_randr_test(X, run => {
-                    if (run) {
-                        mocha.addFile(path.join('./test', file));
-                    }
-
-                    cb();
+                run_randr_test(X, addIf);
+            } else if (extensionTests[file]) {
+                X.QueryExtension(extensionTests[file], (err, ext) => {
+                    addIf(!err && ext.present);
                 });
             } else {
-                mocha.addFile(path.join('./test', file));
-                cb();
+                addIf(true);
             }
         },
         () => {
