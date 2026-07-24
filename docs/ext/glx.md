@@ -84,6 +84,10 @@ Complete example programs in [`examples/opengl/`](../../examples/opengl/):
 
 - `triangle.js` — minimal: visual selection, context, one frame
 - `glxgears.js` — display lists, lighting, animation (port of the classic)
+- `teapot.js` — mesh viewer: the Utah teapot (or `node teapot.js bunny` for
+  the Stanford bunny) loaded from the public-domain `teapot`/`bunny` npm
+  packages (devDependencies), with computed smooth normals and a
+  display-list compiled mesh
 - `reflection-shadow.js` — stencil-buffer planar reflection, projected
   planar shadow, sphere-map environment mapping (TexGen), and a dynamic
   texture re-uploaded every frame with `TexImage2D`

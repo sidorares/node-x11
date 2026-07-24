@@ -41,11 +41,13 @@
   },
   "devDependencies": {
     "async": "^3.0.1",
+    "bunny": "^1.0.1",
     "eslint": "^10.7.0",
     "mocha": "^11.7.6",
     "sax": "^1.2.4",
     "should": "^13.2.1",
-    "sinon": "^22.1.0"
+    "sinon": "^22.1.0",
+    "teapot": "^1.0.0"
   },
   "scripts": {
     "test": "node test-runner.js",
