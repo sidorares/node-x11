@@ -12,6 +12,14 @@ No build step, no transpilation: `lib/` is what ships.
 - Node-API usage must work on maintained Node versions (see CI matrix in
   `.github/workflows/ci.yml`). Avoid long-deprecated APIs
   (`util.isError`, `new Buffer()`, …).
+- **Keep `docs/` in sync with code.** Any change to a request signature,
+  reply shape, event fields, enum, or extension coverage must update the
+  matching page (`docs/core-requests.md`, `docs/core-events.md`, or
+  `docs/ext/<module>.md`) in the same change. New extension modules get a
+  new `docs/ext/` page (copy the structure of `docs/ext/xinerama.md`) and a
+  row in the table in `docs/README.md`. The docs describe what the code
+  actually does — verify against the implementation and tests, not the X
+  spec.
 
 ## Running tests (do this on every change)
 
@@ -52,6 +60,7 @@ Details the script handles for you:
 | `lib/keysyms.js` | Generated keysym table (see `lib/keysyms.update.sh`) |
 | `lib/xserver.js` | Experimental X server implementation |
 | `autogen/` | Scripts that generate request stubs from XML protocol specs (xcb-proto) |
+| `docs/` | API reference: README + core protocol + one page per extension |
 | `examples/` | Runnable demos (need a real X server / XQuartz) |
 | `test/` | Mocha specs, driven by `test-runner.js` |
 
