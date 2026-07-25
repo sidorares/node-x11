@@ -64,6 +64,26 @@ Details the script handles for you:
 | `examples/` | Runnable demos (need a real X server / XQuartz) |
 | `test/` | Mocha specs, driven by `test-runner.js` |
 
+## Commit messages: conventional commits (required)
+
+Releases are automated with [release-please](https://github.com/googleapis/release-please)
+(`.github/workflows/release-please.yml`): it reads commit subjects on `master`
+to decide the next version and to write `Changelog.md`. A malformed subject
+means a wrong version bump or a silent gap in the changelog, so every commit
+that lands on `master` must follow
+[Conventional Commits](https://www.conventionalcommits.org/):
+
+- `fix: …` → patch release; `feat: …` → minor; `feat!: …` / `fix!: …` or a
+  `BREAKING CHANGE:` footer → major.
+- `docs:`, `test:`, `chore:`, `ci:`, `refactor:` → no release, not in the
+  changelog. Don't label a user-visible behavior change with these.
+- Optional scope in parens: `fix(glx): …`, `feat(randr): …`.
+- When squash-merging a PR, the **PR title** becomes the commit subject —
+  it must follow the convention too.
+- Never bump `version` in `package.json` or edit the released sections of
+  `Changelog.md` by hand; release-please owns both (pending state lives in
+  `.release-please-manifest.json`).
+
 ## PR descriptions
 
 Write for a library user deciding whether/how to upgrade, not as a log of
