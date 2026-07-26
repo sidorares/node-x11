@@ -1,0 +1,57 @@
+---
+title: Extensions
+sidebar_position: 4
+---
+
+# Extensions
+
+Most interesting X functionality lives in protocol extensions. node-x11
+loads them at runtime with `X.require(name, callback)`. The callback
+receives an extension object carrying the extension's requests, enums and
+version info; any extension events are registered on the client
+automatically:
+
+```js
+X.require('randr', (err, Randr) => {
+  if (err) throw err; // extension missing on this server
+  Randr.GetScreenResources(display.screen[0].root, (err, res) => {
+    console.log(res.outputs);
+  });
+});
+```
+
+`name` is the module name below (the file in `lib/ext/`), not the
+on-the-wire extension name. Requiring an extension twice returns the cached
+instance.
+
+## Available extensions
+
+| module | X name | what it does |
+|---|---|---|
+| `apple-wm` | Apple-WM | XQuartz window-manager integration |
+| `big-requests` | BIG-REQUESTS | requests larger than 256 KiB (enabled automatically at connect) |
+| `composite` | Composite | redirect window rendering off-screen |
+| `damage` | DAMAGE | be notified when drawables change |
+| `dbe` | DOUBLE-BUFFER | flicker-free double buffering |
+| `dpms` | DPMS | monitor power management |
+| `fixes` | XFIXES | regions, cursor names, selection tracking |
+| `ge` | Generic Event Extension | framing for extensions with large events |
+| `glx` | GLX | OpenGL rendering over the X protocol |
+| `present` | Present | vsynced pixmap presentation |
+| `randr` | RANDR | outputs, CRTCs, modes, rotation |
+| `record` | RECORD | record/replay of the protocol stream |
+| `render` | RENDER | anti-aliased compositing, gradients, glyphs |
+| `res` | X-Resource | per-client server resource usage |
+| `screen-saver` | MIT-SCREEN-SAVER | screen-saver control and notification |
+| `shape` | SHAPE | non-rectangular windows |
+| `shm` | MIT-SHM | shared-memory images |
+| `sync` | SYNC | counters, alarms, fences |
+| `xc-misc` | XC-MISC | XID range recycling |
+| `xinerama` | XINERAMA | multi-head screen layout |
+| `xinput` | XInputExtension | input devices beyond core pointer/keyboard |
+| `xkb` | XKEYBOARD | keyboard maps, controls, indicators |
+| `xtest` | XTEST | synthesize input events for testing |
+| `xv` | XVideo | video output adaptors |
+
+Each extension has its own reference page with every request, event and enum
+— see the [Extensions section of the API reference](../reference/index.md#extensions).
