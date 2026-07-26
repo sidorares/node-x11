@@ -50,8 +50,12 @@ The `display` passed to the callback describes the connection setup block:
 ## Making requests
 
 All requests live on `X = display.client` and follow the callback style —
-no promises. Requests with no reply take plain arguments; requests with a
-reply take a trailing `callback(err, result)`:
+no promises. Requests with a reply take a trailing `callback(err, result)`.
+Requests with no reply ("void" requests) can be fired and forgotten, or given
+a trailing `callback(err)` that fires exactly once: with `null` once the
+server has processed the request without error, or with the X error it
+caused (the client issues a cheap sync round trip when needed, the way
+`xcb_request_check` does):
 
 ```js
 const wid = X.AllocID();                       // allocate a resource id
@@ -62,6 +66,13 @@ X.MapWindow(wid);
 X.InternAtom(false, 'WM_NAME', (err, atom) => { // with reply
     // ...
 });
+
+X.ChangeWindowAttributes(root, {                // void request, checked:
+    eventMask: x11.eventMask.SubstructureRedirect
+}, err => {
+    // err === null   → the request succeeded (e.g. we are the WM now)
+    // err instanceof Error → e.g. BadAccess: another WM is running
+});
 ```
 
 Resource ids (windows, pixmaps, GCs, …) are allocated client-side with
@@ -70,6 +81,48 @@ destroyed. When you are done with the connection, call `X.terminate()`; the
 client emits `'end'` when the stream closes.
 
 See [core-requests.md](core-requests.md) for the complete reference.
+
+## Flow control
+
+Requests are buffered and written to the socket immediately, but the socket
+may not keep up (mouse-driven redraws, full-speed rendering). Three tools
+keep memory bounded:
+
+- **Return value + `'drain'`.** Every request method returns `false` when
+  the socket applied backpressure — same contract as `stream.Writable`'s
+  `write()`. Stop producing and resume on the client's `'drain'` event:
+
+  ```js
+  function render() {
+      let ok = true;
+      while (ok && hasWork())
+          ok = X.PolyFillRectangle(wid, gc, nextBatch());
+      if (!ok)
+          X.once('drain', render);   // resume when the socket caught up
+  }
+  ```
+
+- **`X.flush([cb])`** — the callback fires once everything buffered so far
+  has been handed to the OS. Returns a Promise when called without a
+  callback.
+
+- **`X.sync([cb])`** — a full round trip: the callback fires once the
+  *server has processed* every request issued so far (the equivalent of
+  `XSync`). Any errors those requests caused have been delivered by then.
+  Returns a Promise when called without a callback. Pacing a render loop
+  with `sync` throttles to what the server actually consumes:
+
+  ```js
+  function frame() {
+      drawFrame(X, wid, gc);
+      X.sync(() => frame());     // next frame only when this one is done
+  }
+  ```
+
+Sequence numbers are 16-bit on the wire but full-width on the client
+(`err.seq` keeps growing past 65535); the client transparently inserts a
+cheap round-trip request once per 60000 reply-less requests to keep the
+mapping unambiguous, the same way libxcb does.
 
 ## Listening for events
 
@@ -98,10 +151,12 @@ See [core-events.md](core-events.md) for every core event and its fields.
 
 ## Error handling
 
-X errors arrive asynchronously. Errors caused by a request with a reply are
-routed to that request's callback as `err` (an `Error` with `error` code,
-`seq`, `badParam`, `majorOpcode`/`minorOpcode`). Errors from reply-less
-requests — and errors nobody claims — are emitted as `'error'` on the client:
+X errors arrive asynchronously. Errors caused by a request issued with a
+callback — whether it has a reply or not — are routed to that callback as
+`err` (an `Error` with `error` code, `seq`, `badParam`,
+`majorOpcode`/`minorOpcode`). Errors from requests issued without a
+callback — and errors nobody claims — are emitted as `'error'` on the
+client:
 
 ```js
 X.on('error', err => console.error(err.message, err.badParam));

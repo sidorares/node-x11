@@ -3,9 +3,11 @@
 Reference for all 120 requests of the X11 core protocol as implemented on the
 client object (`X = display.client`, see [README.md](README.md) for connecting
 and the general calling convention). Requests with a reply take a trailing
-`cb(err, result)`; requests without one state "No reply." — they are fire and
-forget, and any X error they cause is emitted as `'error'` on the client with
-`err.seq` identifying the failing request. Source:
+`cb(err, result)`; requests without one state "No reply." — they can be fired
+and forgotten, or given a trailing `cb(err)` invoked exactly once: `null` on
+success (confirmed via a sync round trip when necessary) or the X error the
+request caused. Without a callback, errors are emitted as `'error'` on the
+client with `err.seq` identifying the failing request. Source:
 [`lib/corereqs.js`](../lib/corereqs.js); reply unpackers partly in
 [`lib/generated/core-replies.js`](../lib/generated/core-replies.js). Tests:
 [`test/core-*.js`](../test).
