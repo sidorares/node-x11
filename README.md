@@ -5,6 +5,16 @@ X11 protocol client for Node.js: implements the core X11 protocol, as well as Xr
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/sidorares/node-x11?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![CI](https://github.com/sidorares/node-x11/actions/workflows/ci.yml/badge.svg)](https://github.com/sidorares/node-x11/actions/workflows/ci.yml)
 
+**Documentation & live demos: <https://sidorares.github.io/node-x11/>** — the
+[playground](https://sidorares.github.io/node-x11/playground) runs ordinary
+node-x11 code in your browser against a pure-JavaScript X server (`lib/xserver`)
+that ships with this package, including OpenGL via GLX-over-WebGL.
+
+The client also runs in browsers: `DISPLAY` strings accept a pluggable
+protocol prefix (`x11.registerDisplayProtocol(name, connect)` +
+`myproto/host:0`), and `createClient({ stream })` accepts any duplex stream.
+See the [custom transports guide](https://sidorares.github.io/node-x11/docs/guides/custom-transports).
+
 ## Install
 
     npm install x11
