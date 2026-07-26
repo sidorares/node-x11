@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.1.0](https://github.com/sidorares/node-x11/compare/v3.0.0...v3.1.0) (2026-07-26)
+
+
+### Features
+
+* **xserver:** RENDER extension for the JS X server ([b401c0c](https://github.com/sidorares/node-x11/commit/b401c0cb7fefe2e5aa41013968d126af31ae851d))
+* **xserver:** RENDER extension for the JS X server ([3293aaf](https://github.com/sidorares/node-x11/commit/3293aaf886af279624d13d805a959d519a83f49c))
+
 ## [3.0.0](https://github.com/sidorares/node-x11/compare/v2.3.0...v3.0.0) (2026-07-26)
 
 
