@@ -83,9 +83,12 @@ x11.createClient((err, display) => {
     }
 
     const X = display.client;
-    // Add all files from test root directory
+    // Add all files from test root directory. Subdirectories (test/xserver,
+    // test/glx-emu) hold suites that need no real X server and run separately
+    // via `npm run test:xserver` / `npm run test:glx-emu`.
     async.forEach(
-        fs.readdirSync('./test'),
+        fs.readdirSync('./test').filter(
+            f => f.endsWith('.js') && fs.statSync(path.join('./test', f)).isFile()),
         (file, cb) => {
             const addIf = run => {
                 if (run) {
