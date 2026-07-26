@@ -17,6 +17,23 @@ jobs:
       - run: npm ci
       - run: npm run lint
 
+  # Suites that need no X server: the pure-JS X server driven by our own
+  # client over in-process stream pairs.
+  test-xserver:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24, 26]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm run test:xserver
+
   test:
     runs-on: ubuntu-latest
     # Tests run inside debian bookworm containers rather than on the runner:
