@@ -52,6 +52,7 @@
   "scripts": {
     "test": "node test-runner.js",
     "test:local": "./scripts/test-local.sh",
+    "test:glx-emu": "mocha test/glx-emu/ --timeout 10000",
     "test:xserver": "mocha test/xserver/ --timeout 10000",
     "lint": "eslint .",
     "gen:events": "node autogen/generate-events.js",
