@@ -1,0 +1,15 @@
+# Dependencies
+node_modules
+
+# Production build
+build
+
+# Generated files
+.docusaurus
+.cache-loader
+
+# Generated API reference (synced from repo docs/ by scripts/sync-docs.mjs)
+docs/reference
+
+# Generated demo runtime bundle (built by scripts/build-demo-bundles.mjs)
+static/demo/x11-demo-runtime.js

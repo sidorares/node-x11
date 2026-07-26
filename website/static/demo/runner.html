@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>node-x11 demo runner</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #14161a; overflow: hidden; }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+</style>
+</head>
+<body>
+<script src="./x11-demo-runtime.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // The whole demo stack (client, JS X server, canvas presenter) is the
+  // X11Demo global from x11-demo-runtime.js. Demo code arrives from the
+  // parent frame via postMessage and runs against a fresh in-page server,
+  // connecting exactly like a node program would: through DISPLAY.
+
+  var params = new URLSearchParams(location.search);
+  var WIDTH = parseInt(params.get('width'), 10) || 640;
+  var HEIGHT = parseInt(params.get('height'), 10) || 480;
+
+  // process.env.DISPLAY is what x11.createClient() consults, same as node.
+  // The 'demo' display protocol connects straight to the in-page server.
+  if (!window.process) window.process = { env: {} };
+  if (!window.process.env) window.process.env = {};
+  window.process.env.DISPLAY = 'demo/local:0';
+
+  var current = null; // { server, presenter, connect, canvas, streams, timers }
+
+  X11Demo.x11.registerDisplayProtocol('demo', function () {
+    if (!current)
+      throw new Error('demo server is not running');
+    var stream = current.connect();
+    current.streams.push(stream);
+    return stream;
+  });
+
+  function post(msg) {
+    window.parent.postMessage(msg, '*');
+  }
+
+  function stringify(arg) {
+    if (typeof arg === 'string') return arg;
+    if (arg instanceof Error) return String(arg.stack || arg);
+    try {
+      return JSON.stringify(arg);
+    } catch (e) {
+      return String(arg);
+    }
+  }
+
+  function makeConsole() {
+    function emit(level) {
+      return function () {
+        var text = Array.prototype.map.call(arguments, stringify).join(' ');
+        post({ type: 'console', level: level, text: text });
+      };
+    }
+    return { log: emit('log'), info: emit('log'), warn: emit('warn'), error: emit('error') };
+  }
+
+  // Optional GLX: present only when browser/glx was bundled in.
+  function setupGlx(server) {
+    var glx = X11Demo.glx;
+    if (!glx || typeof glx.createGlxExtension !== 'function' ||
+        typeof glx.WebGLBackend !== 'function')
+      return;
+    try {
+      var glCanvas = document.createElement('canvas');
+      glCanvas.width = server.width;
+      glCanvas.height = server.height;
+      var gl = glCanvas.getContext('webgl2',
+        { preserveDrawingBuffer: true, stencil: true, depth: true, alpha: false });
+      if (!gl)
+        return;
+      var ext = glx.createGlxExtension({
+        backend: new glx.WebGLBackend(gl),
+        getDrawableSurface: function (xid) {
+          var res = current && current.server.resources.get(xid);
+          if (!res || !res.raster)
+            return null;
+          return {
+            get width() { return res.raster.width; },
+            get height() { return res.raster.height; },
+            notifySwap: function (pixels) {
+              if (!pixels || !current)
+                return;
+              if (pixels.length === res.raster.data.length)
+                res.raster.data.set(pixels);
+              if (typeof current.server.damageWindow === 'function' && res.mapped !== undefined)
+                current.server.damageWindow(res);
+            }
+          };
+        }
+      });
+      server.registerExtension('GLX', ext);
+    } catch (e) {
+      // GLX stays optional: a wiring failure must never break core demos
+    }
+  }
+
+  function teardown() {
+    if (!current)
+      return;
+    var old = current;
+    current = null;
+    old.timers.intervals.forEach(clearInterval);
+    old.timers.timeouts.forEach(clearTimeout);
+    old.streams.forEach(function (s) {
+      try { s.destroy(); } catch (e) { /* already gone */ }
+    });
+    // removing the canvas drops the presenter's DOM listeners with it
+    if (old.canvas.parentNode)
+      old.canvas.parentNode.removeChild(old.canvas);
+  }
+
+  function boot() {
+    var canvas = document.createElement('canvas');
+    document.body.appendChild(canvas);
+    var demo = X11Demo.bootDemoServer(canvas, { width: WIDTH, height: HEIGHT });
+    current = {
+      server: demo.server,
+      presenter: demo.presenter,
+      connect: demo.connect,
+      canvas: canvas,
+      streams: [],
+      timers: { intervals: [], timeouts: [] }
+    };
+    setupGlx(demo.server);
+    canvas.focus();
+  }
+
+  function demoRequire(name) {
+    if (name === 'x11')
+      return X11Demo.x11;
+    throw new Error('module not available in the playground: ' + name);
+  }
+
+  function runCode(code) {
+    teardown();
+    boot();
+    var timers = current.timers;
+    var demoConsole = makeConsole();
+    var demoSetInterval = function (fn, ms) {
+      var id = setInterval(fn, ms);
+      timers.intervals.push(id);
+      return id;
+    };
+    var demoSetTimeout = function (fn, ms) {
+      var id = setTimeout(fn, ms);
+      timers.timeouts.push(id);
+      return id;
+    };
+    try {
+      var fn = new Function(
+        'require', 'process', 'console',
+        'setInterval', 'setTimeout', 'clearInterval', 'clearTimeout',
+        code);
+      fn(demoRequire, window.process, demoConsole,
+        demoSetInterval, demoSetTimeout, clearInterval, clearTimeout);
+    } catch (e) {
+      post({ type: 'console', level: 'error', text: stringify(e) });
+    }
+  }
+
+  // async errors from demo callbacks land here
+  window.addEventListener('error', function (ev) {
+    post({ type: 'console', level: 'error',
+           text: stringify(ev.error || ev.message) });
+  });
+  window.addEventListener('unhandledrejection', function (ev) {
+    post({ type: 'console', level: 'error', text: stringify(ev.reason) });
+  });
+
+  window.addEventListener('message', function (ev) {
+    var msg = ev.data;
+    if (msg && msg.type === 'run-code')
+      runCode(String(msg.code || ''));
+  });
+
+  boot();
+  post({ type: 'ready', glx: !!X11Demo.glx });
+})();
+</script>
+</body>
+</html>
