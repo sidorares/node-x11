@@ -35,7 +35,9 @@ describe('Client', () => {
             return done();
          }
          left--;
-         display.client.GetAtomName(1, test);
+         // GetInputFocus really round-trips (GetAtomName of a standard atom
+         // is answered from the local cache and never hits the wire)
+         display.client.GetInputFocus(test);
       }
 
       left++;
