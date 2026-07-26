@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.1.1](https://github.com/sidorares/node-x11/compare/v3.1.0...v3.1.1) (2026-07-26)
+
+
+### Bug Fixes
+
+* re-arm the packet parser even when dispatch throws ([be94d5c](https://github.com/sidorares/node-x11/commit/be94d5cfe558b80237101fd1cd29fcae585051be))
+* re-arm the packet parser even when dispatch throws ([296b525](https://github.com/sidorares/node-x11/commit/296b52544144c8d8c1d35b5426aec7ba1ad318cb)), closes [#226](https://github.com/sidorares/node-x11/issues/226)
+
 ## [3.1.0](https://github.com/sidorares/node-x11/compare/v3.0.0...v3.1.0) (2026-07-26)
 
 
