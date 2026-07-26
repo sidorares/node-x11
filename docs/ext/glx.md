@@ -232,6 +232,36 @@ Opcode 21. `cb(err, configs)` — array of objects keyed by attribute name
 (`FBCONFIG_ID`, `VISUAL_ID`, `DRAWABLE_TYPE`, `RENDER_TYPE`,
 `DOUBLEBUFFER`, ...).
 
+### ChooseFBConfig(screen, spec, cb)
+Convenience helper, not a protocol request: fetches the screen's fbconfigs
+with `GetFBConfigs` and applies the `glXChooseFBConfig` selection rules
+(GLX 1.4 spec §3.3.3) client-side. `spec` is an object keyed by attribute
+name; values are numbers, booleans, or `null` for "don't care".
+`cb(err, configs)` receives **all** matching configs sorted best-first —
+take `configs[0]` as the best match (empty array = nothing matched).
+
+```js
+GLX.ChooseFBConfig(0, {
+    DOUBLEBUFFER: true,
+    RED_SIZE: 8, GREEN_SIZE: 8, BLUE_SIZE: 8,
+    DEPTH_SIZE: 16,
+    DRAWABLE_TYPE: GLX.glxConst.WINDOW_BIT
+}, (err, configs) => {
+    const fbconfig = configs[0];
+    // GLX.CreateNewContext(ctx, fbconfig.FBCONFIG_ID, ...)
+});
+```
+
+Unspecified attributes take the spec's defaults (`RENDER_TYPE`
+`GLX_RGBA_BIT`, `DRAWABLE_TYPE` `GLX_WINDOW_BIT`, `STEREO` false, sizes 0,
+most others don't-care); sized attributes are minimums, `RENDER_TYPE`/
+`DRAWABLE_TYPE` are masks, the rest match exactly. Ties are broken by the
+spec's sort rules: no-caveat configs first, then deeper color (for the
+components you requested), smaller `BUFFER_SIZE`, single-buffer before
+double, fewer aux buffers, depth (none when unrequested, else deepest),
+smaller stencil, larger requested accum, `TrueColor` visuals first.
+Specifying `FBCONFIG_ID` ignores all other attributes, per the spec.
+
 ### CreatePixmap(screen, fbconfig, pixmap, glxpixmap, attribs)
 Opcode 22 (GLX 1.3 fbconfig flavour of CreateGLXPixmap). No reply.
 

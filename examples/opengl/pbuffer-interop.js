@@ -22,12 +22,13 @@ x11.createClient((err, display) => {
 
     X.require('glx', (err, GLX) => {
         if (err) throw err;
-        GLX.GetFBConfigs(0, (err, configs) => {
+        GLX.ChooseFBConfig(0, {
+            DRAWABLE_TYPE: GLX.glxConst.PBUFFER_BIT,
+            RENDER_TYPE: GLX.glxConst.RGBA_BIT,
+            DEPTH_SIZE: 1
+        }, (err, configs) => {
             if (err) throw err;
-            const cfg = configs.find(c =>
-                (c.DRAWABLE_TYPE & GLX.glxConst.PBUFFER_BIT) &&
-                (c.RENDER_TYPE & GLX.glxConst.RGBA_BIT) &&
-                c.DEPTH_SIZE > 0);
+            const cfg = configs[0]; // best match per the GLX selection rules
             if (!cfg)
                 throw new Error('no pbuffer-capable RGBA fbconfig on this server');
 

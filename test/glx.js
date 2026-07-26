@@ -139,6 +139,50 @@ describe('GLX extension', function() {
         }));
     });
 
+    it('ChooseFBConfig should return matching configs sorted best-first', function(done) {
+        const self = this;
+        const C = this.GLX.glxConst;
+        const spec = { RENDER_TYPE: C.RGBA_BIT, DRAWABLE_TYPE: C.WINDOW_BIT,
+            RED_SIZE: 1, GREEN_SIZE: 1, BLUE_SIZE: 1, DOUBLEBUFFER: true };
+        this.GLX.ChooseFBConfig(0, spec, guard(done, (err, chosen) => {
+            should.not.exist(err);
+            chosen.should.be.an.Array();
+            chosen.length.should.be.above(0);
+            // every returned config satisfies the request
+            for (const c of chosen) {
+                (c.RENDER_TYPE & C.RGBA_BIT).should.be.above(0);
+                (c.DRAWABLE_TYPE & C.WINDOW_BIT).should.be.above(0);
+                c.RED_SIZE.should.be.above(0);
+                c.DOUBLEBUFFER.should.equal(1);
+            }
+            // the best config has no caveat and the deepest color available
+            // among the matches (sort rules 1 and 2)
+            const best = chosen[0];
+            (best.CONFIG_CAVEAT === undefined ||
+                best.CONFIG_CAVEAT === C.NONE).should.be.true();
+            const colorBits = c => c.RED_SIZE + c.GREEN_SIZE + c.BLUE_SIZE;
+            for (const c of chosen)
+                colorBits(best).should.be.aboveOrEqual(colorBits(c));
+            // results come from the server's fbconfig list
+            self.GLX.GetFBConfigs(0, guard(done, (err2, all) => {
+                should.not.exist(err2);
+                const allIds = new Set(all.map(c => c.FBCONFIG_ID));
+                for (const c of chosen)
+                    allIds.has(c.FBCONFIG_ID).should.be.true();
+                done();
+            }));
+        }));
+    });
+
+    it('ChooseFBConfig with an impossible spec should return an empty list', function(done) {
+        this.GLX.ChooseFBConfig(0, { RED_SIZE: 1024 }, guard(done, (err, chosen) => {
+            should.not.exist(err);
+            chosen.should.be.an.Array();
+            chosen.length.should.equal(0);
+            done();
+        }));
+    });
+
     it('GetFBConfigsSGIX should agree with GetFBConfigs', function(done) {
         const self = this;
         this.GLX.GetFBConfigsSGIX(0, guard(done, (err, configs) => {
