@@ -11,3 +11,7 @@ if (!globalThis.process)
     globalThis.process = process;
 if (!globalThis.process.env)
     globalThis.process.env = {};
+// browsers have no setImmediate; stream pairs and the client's cached-atom
+// fast path rely on it for async delivery
+if (typeof globalThis.setImmediate !== 'function')
+    globalThis.setImmediate = (fn, ...args) => setTimeout(fn, 0, ...args);
