@@ -33,6 +33,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:xserver
+      - run: npm run test:glx-emu
 
   test:
     runs-on: ubuntu-latest
