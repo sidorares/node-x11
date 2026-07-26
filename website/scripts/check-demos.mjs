@@ -145,8 +145,16 @@ if (files.length === 0) {
 }
 
 let failed = 0;
+let skipped = 0;
 for (const file of files) {
   const demo = loadDemo(path.join(demosDir, file));
+  if (demo.requiresWebGL) {
+    // GLX demos need a real WebGL context; the headless-browser pass
+    // (playwright over the built site) covers them instead
+    console.log(`skip ${demo.id} (WebGL)`);
+    skipped++;
+    continue;
+  }
   const problems = await runDemo(demo);
   if (problems.length === 0) {
     console.log(`ok   ${demo.id}`);
@@ -158,5 +166,5 @@ for (const file of files) {
   }
 }
 
-console.log(failed === 0 ? `all ${files.length} demos green` : `${failed} demo(s) failed`);
+console.log(failed === 0 ? `all ${files.length - skipped} demos green (${skipped} WebGL-only skipped)` : `${failed} demo(s) failed`);
 process.exit(failed === 0 ? 0 : 1);
