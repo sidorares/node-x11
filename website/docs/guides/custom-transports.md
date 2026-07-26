@@ -107,3 +107,20 @@ This mechanism is exercised end-to-end in `test/display-protocols.js`,
 which connects a client to a tiny in-process fake X server through an
 in-memory stream pair — a useful template if you want to unit-test code
 that talks to X without spawning Xvfb.
+
+## In the browser
+
+The [playground](/playground) on this site is built entirely on this
+mechanism: the page boots the pure-JS X server from `lib/xserver`, registers
+a `demo` display protocol whose `connect` returns an in-memory stream pair
+wired to that server, and sets `process.env.DISPLAY = 'demo/local:0'`. The
+demo code you edit there is ordinary node-x11 client code — unchanged, it
+would run against a real display in node:
+
+```js
+x11.registerDisplayProtocol('demo', () => serverConnectedStreamPair());
+process.env.DISPLAY = 'demo/local:0';
+
+// from here on, exactly like node:
+x11.createClient((err, display) => { /* ... */ });
+```
