@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.1.3](https://github.com/sidorares/node-x11/compare/v3.1.2...v3.1.3) (2026-07-27)
+
+
+### Bug Fixes
+
+* **glx:** size Lightfv and Materialfv by their pname ([4e4d765](https://github.com/sidorares/node-x11/commit/4e4d7650aa6d83d420e5365c30c2431324481842))
+* **glx:** size Lightfv and Materialfv by their pname ([1d5dd0e](https://github.com/sidorares/node-x11/commit/1d5dd0e071c7d25268871fb655cc7d48eec23946))
+
 ## [3.1.2](https://github.com/sidorares/node-x11/compare/v3.1.1...v3.1.2) (2026-07-26)
 
 
