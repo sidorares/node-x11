@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.1.2](https://github.com/sidorares/node-x11/compare/v3.1.1...v3.1.2) (2026-07-26)
+
+
+### Bug Fixes
+
+* **apple-wm:** FrameHitTest sent px/py two bytes early ([b6e5eb2](https://github.com/sidorares/node-x11/commit/b6e5eb2c8ccaefea6f1ba0bc5087891921b355c6))
+* **apple-wm:** FrameHitTest sent px/py two bytes early ([7fc3ad6](https://github.com/sidorares/node-x11/commit/7fc3ad642426ca096eb1ffd00632847736872d1e))
+
 ## [3.1.1](https://github.com/sidorares/node-x11/compare/v3.1.0...v3.1.1) (2026-07-26)
 
 
