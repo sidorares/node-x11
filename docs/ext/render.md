@@ -36,6 +36,22 @@ Colors are given as `[r, g, b, a]` arrays of floats in 0..1 (clamped, scaled
 to 16 bits per channel). Coordinates and matrix/filter values are JS numbers
 converted to 16.16 FIXED (truncated to 1/65536 units) on the wire.
 
+Two things about colors are easy to get wrong, and both fail quietly:
+
+- **The range is 0..1, not 0..0xffff.** The client scales to 16 bits for you.
+  A value above 1 is clamped, so a stop list written in 16-bit values
+  (`[0xffff, 0, 0x3000, 0x8000]`) does not come out translucent — every
+  component saturates and the stop is opaque. The client warns once per
+  connection when this happens; set `Render.strictColors = true` to throw
+  instead.
+- **Colors are premultiplied by alpha**, as everywhere in RENDER. Each of
+  `r`, `g`, `b` must be `<= a`. White at half alpha is `[0.5, 0.5, 0.5, 0.5]`,
+  not `[1, 1, 1, 0.5]`, and a fully transparent stop is `[0, 0, 0, 0]`
+  whatever color you were fading from. Out-of-gamut values are not rejected —
+  they composite to something brighter than the alpha allows. Writing
+  `const rgba = (r, g, b, a) => [r * a, g * a, b * a, a]` and calling that is
+  the readable way to keep it straight; the examples do.
+
 ## Requests
 
 ### QueryVersion(clientMajor, clientMinor, cb)
@@ -182,7 +198,20 @@ values (6 per trap: top `l, r, y` then bottom `l, r, y`), offset by
 `offX`,`offY`. No reply.
 
 ### CreateSolidFill(pid, r, g, b, a)
-Creates a solid-fill source picture; channels are floats 0..1. No reply.
+Creates a solid-fill source picture; channels are floats 0..1, premultiplied
+by `a`. No reply.
+
+### strictColors
+Not a request — a flag on the extension object, default `false`. While false,
+a colour component outside 0..1 (or `NaN`) is clamped and warned about once per
+connection. Set it to `true` and the same component throws instead, which is
+useful in tests and when porting code written against a client that took raw
+16-bit values.
+
+```js
+Render.strictColors = true;
+Render.FillRectangles(op, pic, [0xffff, 0, 0, 0xffff], rects); // throws
+```
 
 ### LinearGradient(pid, p1, p2, stops) / CreateLinearGradient(...)
 Creates a linear gradient source from point `p1` to `p2` (`[x, y]` arrays).

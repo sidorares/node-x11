@@ -37,11 +37,14 @@ function ManageWindow(wid)
             eventMask: events
         });
 
+         // RENDER colours are floats 0..1, premultiplied by alpha. These stops
+         // are opaque, so [r, g, b, 1] needs no premultiplying: blue to green
+         // down the 24px title bar.
          const bggrad = X.AllocID();
          X.Render.LinearGradient(bggrad, [0,0], [0,24],
                 [
-                  [0,   [0,0,0xffff,0xffffff ] ],
-                  [1,   [0x00ff, 0xff00, 0, 0xffffff] ]
+                  [0,   [0, 0, 1, 1] ],
+                  [1,   [0, 1, 0, 1] ]
                 ]);
 
         const framepic = X.AllocID();
@@ -96,16 +99,19 @@ x11.createClient((err, display) => {
         tree.children.forEach(ManageWindow);
     });
 
+    // premultiplied floats 0..1; both live stops are opaque, so [r,g,b,1]
+    // needs no multiplying. The commented-out stops are translucent, so their
+    // colours are already multiplied by their alpha.
     X.bggrad = X.AllocID();
     Render.LinearGradient(X.bggrad, [-10,0], [0,1000],
             //RenderRadialGradient(pic_grad, [0,0], [1000,100], 10, 1000,
             //RenderConicalGradient(pic_grad, [250,250], 360,
                 [
-                  [0,   [0,0,0,0xffffff ] ],
-                  //[0.1, [0xfff, 0, 0xffff, 0x1000] ] ,
-                  //[0.25, [0xffff, 0, 0xfff, 0x3000] ] ,
-                  //[0.5, [0xffff, 0, 0xffff, 0x4000] ] ,
-                  [1,   [0xffff, 0xffff, 0, 0xffffff] ]
+                  [0,   [0, 0, 0, 1] ],
+                  //[0.1, [0.0039, 0, 0.0625, 0.0625] ] ,   // blue  @  6% alpha
+                  //[0.25, [0.1875, 0, 0.0117, 0.1875] ] ,  // red   @ 19% alpha
+                  //[0.5, [0.25, 0, 0.25, 0.25] ] ,         // pink  @ 25% alpha
+                  [1,   [1, 1, 0, 1] ]
                 ]);
 
     X.rootpic = X.AllocID();

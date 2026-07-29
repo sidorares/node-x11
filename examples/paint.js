@@ -21,16 +21,22 @@ const xclient = x11.createClient((err, display) => {
 
         const pict = X.AllocID();
         Render.CreatePicture(pict, wid, Render.rgb24);
+        // RENDER colours are floats 0..1, premultiplied by alpha (each of
+        // r,g,b must end up <= a). Multiplying here keeps the stops readable.
+        const rgba = (r, g, b, a) => [r * a, g * a, b * a, a];
+
+        // ten brushes, softest to hardest: flat 6% alpha out to a widening
+        // radius, then fading to nothing at the edge
         const pictGrad = [];
         for (let i=0; i < 10; ++i)
         {
             pictGrad[i] = X.AllocID();
             Render.RadialGradient(pictGrad[i], [50,56], [50,50], 0, 50,
             [
-                [0,   [0,0,0,0x0fff ] ],
-                [0.1 + 0.8*i/10,   [0,0,0,0x0fff ] ],
-                [0.997,   [0xffff, 0xf, 0, 0x1] ],
-                [1,   [0xffff, 0xffff, 0, 0x0] ]
+                [0,   rgba(0, 0, 0, 0.0625) ],
+                [0.1 + 0.8*i/10,   rgba(0, 0, 0, 0.0625) ],
+                [0.997,   rgba(1, 0, 0, 0) ],
+                [1,   rgba(1, 1, 0, 0) ]
             ]);
         }
 

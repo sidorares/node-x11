@@ -56,27 +56,32 @@ const xclient = x11.createClient({ debug: true }, (err, display) => {
         X.CreatePixmap(pix, root, 32, 1, 1);
         const pictSolidPix = X.AllocID();
         Render.CreatePicture(pictSolidPix, pix, Render.rgba32, {repeat: 1});
-        Render.FillRectangles(1, pictSolidPix, [0x0, 0x0, 0x0, 0xffff], [0, 0, 100, 100]);
+        // colours are floats 0..1 (opaque black here, so [r,g,b,a] directly)
+        Render.FillRectangles(1, pictSolidPix, [0, 0, 0, 1], [0, 0, 100, 100]);
         //X.FreePixmap(pix);
+
+        // RENDER colours are premultiplied by alpha (each of r,g,b must end up
+        // <= a); multiplying here keeps the stops readable.
+        const rgba = (r, g, b, a) => [r * a, g * a, b * a, a];
 
         const pictGrad = X.AllocID();
         Render.RadialGradient(pictGrad, [260,260], [260,260], 0, 260,
             [
-                [0,     [0x0000, 0x0, 0, 0xffff ] ],
-                [0.3,   [0xffff, 0x0, 0, 0xffff ] ],
-                [0.997, [0xffff, 0xf, 0, 0x1] ],
-                [1,     [0x0000, 0x0, 0, 0xffff ] ],
+                [0,     rgba(0, 0, 0, 1) ],
+                [0.3,   rgba(1, 0, 0, 1) ],
+                [0.997, rgba(1, 0, 0, 0) ],
+                [1,     rgba(0, 0, 0, 1) ],
             ]
         );
 
         const pictLinearGrad = X.AllocID();
         Render.LinearGradient(pictLinearGrad, [0,0], [1000,100],
                 [
-                  [0,   [0,0,0,0xffff ] ],
-                 // [0.1, [0xfff, 0, 0xffff, 0x1000] ] ,
-                 // [0.25, [0xffff, 0, 0xfff, 0x3000] ] ,
-                 // [0.5, [0xffff, 0, 0xffff, 0x4000] ] ,
-                  [1,   [0xffff, 0xffff, 0, 0xffff] ]
+                  [0,   rgba(0, 0, 0, 1) ],
+                 // [0.1, rgba(0.0625, 0, 1, 0.0625) ] ,
+                 // [0.25, rgba(1, 0, 0.0625, 0.1875) ] ,
+                 // [0.5, rgba(1, 0, 1, 0.25) ] ,
+                  [1,   rgba(1, 1, 0, 1) ]
                 ]);
 
 
@@ -129,7 +134,7 @@ const xclient = x11.createClient({ debug: true }, (err, display) => {
           if (!x)
             x = 0;
           // TODO: example with multiple glyphsets in one CompositeGlyphs call
-          Render.FillRectangles(1, pict, [0xffff, 0xffff, 0xffff, 0xffff], [0, 0, 3000, 3000]);
+          Render.FillRectangles(1, pict, [1, 1, 1, 1], [0, 0, 3000, 3000]);
           //Render.Composite(3, pictLinearGrad, 0, pict, 0, 0, 0, 0, 0, 0, 2500, 2500);
           // op, src, dst, maskFormat, gsid, srcX, srcY, dstX, dstY, glyphs
           //Render.CompositeGlyphs8(3, pictSolidPix, pict, 0, glyphSet, 0, 0, [[10, 60, process.argv[4]]]);

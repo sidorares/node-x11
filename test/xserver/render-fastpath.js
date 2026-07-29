@@ -134,7 +134,7 @@ describe('xserver: RENDER fast paths', () => {
             for (let op = 0; op < OPS.length; op++) {
                 it(`${OPS[op]} on depth ${depth}`, done => {
                     bothAgree(depth, pic => {
-                        render.FillRectangles(op, pic, [0x8000, 0x4000, 0xc000, 0xa000],
+                        render.FillRectangles(op, pic, [0.3, 0.15, 0.45, 0.6],
                             [2, 1, 9, 7, 12, 5, 8, 9]);
                     }, `FillRectangles ${OPS[op]} depth ${depth}`, done);
                 });
@@ -143,7 +143,7 @@ describe('xserver: RENDER fast paths', () => {
 
         it('opaque fill covers exactly the rect and nothing else', done => {
             bothAgree(24, pic => {
-                render.FillRectangles(render.PictOp.Src, pic, [0xffff, 0, 0, 0xffff],
+                render.FillRectangles(render.PictOp.Src, pic, [1, 0, 0, 1],
                     [3, 2, 5, 4]);
             }, 'partial opaque fill', done);
         });
@@ -151,7 +151,7 @@ describe('xserver: RENDER fast paths', () => {
         it('a clip list still matches', done => {
             bothAgree(24, pic => {
                 render.SetPictureClipRectangles(pic, 0, 0, [1, 1, 8, 6, 10, 4, 6, 8]);
-                render.FillRectangles(render.PictOp.Src, pic, [0, 0xffff, 0, 0xffff],
+                render.FillRectangles(render.PictOp.Src, pic, [0, 1, 0, 1],
                     [0, 0, W, H]);
             }, 'clipped fill', done);
         });
@@ -162,7 +162,7 @@ describe('xserver: RENDER fast paths', () => {
         it('overlapping clip rectangles composite each pixel once', done => {
             bothAgree(24, pic => {
                 render.SetPictureClipRectangles(pic, 0, 0, [2, 2, 10, 10, 6, 4, 10, 6]);
-                render.FillRectangles(render.PictOp.Over, pic, [0x8000, 0, 0x4000, 0x8000],
+                render.FillRectangles(render.PictOp.Over, pic, [0.5, 0, 0.25, 0.5],
                     [0, 0, W, H]);
             }, 'overlapping clip, Over', done);
         });
@@ -170,7 +170,7 @@ describe('xserver: RENDER fast paths', () => {
         it('clip rectangles given out of x order still match', done => {
             bothAgree(24, pic => {
                 render.SetPictureClipRectangles(pic, 0, 0, [14, 1, 6, 12, 2, 3, 5, 9]);
-                render.FillRectangles(render.PictOp.Over, pic, [0, 0x9000, 0x3000, 0xa000],
+                render.FillRectangles(render.PictOp.Over, pic, [0, 0.5, 0.2, 0.625],
                     [0, 0, W, H]);
             }, 'unsorted clip', done);
         });
@@ -178,7 +178,7 @@ describe('xserver: RENDER fast paths', () => {
         it('a clip origin offset still matches', done => {
             bothAgree(24, pic => {
                 render.SetPictureClipRectangles(pic, 3, 2, [0, 0, 8, 8]);
-                render.FillRectangles(render.PictOp.Src, pic, [0xffff, 0xffff, 0, 0xffff],
+                render.FillRectangles(render.PictOp.Src, pic, [1, 1, 0, 1],
                     [0, 0, W, H]);
             }, 'clip origin', done);
         });
@@ -223,7 +223,7 @@ describe('xserver: RENDER fast paths', () => {
                     const dotPic = X.AllocID();
                     render.CreatePicture(dotPic, dot, render.rgba32);
                     render.FillRectangles(render.PictOp.Src, dotPic,
-                        [0x6000, 0x2000, 0xa000, 0xc000], [0, 0, 1, 1]);
+                        [0.375, 0.125, 0.625, 0.75], [0, 0, 1, 1]);
                     render.ChangePicture(dotPic, { repeat });
                     render.Composite(render.PictOp.Over, dotPic, 0, pic,
                         0, 0, 0, 0, 0, 0, W, H);
@@ -238,7 +238,7 @@ describe('xserver: RENDER fast paths', () => {
                 const dotPic = X.AllocID();
                 render.CreatePicture(dotPic, dot, render.rgba32);
                 render.FillRectangles(render.PictOp.Src, dotPic,
-                    [0x6000, 0x2000, 0xa000, 0xc000], [0, 0, 1, 1]);
+                    [0.375, 0.125, 0.625, 0.75], [0, 0, 1, 1]);
                 render.Composite(render.PictOp.Over, dotPic, 0, pic,
                     0, 0, 0, 0, 0, 0, W, H);
             }, '1x1 repeat None', done);
@@ -251,7 +251,7 @@ describe('xserver: RENDER fast paths', () => {
                 const dotPic = X.AllocID();
                 render.CreatePicture(dotPic, dot, render.rgb24);
                 render.FillRectangles(render.PictOp.Src, dotPic,
-                    [0, 0xffff, 0x4000, 0xffff], [0, 0, 1, 1]);
+                    [0, 1, 0.25, 1], [0, 0, 1, 1]);
                 render.ChangePicture(dotPic, { repeat: 1 });
                 render.SetPictureTransform(dotPic, [3, 0, 0, 0, 3, 0, 0, 0, 1]);
                 render.Composite(render.PictOp.Src, dotPic, 0, pic,
@@ -265,7 +265,7 @@ describe('xserver: RENDER fast paths', () => {
                 X.CreatePixmap(small, root, 24, 4, 4);
                 const smallPic = X.AllocID();
                 render.CreatePicture(smallPic, small, render.rgb24);
-                render.FillRectangles(render.PictOp.Src, smallPic, [0xffff, 0, 0xffff, 0xffff],
+                render.FillRectangles(render.PictOp.Src, smallPic, [1, 0, 1, 1],
                     [0, 0, 4, 4]);
                 render.ChangePicture(smallPic, { repeat: 1 });
                 render.Composite(render.PictOp.Src, smallPic, 0, pic, 0, 0, 0, 0, 0, 0, W, H);
@@ -321,7 +321,7 @@ describe('xserver: RENDER fast paths', () => {
                 X.CreatePixmap(maskPixmap, root, 8, W, H);
                 const mask = X.AllocID();
                 render.CreatePicture(mask, maskPixmap, render.a8);
-                render.FillRectangles(render.PictOp.Src, mask, [0, 0, 0, 0x8000], [0, 0, W, H]);
+                render.FillRectangles(render.PictOp.Src, mask, [0, 0, 0, 0.5], [0, 0, W, H]);
                 render.Composite(render.PictOp.Over, src.pic, mask, pic, 0, 0, 0, 0, 0, 0, W, H);
             }, 'flat mask', done);
         });
@@ -352,7 +352,7 @@ describe('xserver: RENDER fast paths', () => {
                 const dotPic = X.AllocID();
                 render.CreatePicture(dotPic, dot, render.rgba32);
                 render.FillRectangles(render.PictOp.Src, dotPic,
-                    [0x9000, 0x3000, 0x5000, 0xd000], [0, 0, 1, 1]);
+                    [0.5, 0.2, 0.3, 0.8], [0, 0, 1, 1]);
                 render.ChangePicture(dotPic, { repeat: 1 });
                 const mask = mkAlphaPixmap(5);
                 render.Composite(render.PictOp.Over, dotPic, mask.pic, pic,
@@ -396,7 +396,7 @@ describe('xserver: RENDER fast paths', () => {
                 X.CreatePixmap(small, root, 8, 4, 4);
                 const mask = X.AllocID();
                 render.CreatePicture(mask, small, render.a8);
-                render.FillRectangles(render.PictOp.Src, mask, [0, 0, 0, 0x8000], [0, 0, 4, 4]);
+                render.FillRectangles(render.PictOp.Src, mask, [0, 0, 0, 0.5], [0, 0, 4, 4]);
                 render.ChangePicture(mask, { repeat: 1 });
                 render.Composite(render.PictOp.Over, src.pic, mask, pic,
                     0, 0, 0, 0, 0, 0, W, H);

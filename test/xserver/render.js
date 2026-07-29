@@ -580,6 +580,75 @@ describe('xserver: RENDER', () => {
         });
     });
 
+    describe('colour range', () => {
+
+        // Components are floats 0..1, premultiplied. A 16-bit value like
+        // 0xffff clamps, which used to be silent — every example in this repo
+        // that wrote stops that way rendered fully opaque instead of
+        // translucent, for years, with nothing to notice it by.
+        it('clamps out-of-range components and warns once', done => {
+            const warnings = [];
+            const realWarn = console.warn;
+            console.warn = msg => warnings.push(String(msg));
+
+            const { pic, pixmap } = mkCanvas();
+            // 0x8000 as "half" is the classic mistake: it saturates to full.
+            render.FillRectangles(render.PictOp.Src, pic, [0x8000, 0, 0, 0xffff],
+                [0, 0, W, H]);
+            render.FillRectangles(render.PictOp.Src, pic, [0xffff, 0, 0, 0xffff],
+                [0, 0, 1, 1]);
+
+            readBack(pixmap, data => {
+                console.warn = realWarn;
+                // clamped to full red, not half
+                assert.strictEqual(px(data, 5, 5), 0xff0000);
+                // two offending requests, one warning: the flag lives on the
+                // extension instance, and beforeEach gives each test a fresh
+                // connection, so this is exact rather than order-dependent
+                assert.strictEqual(warnings.length, 1,
+                    `expected exactly one warning, got ${warnings.length}`);
+                assert.match(warnings[0], /outside 0\.\.1/);
+                assert.match(warnings[0], /premultiplied/);
+                done();
+            });
+        });
+
+        it('strictColors turns an out-of-range component into a throw', () => {
+            const { pic } = mkCanvas();
+            render.strictColors = true;
+            try {
+                assert.throws(
+                    () => render.FillRectangles(render.PictOp.Src, pic,
+                        [0xffff, 0, 0, 0xffff], [0, 0, W, H]),
+                    /outside 0\.\.1/);
+                // NaN is caught by the same guard rather than writing garbage
+                assert.throws(
+                    () => render.FillRectangles(render.PictOp.Src, pic,
+                        [NaN, 0, 0, 1], [0, 0, W, H]),
+                    /outside 0\.\.1/);
+                // and valid values still go through untouched
+                assert.doesNotThrow(
+                    () => render.FillRectangles(render.PictOp.Src, pic,
+                        [0.5, 0.25, 0.5, 0.5], [0, 0, W, H]));
+            } finally {
+                render.strictColors = false;
+            }
+        });
+
+        it('CreateSolidFill and gradient stops use the same guard', () => {
+            render.strictColors = true;
+            try {
+                assert.throws(() => render.CreateSolidFill(X.AllocID(), 0xffff, 0, 0, 0xffff),
+                    /outside 0\.\.1/);
+                assert.throws(() => render.CreateLinearGradient(X.AllocID(), [0, 0], [W, 0],
+                    [[0, [0xffff, 0, 0, 0xffff]], [1, [0, 0, 0xffff, 0xffff]]]),
+                    /outside 0\.\.1/);
+            } finally {
+                render.strictColors = false;
+            }
+        });
+    });
+
     describe('errors', () => {
 
         it('bad picture ids raise the Picture error', done => {
