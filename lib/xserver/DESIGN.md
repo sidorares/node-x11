@@ -85,6 +85,49 @@ server.registerExtension(name, {
 `BIG-REQUESTS` (the client enables it on connect by default) and `XC-MISC`.
 GLX registers through the same hook from the browser bundle.
 
+## RENDER compositing (`extensions/render.js`)
+
+Pictures composite in premultiplied ARGB over the Uint32 rasters; the
+pixel-model note at the top of the module says how each depth maps onto the
+32-bit cell. One general loop (`compositeSpan`) covers everything — any
+operator, transform, filter, repeat mode, mask and coverage — by sampling,
+blending and writing one pixel at a time.
+
+That loop is correct but costs six calls and two switches per pixel, and a
+window repaint is a few hundred thousand pixels. So the spans a toolkit
+actually emits are specialised, in `compositeSpanFast` and in
+`FillRectangles`:
+
+| span | what it becomes |
+|---|---|
+| solid source, depth-24 destination, operator with no destination term (Src, Clear, In, Out) | `TypedArray.fill` per span |
+| solid source, any other operator | per-pixel blend with the factors hoisted out |
+| untransformed unfiltered blit, all texels inside the source, Src, matching depths | row copy (`set`) at depth 32, masked row copy at depth 24 |
+| untransformed unfiltered blit, other operators | per-pixel blend with no sampler call |
+
+Rows are painted as a list of `[start, end)` intervals: the whole row when
+there is no clip, and the clip's spans for that row otherwise
+(`clipRowSpans`). Clipped drawing therefore runs at fast-path speed instead
+of being excluded from it, which matters because a toolkit clips constantly
+— every overflow box, every rounded corner, every scrolling viewport. The
+spans come out **merged and non-overlapping**: overlapping clip rectangles
+would otherwise composite a pixel twice, which is invisible for Src and
+wrong for every operator that is not idempotent. The sorted rectangle list
+is cached on the picture and keyed by the clip array's identity, and every
+assignment site replaces that array rather than mutating it.
+
+A specialisation still bails out (returns false) whenever its other
+preconditions do not hold — a mask, a coverage function, a transform, a
+resampling filter, a source the region reaches outside of, an unusual depth
+— and the general loop runs instead. That is why the preconditions are all
+checked before the loop rather than inside it.
+
+**These paths must be indistinguishable from the general loop.**
+`test/xserver/render-fastpath.js` is what enforces it: every scenario runs
+twice, once with `_setFastPaths(false)`, and the two destination rasters are
+compared cell by cell. `scripts/bench-render.js` reports the throughput that
+motivates them.
+
 ## Raster contract (`raster.js`)
 
 All drawing goes through `Raster` with a `gc` state object:
