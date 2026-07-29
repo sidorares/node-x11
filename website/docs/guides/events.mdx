@@ -35,6 +35,12 @@ Commonly used mask bits include `Exposure`, `KeyPress`, `KeyRelease`,
 `LeaveWindow`, `StructureNotify`, `SubstructureNotify`,
 `SubstructureRedirect`, `PropertyChange` and `FocusChange`.
 
+The demo below selects a deliberately broad mask and prints every event the
+server sends. Click and type inside the X screen and watch the console fill —
+then narrow the mask in the editor, press Run, and see what stops arriving:
+
+<LiveDemo demo="event-log" compact />
+
 ## Event delivery
 
 All events arrive through a single `'event'` emitter on the client. Every
@@ -64,8 +70,43 @@ X.on('event', ev => {
 });
 ```
 
+Pointer events carry both window-relative (`x`, `y`) and screen-relative
+(`rootx`, `rooty`) coordinates. Drag inside this one to paint with them:
+
+<LiveDemo demo="pointer-paint" compact />
+
+Keyboard events are lower-level than you may expect: a `KeyPress` carries a
+*keycode*, which is a physical key number, not a character. Turning it into
+something printable means looking up the keysym through
+`GetKeyboardMapping` and applying the modifier state yourself:
+
+<LiveDemo demo="keyboard" compact />
+
 Every core event and its fields is documented in the
 [core events reference](../reference/core-events.md).
+
+## Redirection
+
+Two mask bits are not notifications but *interceptions*. A client holding
+`SubstructureRedirect` on a window receives `MapRequest`, `ConfigureRequest`
+and `CirculateRequest` for its children **instead of those requests taking
+effect** — the server asks permission rather than reporting a fact.
+
+That is the entire mechanism a window manager is built from. There is no
+privileged API and no special connection: selecting one event mask on the root
+window is what makes a program a window manager, and only one client at a time
+may hold it (a second gets `BadAccess`, which is how a WM discovers another is
+already running).
+
+A client's own requests are never redirected back to itself, so the demo below
+opens **two** connections — one managing the screen, one for the toy
+applications. Drag either window by its title bar; neither application drew
+that bar, or knows it exists:
+
+<LiveDemo demo="window-manager" compact />
+
+Redirection is also skipped for override-redirect windows, which is how menus
+and tooltips escape being framed.
 
 ## Extension events
 

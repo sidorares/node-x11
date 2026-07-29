@@ -83,6 +83,50 @@
   background: #14161a;
 }
 
+/* Reserves the screen's box until the demo scrolls into view, so arriving at
+   a guide anchor does not shift the text under the reader. */
+.framePlaceholder {
+  display: block;
+  width: 100%;
+  border: 1px dashed var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  background: var(--ifm-color-emphasis-100);
+}
+
+.shareOk,
+.shareError {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.shareOk {
+  border: 1px solid var(--ifm-color-success-dark);
+  background: var(--ifm-color-success-contrast-background);
+  color: var(--ifm-color-success-contrast-foreground);
+}
+
+.shareError {
+  border: 1px solid var(--ifm-color-danger-dark);
+  background: var(--ifm-color-danger-contrast-background);
+  color: var(--ifm-color-danger-contrast-foreground);
+}
+
+.shareInput {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px 6px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 4px;
+  background: var(--ifm-background-color);
+  color: var(--ifm-font-color-base);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 11px;
+}
+
 .screenCaption {
   margin-top: 6px;
   font-size: 0.8rem;
@@ -95,6 +139,30 @@
   padding: 3rem 1rem;
   text-align: center;
   color: var(--ifm-color-emphasis-600);
+}
+
+/* In prose the screen leads and the editor follows: a reader scrolling a
+   guide wants to see the result first and only then the code that made it.
+   The docs column is also far narrower than the playground's, so side by
+   side would squeeze both panes. */
+.compact {
+  flex-direction: column-reverse;
+  padding: 12px;
+  margin-bottom: var(--ifm-leading);
+}
+
+.compact .editorPane,
+.compact .screenPane {
+  width: 100%;
+  flex: none;
+}
+
+.compact .screenPane {
+  margin-bottom: 12px;
+}
+
+.compact .console {
+  height: 72px;
 }
 
 @media (max-width: 996px) {

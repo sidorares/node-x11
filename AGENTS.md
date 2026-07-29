@@ -63,6 +63,7 @@ Details the script handles for you:
 | `docs/` | API reference: README + core protocol + one page per extension |
 | `examples/` | Runnable demos (need a real X server / XQuartz) |
 | `test/` | Mocha specs, driven by `test-runner.js` |
+| `website/` | The documentation site (Docusaurus); see below |
 
 ## Commit messages: conventional commits (required)
 
@@ -101,6 +102,52 @@ your working session:
   over indirect GLX — documented") so readers don't mistake them for gaps.
 - Say how the change was verified (which servers, pixel-level tests, suite
   totals).
+
+## The documentation site (`website/`)
+
+The site runs the library rather than describing it: `browser/index.js` is
+bundled with the JS X server into `static/demo/x11-demo-runtime.js`, and every
+live demo is real client code talking to a real server over a
+`registerDisplayProtocol('demo')` transport.
+
+Two rules keep it honest:
+
+1. **Demo code lives in `website/src/demos/*.js`, never inline in a page.**
+   Guides embed them by id — `<LiveDemo demo="shapes" compact />` — because
+   `scripts/check-demos.mjs` runs every file in that directory against the
+   real server and fails when a demo stops drawing. A snippet pasted into an
+   `.mdx` file is unchecked and will rot.
+2. **A guide page that needs JSX must be `.mdx`.** `docusaurus.config.js` sets
+   `format: 'detect'`, so a `.md` file silently renders `<LiveDemo …>` as
+   literal text. Renaming also breaks inbound `…​.md` links, which fails the
+   build — grep for the old name.
+
+`LiveDemo` is global via `src/theme/MDXComponents.js`, so no import is needed.
+It mounts its iframe on an IntersectionObserver: a page with eight demos boots
+two X servers, not eight. Keep that — each runner is a server compositing on a
+rAF loop.
+
+Awkward details worth knowing before they cost you an afternoon:
+
+- **The server's built-in font is ASCII only** (chars 0-127, 8x8). An em-dash
+  in an `ImageText8` string renders as a filled box. `check-demos.mjs` wraps
+  every client's text requests and fails on non-ASCII, so this is caught — but
+  write `:` not `—` in drawn strings.
+- **`ImageText8` fills the glyph cell with the GC's `background`** before
+  drawing the glyph. Set both colours or text lands on a black box.
+- **RENDER colours are floats 0..1 and clamped** (`colorToFix`). Passing
+  16-bit values like `0xffff`/`0x3000` silently yields 1.0, so a stop list
+  written in 16-bit comes out fully opaque.
+- **A client's own requests are never redirected to itself.** A window-manager
+  demo needs a second `createClient` for the windows it manages.
+- **`npx docusaurus serve` 301-redirects `/demo/runner.html`** to a path
+  without the baseUrl, so demos show the site's own homepage in the iframe.
+  That is a preview-only artifact — `npm start` and GitHub Pages both serve it
+  correctly. Verify a build with a plain static server, not with `serve`.
+
+Gates, all wired into `npm test` in `website/`: `check-demos` (every demo
+draws, reacts to injected input, animates if it should), `check-bundle` (the
+browser bundle boots and renders), `check-share` (share links round-trip).
 
 ## Conventions
 
