@@ -100,10 +100,28 @@ actually emits are specialised, in `compositeSpanFast` and in
 
 | span | what it becomes |
 |---|---|
-| solid source, depth-24 destination, operator with no destination term (Src, Clear, In, Out) | `TypedArray.fill` per span |
-| solid source, any other operator | per-pixel blend with the factors hoisted out |
-| untransformed unfiltered blit, all texels inside the source, Src, matching depths | row copy (`set`) at depth 32, masked row copy at depth 24 |
+| constant source, depth-24 or a8 destination, operator with no destination term (Src, Clear, In, Out) | `TypedArray.fill` per span |
+| constant source, any other operator or depth | per-pixel blend with the factors hoisted out where the operator allows |
+| untransformed unfiltered blit, all texels inside the source, Src, matching depths | row copy (`set`) at depth 32, masked row copy at depth 24 and a8 |
 | untransformed unfiltered blit, other operators | per-pixel blend with no sampler call |
+| a8 to a8 blit | alpha-only loop; a copy for Src |
+| source through a **direct a8 mask** (`compositeSpanMasked`) | mask read straight from its raster, source either constant or a matching blit |
+
+**"Constant source" is not the same as "solid picture".** A toolkit
+routinely expresses flat paint as a **1x1 pixmap with repeat** rather than
+through `CreateSolidFill` — ntk does — and such a picture samples to the
+same texel at every coordinate whatever the transform. `constantColorOf`
+recognises both, and without it the constant-source paths almost never fire
+on real drawing: in a react-x11 repaint every single masked composite was
+falling through to the general loop for that one reason.
+
+Coverage masks are the other thing worth knowing about. A toolkit draws
+antialiased shapes and runs of text by rasterising coverage into an a8
+picture and compositing paint through it, so a8 fills, a8 blits and
+"source through an a8 mask" are three of the four biggest spans in a real
+repaint. They were all excluded from the fast paths at first, and adding
+them took the share of composited pixels on a specialised path from about
+40% to **98.6%** — the remainder being the trapezoid coverage path.
 
 Rows are painted as a list of `[start, end)` intervals: the whole row when
 there is no clip, and the clip's spans for that row otherwise
@@ -127,6 +145,12 @@ checked before the loop rather than inside it.
 twice, once with `_setFastPaths(false)`, and the two destination rasters are
 compared cell by cell. `scripts/bench-render.js` reports the throughput that
 motivates them.
+
+That equivalence check has one blind spot worth remembering: a scenario
+where *neither* path is taken passes trivially. When adding a
+specialisation, confirm it actually fires — a benchmark row that moves, or
+the pixel-bucket counting described above — rather than trusting a green
+suite.
 
 ## Raster contract (`raster.js`)
 

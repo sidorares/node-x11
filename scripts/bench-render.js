@@ -165,7 +165,22 @@ function setup() {
     const argb = id();
     call(REQ.CreatePicture, bodyCreatePicture(argb, argbPix, 0x101 /* rgba32 */));
 
-    return { server, call, dst, src, argb };
+    // a8 coverage pictures: a destination to fill and blit into, a source to
+    // blit from, and the mask a toolkit composites paint through
+    const a8DstPix = id();
+    server.resources.set(a8DstPix, makePixmap(server, W, H, 8));
+    const a8Dst = id();
+    call(REQ.CreatePicture, bodyCreatePicture(a8Dst, a8DstPix, 0x103 /* a8 */));
+
+    const a8SrcPix = id();
+    const a8SrcRaster = makePixmap(server, W, H, 8);
+    server.resources.set(a8SrcPix, a8SrcRaster);
+    for (let i = 0; i < a8SrcRaster.raster.data.length; i++)
+        a8SrcRaster.raster.data[i] = i & 0xff;
+    const a8Src = id();
+    call(REQ.CreatePicture, bodyCreatePicture(a8Src, a8SrcPix, 0x103));
+
+    return { server, call, dst, src, argb, a8Dst, a8Src };
 }
 
 const { Raster } = require('../lib/xserver/raster');
@@ -196,7 +211,7 @@ function time(label, pixelsPerCall, fn) {
 }
 
 function main() {
-    const { call, dst, src, argb } = setup();
+    const { call, dst, src, argb, a8Dst, a8Src } = setup();
     const AREA = 512 * 384; // a window-sized region
     const rows = [];
 
@@ -211,6 +226,15 @@ function main() {
 
     rows.push(time('Composite Over, untransformed', AREA, () =>
         call(REQ.Composite, bodyComposite(3, argb, 0, dst, 0, 0, 0, 0, 0, 0, 512, 384))));
+
+    rows.push(time('FillRectangles Src onto a8 (mask clear)', AREA, () =>
+        call(REQ.FillRectangles, bodyFillRectangles(1, a8Dst, [0, 0, 0, 0x8000], [[0, 0, 512, 384]]))));
+
+    rows.push(time('Composite Src, a8 -> a8', AREA, () =>
+        call(REQ.Composite, bodyComposite(1, a8Src, 0, a8Dst, 0, 0, 0, 0, 0, 0, 512, 384))));
+
+    rows.push(time('Composite Over through an a8 mask', AREA, () =>
+        call(REQ.Composite, bodyComposite(3, argb, a8Src, dst, 0, 0, 0, 0, 0, 0, 512, 384))));
 
     // gradient source
     const grad = id();
