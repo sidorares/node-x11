@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.2.0](https://github.com/sidorares/node-x11/compare/v3.1.3...v3.2.0) (2026-07-29)
+
+
+### Features
+
+* **xserver:** substructure redirect, so a window manager can run headlessly ([9344958](https://github.com/sidorares/node-x11/commit/9344958ee00c4d533dfd3937b60261389b0e14a0))
+* **xserver:** substructure redirect, so a window manager can run headlessly ([ebf20d6](https://github.com/sidorares/node-x11/commit/ebf20d6461a9d8765983982cec7710ff77752532))
+
 ## [3.1.3](https://github.com/sidorares/node-x11/compare/v3.1.2...v3.1.3) (2026-07-27)
 
 
