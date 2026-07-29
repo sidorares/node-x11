@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>canvas RENDER throughput</title></head>
+<body>
+<pre id="out">running…</pre>
+<script>
+// Canvas 2D throughput for the spans scripts/bench-render.js measures in the
+// software compositor — the evidence behind browser/CANVAS-RENDER.md.
+// Reported in megapixels per second so the two are directly comparable.
+//
+// Open it in a browser, or headlessly:
+//   chrome --headless=new --disable-gpu --virtual-time-budget=60000 \
+//     --dump-dom scripts/bench-canvas-render.html
+const W = 640, H = 480;
+const AW = 512, AH = 384;          // the composited region
+const AREA = AW * AH;
+const RUN_MS = 400;
+
+const dst = document.createElement('canvas');
+dst.width = W; dst.height = H;
+const ctx = dst.getContext('2d', { alpha: true, willReadFrequently: false });
+
+// an opaque source image and one with alpha
+function makeSource(alpha) {
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const img = g.createImageData(W, H);
+  for (let i = 0; i < W * H; i++) {
+    img.data[i * 4] = (i * 7) & 0xff;
+    img.data[i * 4 + 1] = (i * 13) & 0xff;
+    img.data[i * 4 + 2] = (i * 29) & 0xff;
+    img.data[i * 4 + 3] = alpha;
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+const opaqueSrc = makeSource(255);
+const alphaSrc = makeSource(128);
+
+const grad = ctx.createLinearGradient(0, 0, AW, AH);
+grad.addColorStop(0, '#ff0000');
+grad.addColorStop(1, '#0000ff');
+
+function time(label, fn) {
+  for (let i = 0; i < 5; i++) fn();          // warm up
+  const t0 = performance.now();
+  let calls = 0;
+  while (performance.now() - t0 < RUN_MS) { fn(); calls++; }
+  const ms = performance.now() - t0;
+  // force the queued work to actually complete before stopping the clock:
+  // canvas drawing is asynchronous until something reads it back
+  ctx.getImageData(0, 0, 1, 1);
+  const total = performance.now() - t0;
+  return { label, calls, mpxPerSec: +((calls * AREA) / (total / 1000) / 1e6).toFixed(1) };
+}
+
+const rows = [];
+
+rows.push(time('FillRectangles Src (opaque)', () => {
+  ctx.globalCompositeOperation = 'copy';
+  ctx.fillStyle = '#2980b9';
+  ctx.fillRect(0, 0, AW, AH);
+}));
+
+rows.push(time('FillRectangles Over (alpha)', () => {
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = 'rgba(41,128,185,0.5)';
+  ctx.fillRect(0, 0, AW, AH);
+}));
+
+rows.push(time('Composite Src, untransformed', () => {
+  ctx.globalCompositeOperation = 'copy';
+  ctx.drawImage(opaqueSrc, 0, 0, AW, AH, 0, 0, AW, AH);
+}));
+
+rows.push(time('Composite Over, untransformed', () => {
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(alphaSrc, 0, 0, AW, AH, 0, 0, AW, AH);
+}));
+
+rows.push(time('Composite Over, linear gradient', () => {
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, AW, AH);
+}));
+
+rows.push(time('FillRectangles Src, 2 clip rects', () => {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, AW / 2, AH);
+  ctx.rect(AW / 2, 0, AW / 2, AH);
+  ctx.clip();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#00ff00';
+  ctx.fillRect(0, 0, AW, AH);
+  ctx.restore();
+}));
+
+// the readback a hybrid design would need on every frame, for comparison
+rows.push(time('+ getImageData readback of the region', () => {
+  ctx.getImageData(0, 0, AW, AH);
+}));
+
+document.getElementById('out').textContent =
+  rows.map(r => r.label.padEnd(38) + String(r.mpxPerSec).padStart(9)).join('\n');
+document.title = 'done';
+</script>
+</body>
+</html>
