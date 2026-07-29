@@ -54,6 +54,16 @@ server.root.raster                         // composited screen pixels (Uint32Ar
 - Event delivery: per-window per-client event masks (`SelectInput` via
   CreateWindow/ChangeWindowAttributes), device event propagation up the
   ancestor chain, pointer/keyboard grabs (basic active grabs), focus (basic).
+- Substructure redirect: a client holding `SubstructureRedirect` on a parent
+  receives `MapRequest`/`ConfigureRequest`/`CirculateRequest` instead of the
+  request taking effect, which is what lets a window manager run against this
+  server headlessly. Redirection is skipped for override-redirect windows,
+  for requests from the redirecting client itself, and for requests that
+  would not change state (mapping an already-mapped window). Only one client
+  at a time may select `SubstructureRedirect`/`ResizeRedirect` on a window —
+  a second selector gets `BadAccess`, the way a WM discovers that another one
+  is already running. `ChangeSaveSet` is still accepted-but-untracked, so a
+  window manager exiting while it holds reparented clients is not modelled.
 - Errors: correct error codes (BadWindow, BadValue, BadMatch, BadAtom,
   BadDrawable, BadAccess, BadAlloc, BadGC, BadIDChoice, BadName, BadLength,
   BadImplementation) with major/minor opcode fields.
