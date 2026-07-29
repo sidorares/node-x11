@@ -78,8 +78,9 @@ x11.createClient({ debug: true}, (err, display) => {
       let g;
       let b;
 
-      // fill window
-      r = 1;g = 1;b = 1;a = 0.5;
+      // fill window: white at half alpha. Colours are premultiplied, so each
+      // channel is scaled by the alpha rather than left at full scale.
+      a = 0.5; r = a; g = a; b = a;
       Render.FillRectangles(1, pictBuff, [r, g, b, a], [0, 0, 1000, 1000])
 
       // fill traps

@@ -81,11 +81,14 @@ function main(X)
     const gc = X.AllocID();
     X.CreateGC(gc, win);
 
+            // Colours are floats 0..1, premultiplied by alpha. The centre stop
+            // used to read 0x15000, which is past even 16-bit full scale and
+            // silently clamped to opaque — 1 is what it always drew.
             const picGrad = X.AllocID();
             Render.RadialGradient(picGrad, [150/2,150/2], [150/2,150/2], 0, 150/2,
                 [
-                  [0,   [0,0,0,0x15000 ] ],
-                  [1,   [0, 0, 0, 0x0] ]
+                  [0,   [0, 0, 0, 1] ],
+                  [1,   [0, 0, 0, 0] ]
                 ]);
             const pixmapHeatPush = X.AllocID();
             X.CreatePixmap(pixmapHeatPush, win, 32, 150, 150);

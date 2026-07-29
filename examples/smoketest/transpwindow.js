@@ -42,13 +42,18 @@ x11.createClient((err, display) => {
             for (let i=0; i<3; ++i)
                 stops.push(Math.random());
             stops.sort();
+            // Colours are floats 0..1, premultiplied by alpha. These used to be
+            // random 16-bit values, every one of which clamped to 1 — so the
+            // "random" gradient was always opaque white.
             const colors = [];
-            for (let i=0; i<stops.length; ++i)
+            for (let i=0; i<stops.length; ++i) {
+                const a = Math.random();
                 colors.push([stops[i], [
-                    parseInt(Math.random()*65535),
-                    parseInt(Math.random()*65535),
-                    parseInt(Math.random()*65535),
-                    parseInt(Math.random()*65535)]]);
+                    Math.random()*a,
+                    Math.random()*a,
+                    Math.random()*a,
+                    a]]);
+            }
 
             console.log(colors);
 

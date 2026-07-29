@@ -29,35 +29,41 @@ x11.createClient(
             const pix_pict = X.AllocID();
             Render.CreatePicture(pix_pict, pixmap, Render.rgba32, { polyEdge: 1, polyMode: 0 });
 
+            // RENDER colours are floats 0..1 and PREMULTIPLIED by alpha, so
+            // each of r,g,b must end up <= a. Writing the colour you mean and
+            // letting this helper multiply is clearer, and harder to get
+            // wrong, than premultiplying the constants by hand.
+            const rgba = (r, g, b, a) => [r * a, g * a, b * a, a];
+
             const pic_grad = X.AllocID();
             Render.LinearGradient(pic_grad, [0,0], [1000,100],
             //RenderRadialGradient(pic_grad, [0,0], [1000,100], 10, 1000,
             //RenderConicalGradient(pic_grad, [250,250], 360,
                 [
-                  [0,   [0,0,0,0x3000 ] ],
-                  [0.1, [0xfff, 0, 0xffff, 0x1000] ] ,
-                  [0.25, [0xffff, 0, 0xfff, 0x3000] ] ,
-                  [0.5, [0xffff, 0, 0xffff, 0x4000] ] ,
-                  [1,   [0xffff, 0xffff, 0, 0x8000] ]
+                  [0,   rgba(0, 0, 0, 0.1875) ],
+                  [0.1, rgba(0.0625, 0, 1, 0.0625) ] ,
+                  [0.25, rgba(1, 0, 0.0625, 0.1875) ] ,
+                  [0.5, rgba(1, 0, 1, 0.25) ] ,
+                  [1,   rgba(1, 1, 0, 0.5) ]
                 ]);
 
             const pic_grad1 = X.AllocID();
 
             Render.ConicalGradient(pic_grad1, [250,250], 10,
                 [
-                  [0,   [0,0,0,0x5000 ] ],
-                  [0.1, [0xfff, 0, 0xffff, 0x3000] ] ,
-                  [0.25, [0xffff, 0, 0xfff, 0x2000] ] ,
-                  [0.5, [0xffff, 0, 0xffff, 0x1000] ] ,
-                  [1,   [0xffff, 0xffff, 0, 0x8000] ]
+                  [0,   rgba(0, 0, 0, 0.3125) ],
+                  [0.1, rgba(0.0625, 0, 1, 0.1875) ] ,
+                  [0.25, rgba(1, 0, 0.0625, 0.125) ] ,
+                  [0.5, rgba(1, 0, 1, 0.0625) ] ,
+                  [1,   rgba(1, 1, 0, 0.5) ]
                 ]);
 
             const pic_grad2 = X.AllocID();
             Render.RadialGradient(pic_grad2, [250,250], [250,250], 0, 250,
                 [
-                  [0,   [0,0,0,0x5000 ] ],
-                  [0.99,   [0xffff, 0xffff, 0, 0xffff] ],
-                  [1,   [0xffff, 0xffff, 0, 0x0] ]
+                  [0,   rgba(0, 0, 0, 0.3125) ],
+                  [0.99,   rgba(1, 1, 0, 1) ],
+                  [1,   rgba(1, 1, 0, 0) ]
                 ]);
 
             const pixmap1 = X.AllocID();
@@ -80,7 +86,7 @@ x11.createClient(
 
             function update()
             {
-                Render.FillRectangles(1, pix_pict, [0xffff, 0xffff, 0xffff, 0xffff], [0, 0, 2500, 2500]);
+                Render.FillRectangles(1, pix_pict, [1, 1, 1, 1], [0, 0, 2500, 2500]);
                 Render.Composite(3, pix_pict2, 0, pix_pict, 0, 0, 0, 0, X.x1, X.y1, 2500, 2500);
                 //Render.Composite(3, pic_grad, 0, pix_pict, 0, 0, 0, 0, 0, 0, 500, 500);
                 Render.Composite(3, pix_pict1, 0, pix_pict, 0, 0, 0, 0, X.x2, X.y2, 2500, 2500);
