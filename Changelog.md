@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.3.0](https://github.com/sidorares/node-x11/compare/v3.2.2...v3.3.0) (2026-07-29)
+
+
+### Features
+
+* **website:** runnable demos inside the guides, and nine more of them ([#240](https://github.com/sidorares/node-x11/issues/240)) ([7ed58e2](https://github.com/sidorares/node-x11/commit/7ed58e2876af122edacaccfb400107fc8a9e716d))
+
+
+### Bug Fixes
+
+* **render:** examples wrote 16-bit colours that silently clamped to opaque ([#242](https://github.com/sidorares/node-x11/issues/242)) ([bccddd4](https://github.com/sidorares/node-x11/commit/bccddd41dad960be8dedd39118c314f7a7e2ab8c))
+
 ## [3.2.2](https://github.com/sidorares/node-x11/compare/v3.2.1...v3.2.2) (2026-07-29)
 
 
