@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.2.2](https://github.com/sidorares/node-x11/compare/v3.2.1...v3.2.2) (2026-07-29)
+
+
+### Performance Improvements
+
+* **xserver:** fast paths for a8 coverage masks and 1x1 repeating paint ([#239](https://github.com/sidorares/node-x11/issues/239)) ([deca473](https://github.com/sidorares/node-x11/commit/deca4739ce28761ee0b840a1fca76c0169e69f84))
+* **xserver:** specialise the RENDER spans a toolkit actually emits ([#237](https://github.com/sidorares/node-x11/issues/237)) ([511bbe7](https://github.com/sidorares/node-x11/commit/511bbe7f634db0e5703a4add08753601110c2486))
+
 ## [3.2.1](https://github.com/sidorares/node-x11/compare/v3.2.0...v3.2.1) (2026-07-29)
 
 
