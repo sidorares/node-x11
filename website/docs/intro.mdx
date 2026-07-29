@@ -33,7 +33,15 @@ x11.createClient((err, display) => {
 });
 ```
 
-A more typical program creates a window, selects events and draws into it:
+A more typical program creates a window, selects events and draws into it.
+This one is running below — not a recording, and not a screenshot: the X
+server it is talking to is the pure-JavaScript one from this repository,
+compiled to run in your browser and compositing to a canvas. Edit the code
+and press Run.
+
+<LiveDemo demo="hello-window" compact />
+
+The same program, as a listing:
 
 ```js
 const x11 = require('x11');
@@ -76,12 +84,12 @@ x11.createClient((err, display) => {
 
 ## Where to go next
 
-- [Getting started](guides/getting-started.md) — connecting, the display
+- [Getting started](guides/getting-started.mdx) — connecting, the display
   object, screens and resource ids
-- [Windows & drawing](guides/windows-and-drawing.md) — `CreateWindow`,
+- [Windows & drawing](guides/windows-and-drawing.mdx) — `CreateWindow`,
   graphics contexts and drawing requests
-- [Events](guides/events.md) — event masks and event delivery
-- [Extensions](guides/extensions.md) — loading protocol extensions with
+- [Events](guides/events.mdx) — event masks and event delivery
+- [Extensions](guides/extensions.mdx) — loading protocol extensions with
   `X.require()`
 - [Custom transports & DISPLAY protocols](guides/custom-transports.md) —
   plugging your own connection layer into `createClient`

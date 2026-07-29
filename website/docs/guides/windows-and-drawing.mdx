@@ -38,6 +38,8 @@ X.CreateWindow(wid, root, 0, 0, 500, 500, 0, 0, 0, 0, {
 
 A window becomes visible only after `X.MapWindow(wid)`.
 
+<LiveDemo demo="guide-create-window" compact />
+
 ## Graphics contexts
 
 All core drawing requests take a graphics context (GC) that carries pen
@@ -54,6 +56,14 @@ X.CreateGC(gc, wid, {
 
 GCs can be mutated later with `ChangeGC(gc, values)` and freed with
 `FreeGC(gc)`.
+
+The GC is where nearly all drawing state lives, which is why the same request
+can produce very different ink. Below, `PolyFillRectangle` is called four
+times with identical arguments — only `ChangeGC` differs between them, and the
+last one switches the raster operation to `GXxor` so it combines with what is
+already on screen instead of replacing it:
+
+<LiveDemo demo="guide-gc" compact />
 
 ## Drawing requests
 
@@ -72,6 +82,21 @@ X.on('event', ev => {
 Draw from an `Expose` handler — the server does not preserve window contents
 for you, and `Expose` tells you when (part of) the window needs repainting.
 
+There are no paths and no curves beyond the ellipse: every shape is one
+request carrying a flat list of 16-bit coordinates. Note that `PolyLine` and
+`PolyPoint` take `coordMode` as their *first* argument while every other
+drawing request takes the drawable first — an inconsistency worth knowing
+before it costs you an afternoon:
+
+<LiveDemo demo="shapes" compact />
+
+Drawing can also be masked. A clip list installed on the GC with
+`SetClipRectangles` turns it into a stencil, which is how core X11 produces
+shapes it has no request for — the fill is ordinary, the rectangle list is
+the shape:
+
+<LiveDemo demo="clip-rects" compact />
+
 Pixmaps are off-screen drawables, useful for double buffering:
 
 ```js
@@ -81,6 +106,13 @@ X.CreatePixmap(pixmap, wid, depth, width, height);
 X.CopyArea(pixmap, wid, gc, 0, 0, 0, 0, width, height);
 ```
 
+`CopyArea` is a server-side blit: no pixel data crosses the connection, which
+makes "draw once into a pixmap, then move it" the cheapest animation the core
+protocol offers. The demo below scrolls a 960×200 pixmap drawn a single time,
+at two requests per frame:
+
+<LiveDemo demo="copy-area" compact />
+
 The complete list of drawing requests — `PolyPoint`, `PolySegment`,
 `PolyArc`, `FillPoly`, `PutImage`, `GetImage`, `CopyPlane` and friends — is
 in the [core requests reference](../reference/core-requests.md).
@@ -89,35 +121,37 @@ in the [core requests reference](../reference/core-requests.md).
 
 The core protocol only does flat 1-bit-coverage drawing. For anti-aliasing,
 alpha blending and gradients, load the [RENDER](../reference/ext/render.md)
-extension. Abridged from `examples/simple/gradients.js`:
+extension. Its unit of work is the *Picture*: a drawable wrapped in a pixel
+format, or — for gradients and solid fills — no drawable at all.
 
-```js
-X.require('render', (err, Render) => {
-  const win = X.AllocID();
-  X.CreateWindow(win, display.screen[0].root, 0, 0, 500, 500, 0, 0, 0, 0, {
-    backgroundPixel: display.screen[0].white_pixel,
-    eventMask: x11.eventMask.Exposure,
-  });
-  X.MapWindow(win);
+:::note Colour components are floats
 
-  // a Picture wraps a drawable for use with RENDER
-  const picture = X.AllocID();
-  Render.CreatePicture(picture, win, Render.rgb24, { polyEdge: 1, polyMode: 0 });
+Everywhere in the RENDER binding, colour components are **0..1 and clamped**,
+not the 16-bit values the protocol carries on the wire; the client scales them
+for you. Passing `0xffff` gets you 1.0, and passing `0x3000` for alpha gets you
+1.0 as well, silently — so a stop list written in 16-bit values comes out fully
+opaque rather than translucent.
 
-  // gradients are Pictures too
-  const gradient = X.AllocID();
-  Render.LinearGradient(gradient, [0, 0], [1000, 100], [
-    [0,    [0, 0, 0, 0x3000]],           // stop, [r, g, b, a] as 16-bit
-    [0.25, [0xffff, 0, 0x0fff, 0x3000]],
-    [1,    [0xffff, 0xffff, 0, 0x8000]],
-  ]);
+:::
 
-  X.on('event', () => {
-    // composite the gradient onto the window (3 = PictOp Over)
-    Render.Composite(3, gradient, 0, picture, 0, 0, 0, 0, 0, 0, 500, 500);
-  });
-});
-```
+Gradients are Pictures with nothing behind them: the client sends a few hundred
+bytes describing the ramp, and the server evaluates it for every sample the
+composite needs.
+
+<LiveDemo demo="render-gradients" compact />
+
+Because a Picture's source can be transformed, a small pixmap goes a long way.
+`SetPictureTransform` takes a 3×3 matrix mapping *destination* coordinates back
+to source coordinates — the inverse of how you would write it for a canvas —
+and `SetPictureFilter` chooses the resampling:
+
+<LiveDemo demo="render-transform" compact />
+
+Compositing itself is Porter-Duff, and the operator is an argument to every
+RENDER drawing request. The fourteen operators only differ from one another
+where both sides carry alpha, which is what this grid is arranged to show:
+
+<LiveDemo demo="render-operators" compact />
 
 `Render` also provides `RadialGradient`, `ConicalGradient`, `Triangles`,
 `FillRectangles` and glyph rendering — see the

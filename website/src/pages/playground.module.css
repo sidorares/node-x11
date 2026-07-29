@@ -53,6 +53,40 @@
   font-weight: 600;
 }
 
+.demoButtonShared,
+.demoButtonShared:hover {
+  font-style: italic;
+}
+
+.perfNote,
+.sharedNote,
+.shareError {
+  max-width: 62rem;
+  margin-bottom: var(--ifm-leading);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.perfNote {
+  border-left: 4px solid var(--ifm-color-warning-dark);
+  background: var(--ifm-color-warning-contrast-background);
+  color: var(--ifm-color-warning-contrast-foreground);
+}
+
+.sharedNote {
+  border-left: 4px solid var(--ifm-color-info-dark);
+  background: var(--ifm-color-info-contrast-background);
+  color: var(--ifm-color-info-contrast-foreground);
+}
+
+.shareError {
+  border-left: 4px solid var(--ifm-color-danger-dark);
+  background: var(--ifm-color-danger-contrast-background);
+  color: var(--ifm-color-danger-contrast-foreground);
+}
+
 .demoTitle {
   margin-bottom: 0.25rem;
 }

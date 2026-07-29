@@ -8,11 +8,12 @@
     "build-demo-bundles": "node scripts/build-demo-bundles.mjs",
     "check-demos": "node scripts/check-demos.mjs",
     "check-bundle": "node scripts/check-bundle.mjs",
+    "check-share": "node scripts/check-share.mjs",
     "start": "npm run sync-docs && npm run build-demo-bundles && docusaurus start",
     "prebuild": "npm run sync-docs && npm run build-demo-bundles",
     "build": "docusaurus build",
     "pretest": "npm run check-demos",
-    "test": "npm run build-demo-bundles && npm run check-bundle",
+    "test": "npm run build-demo-bundles && npm run check-bundle && npm run check-share",
     "serve": "docusaurus serve",
     "clear": "docusaurus clear"
   },

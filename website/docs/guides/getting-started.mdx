@@ -87,6 +87,15 @@ Resource ids (windows, pixmaps, GCs, …) are allocated client-side with
 is destroyed. When you are done with the connection, call `X.terminate()`;
 the client emits `'end'` when the stream closes.
 
+That is already enough for a whole program. This one runs here, in this page,
+against a pure-JavaScript X server compositing to the canvas above the editor
+— no display, no `DISPLAY`, nothing installed. Edit it and press Run.
+
+<LiveDemo demo="guide-create-window" compact />
+
+Every demo on this site works the same way, and the code is the code you
+would run in node. The [playground](/playground) has the longer ones.
+
 ## Error handling
 
 X errors arrive asynchronously. Errors caused by a request with a reply are

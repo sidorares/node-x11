@@ -24,6 +24,22 @@ X.require('randr', (err, Randr) => {
 on-the-wire extension name. Requiring an extension twice returns the cached
 instance.
 
+An absent extension gives you an `err` rather than throwing, so the callback
+is also where you put your fallback. This demo requires RENDER and uses it to
+do something the core protocol cannot — blend two translucent rectangles:
+
+<LiveDemo demo="guide-extension" compact />
+
+:::info The in-page X server implements three of these
+
+The live demos on this site run against the pure-JavaScript X server in
+`lib/xserver`, which registers BIG-REQUESTS, XC-MISC and RENDER (plus GLX in
+the browser build, backed by WebGL). `X.require('randr')` and friends will
+report the extension as missing here — the client supports all of them, but
+you need a real server to talk to.
+
+:::
+
 ## Available extensions
 
 | module | X name | what it does |

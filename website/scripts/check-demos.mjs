@@ -38,6 +38,59 @@ function loadDemo(file) {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// The server's built-in font covers ASCII 0-127 and nothing else, so a stray
+// em-dash or "×" in a drawn string comes out as a filled box. A checksum
+// cannot see that, so every text request is inspected as it is made.
+//
+// This has to happen at call time rather than by reading the source: demos
+// route text through their own label() helpers and build strings by
+// concatenation, and a scan of the literal `ImageText8(...)` span misses both.
+const TEXT_REQUESTS = ['ImageText8', 'ImageText16', 'PolyText8', 'PolyText16'];
+
+function watchDrawnText(X, problems) {
+  for (const name of TEXT_REQUESTS) {
+    const original = X[name];
+    if (typeof original !== 'function') continue;
+    X[name] = function (...args) {
+      for (const arg of args) {
+        const strings =
+          typeof arg === 'string' ? [arg]
+            : Array.isArray(arg) ? arg.filter(a => typeof a === 'string')
+              : [];
+        for (const s of strings) {
+          const bad = s.match(/[^\x00-\x7F]/);
+          if (bad)
+            problems.push(new Error(
+              `${name} would draw non-ASCII ${JSON.stringify(bad[0])} as a filled box, in ${JSON.stringify(s)}`));
+        }
+      }
+      return original.apply(this, args);
+    };
+  }
+}
+
+// x11 as the demo sees it, except that every client it opens has its text
+// requests watched. A demo may connect more than once (the window manager
+// does), so this wraps createClient rather than a single client.
+function watchedX11(problems) {
+  return new Proxy(x11, {
+    get(target, prop) {
+      if (prop !== 'createClient') return target[prop];
+      return (...args) => {
+        const last = args.length - 1;
+        if (typeof args[last] === 'function') {
+          const cb = args[last];
+          args[last] = (err, display) => {
+            if (display && display.client) watchDrawnText(display.client, problems);
+            return cb(err, display);
+          };
+        }
+        return target.createClient(...args);
+      };
+    },
+  });
+}
+
 function checksum(server) {
   server.compose();
   const data = server.root.raster.data;
@@ -69,10 +122,39 @@ const exercises = {
     server.injectButton(1, true);
     server.injectButton(1, false);
   },
+  'raster-ops'(server) {
+    // drag out a rubber band, then release to commit it
+    server.injectPointerMove(120, 140);
+    server.injectButton(1, true);
+    for (let i = 1; i <= 12; i++)
+      server.injectPointerMove(120 + i * 20, 140 + i * 12);
+    server.injectButton(1, false);
+  },
+  'window-manager'(server) {
+    // grab a frame by its title bar and move it
+    server.injectPointerMove(120, 78);
+    server.injectButton(1, true);
+    for (let i = 1; i <= 8; i++)
+      server.injectPointerMove(120 + i * 10, 78 + i * 6);
+    server.injectButton(1, false);
+  },
 };
 
+// Demos whose whole point is that injected input changes the picture: a
+// green run that never moved a pixel here would mean the handler silently
+// stopped being wired up.
+const mustReactToInput = new Set([
+  'pointer-paint', 'keyboard', 'raster-ops', 'window-manager',
+]);
+
+// Demos driven by a timer rather than by input.
+const mustAnimate = new Set(['bouncing-ball', 'copy-area', 'render-transform', 'clip-rects']);
+
 async function runDemo(demo) {
-  const server = new XServer({ width: 640, height: 480 });
+  const server = new XServer({
+    width: demo.screenWidth || 640,
+    height: demo.screenHeight || 480,
+  });
   current = { server, streams: [] };
   const problems = [];
   const timers = { intervals: [], timeouts: [] };
@@ -86,8 +168,9 @@ async function runDemo(demo) {
   };
   const trackInterval = (fn, ms) => { const id = setInterval(fn, ms); timers.intervals.push(id); return id; };
   const trackTimeout = (fn, ms) => { const id = setTimeout(fn, ms); timers.timeouts.push(id); return id; };
+  const watched = watchedX11(problems);
   const demoRequire = name => {
-    if (name === 'x11') return x11;
+    if (name === 'x11') return watched;
     throw new Error(`module not available in the playground: ${name}`);
   };
   const onUncaught = err => problems.push(err);
@@ -111,15 +194,13 @@ async function runDemo(demo) {
 
     if (after === before && afterSetup === before)
       problems.push(new Error('no pixels changed on the server raster'));
-    if (demo.id === 'pointer-paint' && after === afterSetup)
-      problems.push(new Error('painting via injected pointer input changed nothing'));
-    if (demo.id === 'keyboard' && after === afterSetup)
-      problems.push(new Error('typing via injected key input changed nothing'));
+    if (mustReactToInput.has(demo.id) && after === afterSetup)
+      problems.push(new Error('injected input changed nothing on screen'));
     if (demo.id === 'event-log' && logCount === 0)
       problems.push(new Error('no events were logged'));
-    if (demo.id === 'bouncing-ball') {
+    if (mustAnimate.has(demo.id)) {
       const mid = checksum(server);
-      await sleep(120);
+      await sleep(150);
       if (checksum(server) === mid)
         problems.push(new Error('animation is not animating'));
     }
