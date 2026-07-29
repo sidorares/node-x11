@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.1](https://github.com/sidorares/node-x11/compare/v3.2.0...v3.2.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* connect to a plain ":N" display over the unix socket on macOS ([#235](https://github.com/sidorares/node-x11/issues/235)) ([f0e58e4](https://github.com/sidorares/node-x11/commit/f0e58e48cf9a01f1e40290fb97146372632ac053))
+
 ## [3.2.0](https://github.com/sidorares/node-x11/compare/v3.1.3...v3.2.0) (2026-07-29)
 
 
