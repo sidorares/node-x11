@@ -47,6 +47,36 @@ describe('Window property', () => {
       });
   });
 
+  it('should report the format the property was stored with', done => {
+      X.on('error', done);
+      // 8 vs 32 is not derivable from the type: a CARDINAL array of bytes and
+      // one of words are both CARDINAL, and telling them apart is the whole
+      // job when diagnosing a property that "does not work"
+      const words = Buffer.alloc(8);
+      words.writeUInt32LE(0x11223344, 0);
+      words.writeUInt32LE(0x55667788, 4);
+      X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, 'bytes');
+      X.ChangeProperty(0, wid, X.atoms.WM_COMMAND, X.atoms.CARDINAL, 32, words);
+      X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 100, (err, prop) => {
+          if (err) return done(err);
+          assert.strictEqual(prop.format, 8);
+          assert.strictEqual(prop.data.length, 5);
+          X.GetProperty(0, wid, X.atoms.WM_COMMAND, X.atoms.CARDINAL, 0, 100, (err, prop) => {
+              if (err) return done(err);
+              assert.strictEqual(prop.format, 32);
+              assert.strictEqual(prop.data.readUInt32LE(4), 0x55667788);
+              // a property that does not exist reports neither type nor format
+              X.GetProperty(0, wid, X.atoms.WM_ICON_NAME, 0, 0, 100, (err, prop) => {
+                  if (err) return done(err);
+                  assert.strictEqual(prop.type, 0);
+                  assert.strictEqual(prop.format, 0);
+                  assert.strictEqual(prop.data.length, 0);
+                  done();
+              });
+          });
+      });
+  });
+
   it('should generate PropertyNotify event', done => {
       X.on('error', done);
       const propvalset = "some property value";

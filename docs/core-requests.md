@@ -130,10 +130,16 @@ X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, 'hello');
 Opcode 19. No reply. `prop` is the property atom.
 
 ### GetProperty(del, wid, name, type, longOffset, longLength, cb)
-Opcode 20. `cb(err, prop)` — `{type, bytesAfter, data}` with `data` a Buffer
-(sliced to the actual value length). `longOffset`/`longLength` are in 4-byte
-units. A nonexistent property yields `type` 0 and empty `data`. `del` truthy
-deletes the property after reading.
+Opcode 20. `cb(err, prop)` — `{type, format, bytesAfter, data}` with `data` a
+Buffer (sliced to the actual value length) and `format` the 8/16/32 bits per
+element the property was stored with — the only way to tell a `CARDINAL`
+array of bytes from one of words. `longOffset`/`longLength` are in 4-byte
+units; `bytesAfter` is non-zero when the value was truncated. A nonexistent
+property yields `type` 0, `format` 0 and empty `data`. `del` truthy deletes
+the property after reading.
+
+[`examples/xprop.js`](../examples/xprop.js) dumps every property of a window
+decoded, which is the fastest way to see what a request actually wrote.
 
 ### ListProperties(wid, cb)
 Opcode 21. `cb(err, atoms)` — array of property atoms defined on the window.
