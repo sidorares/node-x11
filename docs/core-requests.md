@@ -2,7 +2,8 @@
 
 Reference for all 120 requests of the X11 core protocol as implemented on the
 client object (`X = display.client`, see [README.md](README.md) for connecting
-and the general calling convention). Requests with a reply take a trailing
+and the general calling convention), plus one convenience wrapper built on top
+of them (`SendClientMessage`). Requests with a reply take a trailing
 `cb(err, result)`; requests without one state "No reply." — they can be fired
 and forgotten, or given a trailing `cb(err)` invoked exactly once: `null` on
 success (confirmed via a sync round trip when necessary) or the X error the
@@ -155,11 +156,68 @@ Opcode 24. No reply. Asks the selection owner to convert `selection` to
 `target` and store it in `property` on `requestor`; results arrive as a
 SelectionNotify event. `time` optional.
 
-### SendEvent(destination, propagate, eventMask, eventRawData)
+### SendEvent(destination, propagate, eventMask, event)
 Opcode 25. No reply. Sends a synthetic event. `destination` is a window id
-or `x11.PointerWindow` (0) / `x11.InputFocus` (1); `eventRawData` must be a
-32-byte Buffer in wire format — the `rawData` property of a received event
-works directly.
+or `x11.PointerWindow` (0) / `x11.InputFocus` (1).
+
+`event` is either an event object — see
+[Building events to send](core-events.md#building-events-to-send) — or a
+32-byte Buffer already in wire format, such as the `rawData` property of a
+received event. Anything that is not exactly 32 bytes throws.
+
+`eventMask` selects who receives it: the event goes to every client that
+selected one of those bits on `destination`. An **empty mask (0) is not "no
+delivery"** — it sends the event to the client that created `destination`,
+which is how ICCCM WM_PROTOCOLS, XEmbed and XDND messages reach their target
+regardless of what it selected. EWMH messages addressed to the root window
+use `SubstructureRedirect|SubstructureNotify` instead. `propagate` is false
+for every one of those conventions.
+
+```js
+// answer a SelectionRequest, ICCCM 2.2 (property 0 = refused)
+X.SendEvent(ev.requestor, 0, 0, {
+    name: 'SelectionNotify',
+    time: ev.time,
+    requestor: ev.requestor,
+    selection: ev.selection,
+    target: ev.target,
+    property: ev.property
+});
+```
+
+### SendClientMessage(destination, wid, message_type, format, data, eventMask, cb)
+Convenience wrapper over `SendEvent` (opcode 25) for the event that carries
+most window-manager traffic. No reply; `cb(err)` may be passed in place of
+`eventMask` or after it, and fires once the server has processed the request.
+
+`destination` is the window the message is *delivered* to and `wid` the window
+it is *about*; for EWMH root-window messages those differ. `format` is 8, 16
+or 32 and decides how the server byte-swaps `data` for the recipient — it must
+match how the values were composed. `data` holds up to 20/10/5 values
+respectively and is zero-padded.
+
+`eventMask` defaults to `SubstructureRedirect|SubstructureNotify`, what EWMH
+requires for messages sent to the root. Messages aimed at another client's own
+window need an explicit `0` — including when a callback is passed in the
+`eventMask` position, which leaves the root-window default in place.
+
+None of the atoms below are predefined (`X.atoms` holds only the 68 that are),
+so intern them first:
+
+```js
+X.InternAtom(false, '_NET_WM_STATE', (err, _NET_WM_STATE) => {
+    X.InternAtom(false, '_NET_WM_STATE_FULLSCREEN', (err, fullscreen) => {
+        // ask the window manager to fullscreen us (EWMH _NET_WM_STATE)
+        X.SendClientMessage(root, wid, _NET_WM_STATE, 32,
+            [1 /* add */, fullscreen, 0, 1 /* normal application */]);
+    });
+});
+
+// tell a client to close (ICCCM WM_DELETE_WINDOW). `time` is the timestamp of
+// the event that prompted this, and the empty mask is what routes the message
+// to the window's own client
+X.SendClientMessage(wid, wid, WM_PROTOCOLS, 32, [WM_DELETE_WINDOW, time], 0);
+```
 
 ## Grabs & input control
 

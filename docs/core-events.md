@@ -38,8 +38,54 @@ SelectionClear/SelectionRequest arrive at selection owners.
 Every parsed event carries `type` (numeric event code), `name`, `seq`
 (sequence number of the last request processed before the event; absent on
 KeymapNotify) and the fields listed below. The client additionally attaches
-`rawData`, the raw 32-byte wire packet, which can be passed to `SendEvent`
-unchanged. Field lists below name only the event-specific fields.
+`rawData`, the raw wire packet — 32 bytes for a core event, which can be
+passed to `SendEvent` unchanged; longer for a GenericEvent, which cannot be
+sent at all. Field lists below name only the event-specific fields.
+
+## Building events to send
+
+`x11.packEvent(event[, buffer])` is the inverse of the parsers: it turns an
+event object — the same shape the events below describe — into the 32-byte
+wire form [`SendEvent`](core-requests.md#sendeventdestination-propagate-eventmask-event)
+expects. `SendEvent` calls it for you, so an object can be passed directly:
+
+```js
+X.SendEvent(wid, 0, 0, {
+    name: 'ClientMessage',
+    format: 32,
+    wid: wid,
+    message_type: WM_PROTOCOLS,
+    data: [WM_DELETE_WINDOW, 0]
+});
+```
+
+Every event on this page except GenericEvent can be packed — GenericEvent has
+no fixed 32-byte form — and `x11.eventTypes` maps those 33 names to their
+protocol numbers. The same function is on the client as `X.packEvent`. Notes
+that apply to all of them:
+
+- Fields left out are packed as zero, and unused bytes are always zero — what
+  EWMH, XEmbed and XDND require of a sender.
+- `seq` (bytes 2-3) and the `0x80` "synthetic" bit are the server's to fill
+  in, so callers do not supply them; the server rewrites both for each
+  recipient, so not even forwarding `rawData` verbatim delivers them intact.
+  KeymapNotify is the exception that has no sequence number at all: its bytes
+  1-31 are entirely payload.
+- Out-of-range and negative values wrap to the width of their field rather
+  than throwing, so a negative coordinate — or an XDND data word composed as
+  `(x << 16) | y` — packs the way the wire encodes it.
+- Passing a `buffer` packs into its first 32 bytes instead of allocating (they
+  are zeroed first; the rest is untouched) and returns just those 32 bytes.
+  It must be a Buffer of at least 32 bytes.
+- Invalid input throws a `TypeError` rather than producing a packet the server
+  rejects asynchronously: an unknown event name, a GenericEvent, an extension
+  event that reuses a core event's name (the numeric `type` wins, and there is
+  no packer for it), a ClientMessage `format` other than 8, 16 or 32, or more
+  `data` values than the format holds.
+
+ClientMessage has a shortcut, since it carries nearly every window-manager
+conversation — see
+[`SendClientMessage`](core-requests.md#sendclientmessagedestination-wid-message_type-format-data-eventmask-cb).
 
 ## Keyboard and pointer
 
