@@ -100,4 +100,17 @@ describe('AllowEvents', () => {
             });
         });
     });
+
+    after(function(done) {
+        // This test grabs the pointer and never released it, and its client
+        // stayed open for the rest of the run — so every later suite's
+        // pointer events went to this connection instead of theirs. Nothing
+        // noticed until XI2 device events arrived, because a grab redirects
+        // those and leaves raw events alone: raw motion kept working while
+        // ordinary motion vanished, in this file's absence and not otherwise.
+        this.X.UngrabPointer(0);
+        this.X.DestroyWindow(this.wid);
+        this.X.terminate();
+        this.X.on('end', done);
+    });
 });
