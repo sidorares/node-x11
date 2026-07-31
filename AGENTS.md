@@ -9,6 +9,34 @@ No build step, no transpilation: `lib/` is what ships.
   new packages go to `devDependencies` only, and only when clearly justified.
 - The public API is callback-based (`createClient(cb)`, `X.SomeRequest(args, cb)`).
   Don't convert it to promises/async — that's a breaking change out of scope.
+- **Scope: the wire protocol, not the conventions layered on it.** In scope are
+  core requests/replies/events, extensions negotiated with `QueryExtension`,
+  the predefined atom *numbers* (`lib/stdatoms.js` is the X protocol's
+  Appendix B table, nothing more), and anything else whose byte layout comes
+  from `autogen/proto/*.xml`. Out of scope are ICCCM and EWMH property
+  *values* — the `WM_SIZE_HINTS` and `WM_HINTS` structs, `_NET_WM_*`,
+  `WM_PROTOCOLS` membership, `_NET_SUPPORTED` probing, `_MOTIF_WM_HINTS`.
+  Those belong to [ntk](https://github.com/sidorares/ntk), which already
+  implements them (see its AGENTS.md). This has been the standing answer
+  since [#177](https://github.com/sidorares/node-x11/issues/177) ("part of
+  xlib but not core protocol") and was reaffirmed closing
+  [#191](https://github.com/sidorares/node-x11/issues/191) and
+  [#87](https://github.com/sidorares/node-x11/issues/87).
+
+  The test that decides a borderline case: **can the server tell?** A wrong
+  request encoding is a protocol error the server rejects and Xvfb can prove
+  in CI; a wrong `WM_SIZE_HINTS` flags word is bytes the server stores
+  verbatim and only a *window manager* can judge — which is why the repo has
+  no generator, no round trip and no authority for it. `SendEvent`'s
+  `packEvent`/`SendClientMessage` are in scope despite being mostly used for
+  EWMH, because a 32-byte event layout is core protocol and is generated from
+  `xproto.xml` like everything else in `lib/generated/`.
+
+  What *is* ours in this area: making the requests underneath hard to misuse
+  (the `ChangeProperty` `(type, format, data)` tuple is where the filed bugs
+  actually landed — #106, #174, #178), exposing what only we know (the
+  connection byte order negotiated in `lib/handshake.js`), and decoding
+  properties for diagnostics (`examples/`).
 - Node-API usage must work on maintained Node versions (see CI matrix in
   `.github/workflows/ci.yml`). Avoid long-deprecated APIs
   (`util.isError`, `new Buffer()`, …).
