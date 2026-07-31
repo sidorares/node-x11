@@ -119,12 +119,24 @@ Opcode 17. `cb(err, name)` — atom name as a string. Cached like `InternAtom`.
 
 ### ChangeProperty(mode, wid, name, type, format, data)
 Opcode 18. No reply. `mode`: 0 Replace, 1 Prepend, 2 Append. `name` and
-`type` are atoms, `format` is 8, 16 or 32 (bits per element). `data` may be
-a Buffer, an array of bytes, or a string (encoded latin1).
+`type` are atoms, `format` is 8, 16 or 32 (bits per element).
+
+`data` may be a Buffer (used as-is), a string (encoded latin1), or a number
+or array of numbers — those are encoded as elements of the declared `format`
+width, so a 32-bit property can be written without packing a Buffer by hand:
 
 ```js
 X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, 'hello');
+X.ChangeProperty(0, wid, strutAtom, X.atoms.CARDINAL, 32, [0, 0, 0, 23]);
 ```
+
+The server does not validate property contents — it stores whatever bytes it
+is given — so a `format` that does not match the data produces no error and a
+property everyone silently ignores. Two cases that cannot be right are
+reported once per process on `console.warn`: a `format` other than 8/16/32
+(the server answers BadValue), and a Buffer whose length is not a whole number
+of elements of that format (BadLength). To see what actually landed on a
+window, use [`examples/xprop.js`](../examples/xprop.js).
 
 ### DeleteProperty(wid, prop)
 Opcode 19. No reply. `prop` is the property atom.

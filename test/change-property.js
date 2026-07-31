@@ -84,6 +84,53 @@ describe('ChangeProperty', () => {
         });
     });
 
+    it('should encode a number array at the declared format width', function(done) {
+        const self = this;
+        // Buffer.from([1366]) keeps only the low byte, so this used to reach
+        // the server as an empty property with one garbage byte behind it
+        const strut = [0, 0, 0, 23, 0, 0, 0, 0, 0, 0, 0, 1366];
+        this.X.InternAtom(false, 'X11_TEST_STRUT', (err, atom) => {
+            should.not.exist(err);
+            self.X.ChangeProperty(0, self.wid, atom, self.X.atoms.CARDINAL, 32, strut);
+            self.X.GetProperty(0, self.wid, atom, self.X.atoms.CARDINAL, 0, 100, (err, prop) => {
+                should.not.exist(err);
+                prop.data.length.should.equal(48);
+                const out = [];
+                for (let i = 0; i + 4 <= prop.data.length; i += 4)
+                    out.push(prop.data.readUInt32LE(i));
+                out.should.eql(strut);
+                done();
+            });
+        });
+    });
+
+    it('should encode a bare number as one element of the declared format', function(done) {
+        const self = this;
+        this.X.InternAtom(false, 'X11_TEST_NUMBER', (err, atom) => {
+            should.not.exist(err);
+            self.X.ChangeProperty(0, self.wid, atom, self.X.atoms.CARDINAL, 32, 0xdeadbeef);
+            self.X.GetProperty(0, self.wid, atom, self.X.atoms.CARDINAL, 0, 100, (err, prop) => {
+                should.not.exist(err);
+                prop.data.length.should.equal(4);
+                prop.data.readUInt32LE(0).should.equal(0xdeadbeef);
+                done();
+            });
+        });
+    });
+
+    it('should keep packing a byte array at format 8', function(done) {
+        const self = this;
+        this.X.InternAtom(false, 'X11_TEST_BYTES', (err, atom) => {
+            should.not.exist(err);
+            self.X.ChangeProperty(0, self.wid, atom, self.X.atoms.STRING, 8, [104, 105]);
+            self.X.GetProperty(0, self.wid, atom, self.X.atoms.STRING, 0, 100, (err, prop) => {
+                should.not.exist(err);
+                prop.data.toString().should.equal('hi');
+                done();
+            });
+        });
+    });
+
     after(function(done) {
         this.X.DestroyWindow(this.wid);
         this.X.terminate();

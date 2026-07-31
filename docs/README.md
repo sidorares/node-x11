@@ -46,6 +46,12 @@ The `display` passed to the callback describes the connection setup block:
   `white_pixel`, `black_pixel`, `pixel_width`/`pixel_height`,
   `mm_width`/`mm_height`, `default_colormap`, `root_depth`, `depths`, …
 - `display.min_keycode` / `display.max_keycode`
+- `display.byte_order` — the order this connection speaks: 0 LSBFirst,
+  1 MSBFirst. Every request, reply, event and property value on the
+  connection uses it, so anything decoding property bytes should read this
+  rather than assume little-endian. Not to be confused with
+  `display.image_byte_order`, which is the server's pixel order for
+  `GetImage`/`PutImage`.
 
 ## Making requests
 
