@@ -1,84 +1,208 @@
-# Open issues summary
+# Open issues — node-x11 and ntk
 
-Triage pass of 2026-07-25. Out of 40 open issues, 30 were answered and closed
-(fixed by the recent modernization / protocol-coverage / GLX work, answered
-usage questions, or obsolete infrastructure reports). The 10 issues below stay
-open: they are real feature requests or design problems that need actual work.
+Triage notes, refreshed whenever the picture has moved enough to mislead.
+Audited **2026-07-31** against node-x11 `722a0df` (v3.4.0 released) and ntk
+`7016021` (#130/#131/#132 merged). Covers both repos, because they are worked
+on together and half the entries below only make sense as a pair.
 
-## Architecture / API design
+Previous pass was 2026-07-25 and covered node-x11 only. Since then **five of
+its ten entries closed** — #85 and #195 by the flow-control work, #171 and
+#183 on 2026-07-26, and #179 today — and **four new issues were filed**
+(#243–#246). Everything below has been re-checked against current code rather
+than carried forward.
 
-### [#85](https://github.com/sidorares/node-x11/issues/85) — Missing async handling for void requests (2015)
-Requests that produce no reply (`ChangeWindowAttributes`, `CreateWindow`, …)
-only invoke their callback on error, so the callback may never fire — against
-Node CPS conventions, and there is no way to await completion. Ideas discussed
-in-thread: track sequence numbers and resolve "no news is good news" when a
-later reply/error arrives (that is how xcb's `xcb_request_check` works — it
-internally appends a no-op `GetInputFocus`); or return an EventEmitter per
-request. Complications: callback-map growth, seq wrap-around (16-bit), and
-choosing sane semantics without a timeout hack. Related closed discussion:
-[#151](https://github.com/sidorares/node-x11/issues/151). Pairs naturally with
-a promise-returning higher-level layer (declined for core in
-[#87](https://github.com/sidorares/node-x11/issues/87)).
+---
 
-### [#195](https://github.com/sidorares/node-x11/issues/195) — Add backpressure mechanism (2020)
-Requests are written to the socket without observing `stream.write()`'s return
-value, so a render-heavy client (e.g. drawing on every mouse move) can queue
-unbounded memory. Wanted: at minimum a `flush(cb)`/promise that resolves when
-buffered data is on the wire; ideally documented patterns for protocol-level
-throttling (draw-on-Expose, or a Sync/GetInputFocus round-trip as a fence).
-The serialization layer was rewritten in #215, which makes this feasible now.
+# node-x11 — 9 open
 
-### [#152](https://github.com/sidorares/node-x11/issues/152) — X11 server side (2017)
-`lib/xserver.js` is an experimental protocol-level server skeleton (still has
-a hard-coded `fs.readFile` of a handshake dump). Deciding its fate — either
-grow it into a usable proxy/nested-server building block or document it as
-out of scope — would close a recurring line of questions.
+## Worth doing next
 
-## Features
+### [#243](https://github.com/sidorares/node-x11/issues/243) — FamilyWild cookies never match, and a failed match silently drops auth (2026-07-31)
 
-### [#171](https://github.com/sidorares/node-x11/issues/171) — Abstract namespace socket support (2018) — *easy win*
-Snap-confined apps can reach `@/tmp/.X11-unix/X0` but not the filesystem
-socket. Node's `net` now supports abstract sockets natively (path prefixed
-with `'\0'`), so this no longer needs a native addon: fall back to the
-abstract socket when the filesystem one fails, and/or accept an explicit
-socket path in `createClient` options. Connection logic: `lib/xcore.js`
-(`connectStream`).
+**Verified against current master.** `parseXauth` writes `cookie.type`;
+the match loop at `lib/auth.js:97` tests `typeToName[cookie.family]`, a
+property nothing ever sets. `typeToName[undefined]` is never `'Wild'`, so the
+wildcard branch is dead and only the exact `(type, address)` pair can match.
+When nothing matches — wild-only file, hostname mismatch in a container,
+stale entry — `lib/auth.js:101` falls through to `{ authName: '', authData: '' }`
+and connects anonymously, so the only symptom is the server's generic
+"Authorization required" with nothing saying a cookie file was read.
 
-### [#183](https://github.com/sidorares/node-x11/issues/183) — GLX FBConfig chooser helper (2018)
-Constants and attribute decoding landed with #218; what remains is a
-`ChooseFBConfig`-style helper implementing the GLX 1.3 matching/sorting rules
-so examples and users stop filtering `GetFBConfigs` results by hand.
+Two-line logic fix plus a diagnostic. Reproducible with no X server at all,
+since the failure is in cookie selection. **Top pick.**
 
-### [#50](https://github.com/sidorares/node-x11/issues/50) — Shaders (2014)
-`ProgramString`/`BindProgram` (ARB assembly) landed with #218. Missing for a
-usable pipeline: `ProgramEnvParameter*`/`ProgramLocalParameter*` render
-opcodes plus an example (the classic ARB gears/brick demos). GLSL over the
-indirect protocol was never standardized, so ARB assembly is the ceiling.
+### [#245](https://github.com/sidorares/node-x11/issues/245) — XISelectEvents and XI2 event delivery (2026-07-31)
 
-### [#51](https://github.com/sidorares/node-x11/issues/51) — GL evaluator functions (2014)
-`Map1/Map2/EvalCoord/EvalMesh/MapGrid` render opcodes are still not
-implemented in `lib/ext/glxrender.js`. Niche legacy-GL feature; low priority
-but well-specified (opcodes in the GLX protocol spec / Mesa `gl_API.xml`).
+`lib/ext/xinput.js` implements four requests — XI1 `GetExtensionVersion` and
+`ListInputDevices`, XI2 `XIQueryVersion` and `XIQueryDevice` — and no
+`XISelectEvents` (46), no GenericEvent parser. So a client can enumerate
+devices in detail, *including the Scroll classes the reply parser already
+decodes*, and never hear from them. All input arrives as core events, where a
+touchpad's smooth scroll is flattened into button 4/5 presses and touch,
+pressure and tilt do not exist.
 
-## Examples / documentation
+The delivery half is already built: `geEventParsers` keyed by extension major
+opcode (`lib/xcore.js:167`), dispatch at `:349`, and `lib/ext/present.js:180`
+as the worked example of an extension registering its parser. Largest item
+here, but well-scoped and additive.
+
+### [#246](https://github.com/sidorares/node-x11/issues/246) — ESM bundling throws at runtime (2026-07-31)
+
+`esbuild --format=esm` builds cleanly and the bundle then throws
+`Dynamic require of "events" is not supported` — the worst failure shape,
+because it surfaces at deploy. Node itself is fine both ways; this is purely
+bundler output. `node:`-prefixed requires do **not** help.
+
+Split it: the `exports` map is three lines, no behaviour change, and removes
+the deprecated directory-main — fold it into any other PR. The real fix is
+converting `lib/` to ESM sources, which is a major, and the tempting shortcut
+does not work: a thin ESM wrapper over CJS still `require()`s builtins
+underneath, which is the exact failing construct.
+
+## Deferred by choice
+
+### [#244](https://github.com/sidorares/node-x11/issues/244) — Buffer the output stream (2026-07-31)
+
+Every request is `put()` + unconditional `flush()`, and `flush()` hands each
+buffer to `socket.write` individually — N requests, N syscalls, no writev, no
+cork. Nothing calls `setNoDelay`, so Nagle is on for TCP and small writes
+stall on the previous ACK. Xlib has had a 16 KB output buffer since 1987.
+
+Real and structural, but perf-only, and perf is deferred. Note it pairs with
+the flush/backpressure machinery #195 added, so the groundwork exists.
+
+## Old, and closeable rather than workable
+
+### [#152](https://github.com/sidorares/node-x11/issues/152) — X11 Server (2017)
+
+Someone trying to write an X server, stuck on the handshake reply. **The
+thing they wanted now exists**: `lib/xserver/` is a working pure-JS X server
+with RENDER, its own `DESIGN.md`, and hermetic test suites in both repos.
+Answer with a pointer and close.
+
+### [#91](https://github.com/sidorares/node-x11/issues/91) — Grabbed key events not reaching an nw.js app (2015)
+
+Environment-specific, and the reported behaviour is what a keyboard grab is
+*for*: grabbed input goes to the grabbing client, not the app's own window.
+Too little information to resolve; close as stale.
 
 ### [#62](https://github.com/sidorares/node-x11/issues/62) — Arbitrary polygon rendering example (2014)
-XRender only draws triangles/trapezoids; the ask is an example gluing a JS
-triangulation library (earcut is the modern choice) to `Render.AddTraps` /
-`Triangles`. Pure example work, no library changes.
 
-### [#179](https://github.com/sidorares/node-x11/issues/179) — `_NET_WM_STRUT(_PARTIAL)` doesn't reserve space (2018)
-Setting struts via `ChangeProperty` appeared not to work for a panel app,
-while the equivalent GTK/C program did; another user hit the same in 2021.
-Never root-caused — likely a property-encoding or ordering subtlety (format
-32, CARDINAL array of 4/12 values, set before mapping, plus
-`_NET_WM_WINDOW_TYPE_DOCK`). Needs a reproduction against a strut-honoring WM
-and, once solved, a worked panel example; a good candidate for a test-driven
-EWMH example/doc page.
+Wants a triangulation library glued to `Render.AddTraps`/`Triangles`. Note
+ntk solved the underlying problem in `lib/trapezoid.js` — polygon to
+trapezoids, non-zero and even-odd, used for every 2d path fill and vector
+glyph — so this is now only an example, and arguably one that belongs in ntk.
 
-## Skipped
+### [#50](https://github.com/sidorares/node-x11/issues/50) — Shaders (2014)
 
-### [#91](https://github.com/sidorares/node-x11/issues/91) — Grabbed key events not reaching nw.js app (2015)
-Environment-specific (nw.js + grab semantics: grabbed input is redirected to
-the grabbing client, not the app's own window). Too little information to
-resolve definitively; left untouched.
+`ProgramString`/`BindProgram` (ARB assembly) landed with #218. Missing:
+`ProgramEnvParameter*`/`ProgramLocalParameter*` render opcodes and an
+example. GLSL over indirect GLX was never standardized, so ARB assembly is
+the ceiling — worth saying in the issue so it stops reading as open-ended.
+
+### [#51](https://github.com/sidorares/node-x11/issues/51) — GL evaluator functions (2014)
+
+`Map1`/`Map2`/`EvalCoord`/`EvalMesh`/`MapGrid` still absent from
+`lib/ext/glxrender.js` — re-checked, zero hits. Niche legacy GL, well
+specified, low priority.
+
+---
+
+# ntk — 17 open
+
+Three PRs merged today closed #126 and #117 and left #118 partly done. What
+remains splits cleanly into one real bug, a text/render batch, a clipboard
+batch, and a tail of old idea-issues.
+
+## Worth doing next
+
+### [ntk#116](https://github.com/sidorares/ntk/issues/116) — keysym by XKB group and shift level
+
+`symInd = capital ? 1 : 0` reaches only levels 1–2 of group 1, so on Linux a
+non-Latin layout never types — and a layout switch fires no MappingNotify, so
+the existing refresh cannot see it. The group bits are already arriving in
+`ev.buttons` 13–14; no XKB extension calls needed for the common case. AltGr
+(levels 3–4) is unreachable for the same reason, which the code's own TODO
+admits.
+
+**Highest user-facing impact of anything open in either repo.** Caveat for
+this machine: XQuartz takes the other path entirely — it rewrites the keymap
+and fires MappingNotify rather than using groups — so the payoff cannot be
+confirmed locally without a Linux box.
+
+### [ntk#118](https://github.com/sidorares/ntk/issues/118) — remaining: `_NET_WM_ICON`
+
+Items 1, 3, 4 and 6 shipped in #131 (the WM_PROTOCOLS clobber, `setWmHints`,
+`setPid`, the position/size flags) and item 2 in #130 (the ClientMessage
+helper). Only item 5 is left, and it is a pixel-format decision rather than a
+property-writer one: EWMH wants non-premultiplied ARGB in CARD32s, ntk's
+`getImageData` hands back BGRA, canvas `ImageData` is RGBA. Pick a convention
+first, then it is twenty lines.
+
+### [ntk#36](https://github.com/sidorares/ntk/issues/36) — a named close-request event
+
+Still real, and now small. `addProtocol('WM_DELETE_WINDOW')` opts in and the
+request arrives as a generic `'message'`; what is missing is the ergonomic
+half the issue actually asks for — a named event, and the issue's own
+suggestion of `onBeforeUnload` is worth keeping. Natural follow-on to #131.
+
+## Batches
+
+**Text/render:** [#125](https://github.com/sidorares/ntk/issues/125)
+one-write-per-frame, [#124](https://github.com/sidorares/ntk/issues/124)
+maxLines/ellipsis, [#123](https://github.com/sidorares/ntk/issues/123)
+half-leading, [#122](https://github.com/sidorares/ntk/issues/122) downscale
+before upload. #124 and #123 are self-contained TextLayout work with obvious
+tests; #125 and #122 are perf, deferred.
+
+**Clipboard:** [#120](https://github.com/sidorares/ntk/issues/120) XFixes
+selection-changed events, [#119](https://github.com/sidorares/ntk/issues/119)
+INCR on the write side plus required targets. #119 closes a limitation
+`lib/clipboard.js` documents in its own header, so it is honest work with a
+known shape.
+
+**Fonts:** [#121](https://github.com/sidorares/ntk/issues/121) a first-class
+bundled-fonts option. The `FontSource` seam already exists —
+`StaticFontSource` is the browser-safe implementation — so this is largely
+packaging a default set rather than new architecture.
+
+## Resolved or superseded — close these
+
+### [ntk#106](https://github.com/sidorares/ntk/issues/106) — drop the mermaid dependency
+
+**Done**, by removal rather than injection: `feat!: drop mermaid diagram
+rendering` (#113, in 4.0.0). `grep mermaid package.json lib/` is empty. The
+issue asked for a `configureTex`-style injection seam and got deletion
+instead, so close with that note rather than silently.
+
+### [ntk#31](https://github.com/sidorares/ntk/issues/31) — set window class / "all the EWMH stuff besides the title"
+
+**Done.** `setClass` has shipped for a while; as of #131/#132 the EWMH surface
+covers window type, states, transient-for, hints, protocols and pid. Close
+pointing at the Window manager hints section of `docs/window.md`.
+
+### [ntk#19](https://github.com/sidorares/ntk/issues/19) — implement basic ICCCM
+
+**Done**, including the API sketched in your own comment on it —
+`createWindow({ icon, transientFor, maxWidth })` and `setHints()` both work as
+written there. Close pointing at #131.
+
+### [ntk#4](https://github.com/sidorares/ntk/issues/4) — layout managers
+
+Superseded. The answer turned out to be yoga-layout, used by HtmlView and
+re-exported from `lib/index.js` so downstream renderers share one WASM
+instance. Cassowary is not coming.
+
+### [ntk#17](https://github.com/sidorares/ntk/issues/17) — widgets via Zebra
+
+Superseded. Zebra is unmaintained, and ntk grew its own widget layer —
+HtmlView, MarkdownView, SvgView, TexView.
+
+## Leave open, low priority
+
+- [ntk#37](https://github.com/sidorares/ntk/issues/37) — "attention" event,
+  a 2018 speculative idea about predicting clicks. Unrelated to the ICCCM
+  urgency hint despite the name; needs a decision on whether it is wanted at
+  all before it is worth scoping.
+- [ntk#22](https://github.com/sidorares/ntk/issues/22) — text editor example.
+  Genuinely useful as a demo of the text stack, and cheap once #124 lands.
