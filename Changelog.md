@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.4.0](https://github.com/sidorares/node-x11/compare/v3.3.0...v3.4.0) (2026-07-31)
+
+
+### Features
+
+* encode property values at their declared format, and report the connection byte order ([#253](https://github.com/sidorares/node-x11/issues/253)) ([26adf2e](https://github.com/sidorares/node-x11/commit/26adf2ef03434681130d1d5e77fde045e58c4313))
+* **events:** build events from objects instead of hand-packing 32-byte buffers ([#248](https://github.com/sidorares/node-x11/issues/248)) ([865287f](https://github.com/sidorares/node-x11/commit/865287fe6487b0c603e81e0058f7089f721e4986)), closes [#247](https://github.com/sidorares/node-x11/issues/247)
+* report the format GetProperty replies carry, and ship an xprop-alike ([#252](https://github.com/sidorares/node-x11/issues/252)) ([8f6ec64](https://github.com/sidorares/node-x11/commit/8f6ec649f5634fab07807749b1a8e8bd5a0bf426)), closes [#179](https://github.com/sidorares/node-x11/issues/179)
+
+
+### Bug Fixes
+
+* accept async functions as request callbacks ([#250](https://github.com/sidorares/node-x11/issues/250)) ([63059a9](https://github.com/sidorares/node-x11/commit/63059a91a7fa58b609f86ca428f273da5833d7c5))
+
 ## [3.3.0](https://github.com/sidorares/node-x11/compare/v3.2.2...v3.3.0) (2026-07-29)
 
 
