@@ -117,14 +117,14 @@ describe('xserver: multiple clients', () => {
                     assert.strictEqual(ev.requestor, requestor);
                     assert.strictEqual(ev.selection, selection);
                     // owner answers with a SelectionNotify through SendEvent
-                    const reply = Buffer.alloc(32);
-                    reply.writeUInt8(31, 0);                    // SelectionNotify
-                    reply.writeUInt32LE(ev.time, 4);
-                    reply.writeUInt32LE(ev.requestor, 8);
-                    reply.writeUInt32LE(ev.selection, 12);
-                    reply.writeUInt32LE(ev.target, 16);
-                    reply.writeUInt32LE(ev.property, 20);
-                    A.SendEvent(ev.requestor, false, 0, reply);
+                    A.SendEvent(ev.requestor, false, 0, {
+                        name: 'SelectionNotify',
+                        time: ev.time,
+                        requestor: ev.requestor,
+                        selection: ev.selection,
+                        target: ev.target,
+                        property: ev.property
+                    });
                 });
                 B.on('event', ev => {
                     if (ev.name !== 'SelectionNotify')
@@ -189,14 +189,8 @@ describe('xserver: multiple clients', () => {
                 assert.strictEqual(ev.rawData[0] & 0x80, 0x80, 'send_event bit set');
                 done();
             });
-            const raw = Buffer.alloc(32);
-            raw.writeUInt8(33, 0);          // ClientMessage
-            raw.writeUInt8(32, 1);          // format
-            raw.writeUInt32LE(wid, 4);
-            raw.writeUInt32LE(6, 8);        // message type CARDINAL
-            [11, 22, 33, 44, 55].forEach((v, i) => raw.writeUInt32LE(v, 12 + i * 4));
             // event-mask 0: goes to the window's creator (A) even if B sends it
-            B.SendEvent(wid, false, 0, raw);
+            B.SendClientMessage(wid, wid, 6 /* CARDINAL */, 32, [11, 22, 33, 44, 55], 0);
         });
     });
 });

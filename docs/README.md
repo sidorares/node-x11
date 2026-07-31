@@ -215,6 +215,10 @@ extension name. Requiring an extension twice returns the cached instance.
 ## Other exports
 
 - `x11.eventMask` — event mask bit names
+- `x11.packEvent` — build the 32 wire bytes of an event for `SendEvent`, also
+  available on the client as `X.packEvent`
+  (see [core-events.md](core-events.md#building-events-to-send))
+- `x11.eventTypes` — event name → protocol event number
 - `x11.keySyms` — keysym tables (lazy-loaded)
 - `x11.gcFunction` — GC raster operation constants (lazy-loaded)
 - `x11.createServer` — experimental X server implementation

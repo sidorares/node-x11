@@ -41,16 +41,8 @@ xclient.on('connect', function(display) {
             // send copy of event to the second window
             if (ev.wid == wid) // don't send it from second window
             {
-                // set window in the event we are sending
-                const n = wid1;
-                let offset = 12;
-                const buf = ev.rawData;
-                buf[offset++] = n & 0xff;
-                buf[offset++] = (n >> 8) & 0xff;
-                buf[offset++] = (n >> 16) & 0xff;
-                buf[offset++] = (n >> 24) & 0xff;
-
-                X.SendEvent(wid1, 1, PointerMotion, ev.rawData);
+                // same event, re-addressed to the second window
+                X.SendEvent(wid1, 1, PointerMotion, Object.assign({}, ev, { wid: wid1 }));
             } else {
                 console.log('GotData!');
             }
