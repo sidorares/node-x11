@@ -222,6 +222,31 @@ extension name. Requiring an extension twice returns the cached instance.
   `x11.InputOnly` and `SendEvent` destinations `x11.PointerWindow` /
   `x11.InputFocus`
 
+## Diagnosing properties
+
+Window properties are opaque to the X server: it stores whatever bytes you
+give it, so a wrong `type`, a wrong `format` or a struct with the wrong flags
+word produces no error at all — the window manager simply ignores the
+property. When something "does not work", look at what actually landed on the
+window:
+
+```sh
+node examples/xprop.js 0x400001    # or no argument for the root window
+```
+
+[`examples/xprop.js`](../examples/xprop.js) decodes each property by type,
+prints `WM_NORMAL_HINTS`/`WM_HINTS` field by field with the flags word spelled
+out (a flags word of `0` is a legal property that declares *nothing*, and is
+indistinguishable from a correct one until you decode it), and names the
+fields of `_NET_WM_STRUT`/`_NET_WM_STRUT_PARTIAL`.
+
+It finishes by printing the root window's `_NET_WORKAREA` against the screen
+size. That is the window manager's answer to a strut — if the workarea did not
+shrink, the strut had no effect; if it did, the strut worked and the problem
+is elsewhere. Note that these conventions (ICCCM/EWMH property *contents*) are
+not implemented by this library — see
+[ntk](https://github.com/sidorares/ntk) for writers.
+
 ## Running against a test server
 
 The test suite runs against a private Xvfb: `npm run test:local` (see
