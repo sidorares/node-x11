@@ -34,6 +34,19 @@ style, e.g. `/private/tmp/com.apple.launchd.../org.xquartz:0`), and over TCP
 (port 6000 + display number) otherwise. `~/.Xauthority` (or `$XAUTHORITY`) is
 used for authentication automatically.
 
+Cookie selection follows the file's own order, taking the first entry whose
+display matches — an empty display field in the entry matches any — and whose
+address matches, either exactly or because the entry is `FamilyWild`, the
+wildcard `xauth generate` writes. When `$XAUTHORITY` names a file that is not
+there, that is the answer; the `~/.Xauthority` and dotless-`~/Xauthority`
+guesses are only tried when the variable is unset.
+
+If a cookie file exists but nothing in it matches, the connection is still
+attempted **without** authentication — some servers accept that — and a
+warning names the file, what was looked for and what the file held instead.
+Without it the only symptom is the server's own "Authorization required",
+which looks the same as having no cookie file at all.
+
 `createClient` returns the client object immediately; subscribe to `'error'`
 on it to catch connection-phase failures.
 
