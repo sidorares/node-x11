@@ -28,6 +28,16 @@ describe('Client', () => {
       done();
   });
 
+  it('reports the byte order the connection speaks', done => {
+      // what the client declared in its hello, and therefore how every
+      // request, reply, event and property value on it is encoded
+      display.byte_order.should.be.oneOf([0, 1]);
+      const hostIsLittleEndian =
+          new Uint32Array(new Uint8Array([1, 2, 3, 4]).buffer)[0] === 0x04030201;
+      display.byte_order.should.equal(hostIsLittleEndian ? 0 : 1);
+      done();
+  });
+
   it('uses display variable from parameter if present ignoring anvironment $DISPLAY', done => {
      const disp = process.env.DISPLAY;
      process.env.DISPLAY = 'BOGUS DISPLAY';
