@@ -163,7 +163,11 @@ X.on('error', err => console.error(err.message, err.badParam));
 ```
 
 If a reply callback receives an error and returns `true`, the error is
-considered handled and is not re-emitted on the client. With
+considered handled and is not re-emitted on the client. Any callable works as
+a callback, including an `async` function — with two consequences worth
+knowing: an `async` function always returns a promise, which is truthy, so
+errors routed to one always count as handled; and a rejection inside it
+surfaces as an unhandled rejection rather than reaching the client. With
 `createClient({debug: true}, …)` each error also carries the stack trace of
 the request that caused it.
 
