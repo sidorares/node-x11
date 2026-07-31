@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.5.0](https://github.com/sidorares/node-x11/compare/v3.4.0...v3.5.0) (2026-07-31)
+
+
+### Features
+
+* **xinput:** select and deliver XI2 events ([#257](https://github.com/sidorares/node-x11/issues/257)) ([1c2e111](https://github.com/sidorares/node-x11/commit/1c2e1111d3c61fc1ba42c36aacf5d9b68e9f198e))
+
+
+### Bug Fixes
+
+* **auth:** match FamilyWild cookies, and say when no cookie matched ([#254](https://github.com/sidorares/node-x11/issues/254)) ([4a6eabf](https://github.com/sidorares/node-x11/commit/4a6eabfa3ca2fbc0d4afeedc498460e96bc74006)), closes [#243](https://github.com/sidorares/node-x11/issues/243)
+
 ## [3.4.0](https://github.com/sidorares/node-x11/compare/v3.3.0...v3.4.0) (2026-07-31)
 
 
