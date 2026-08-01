@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.0](https://github.com/sidorares/node-x11/compare/v3.5.0...v3.6.0) (2026-08-01)
+
+
+### Features
+
+* buffer the output stream, opt in with bufferRequests ([#260](https://github.com/sidorares/node-x11/issues/260)) ([8a11d87](https://github.com/sidorares/node-x11/commit/8a11d8713eabad3f4e59cb2c10d305c6e1b14cef))
+
 ## [3.5.0](https://github.com/sidorares/node-x11/compare/v3.4.0...v3.5.0) (2026-07-31)
 
 
