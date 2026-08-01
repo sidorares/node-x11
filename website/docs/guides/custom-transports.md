@@ -66,6 +66,13 @@ stream is not immediately usable, follow `net.Socket` semantics: set
 `connecting = true` and emit `'connect'` once ready. A stream that is
 already open is used as-is.
 
+`write(buf)` must consume or copy `buf` before it returns, unless it is a
+real `stream.Writable` (one with a numeric `writableLength`, whose
+`write(buf, cb)` callback says when the buffer is free). The client packs
+requests into a buffer it reuses, so a transport that keeps the object
+around — queueing it for a later send, say — must take its own copy, the way
+`MessagePortStream` does.
+
 Connecting with an unregistered protocol prefix throws
 `unknown display protocol: <name>`.
 

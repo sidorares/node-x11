@@ -180,7 +180,11 @@ browser bundle boots and renders), `check-share` (share links round-trip).
 ## Conventions
 
 - Request definitions in `corereqs.js` return a `Buffer` built with `writeUInt*` (plus optional reply unpacker) — study a neighbouring request before adding one.
-- Outbound I/O: `pack_stream.put(buf).flush()` via [`lib/framebuffer.js`](lib/framebuffer.js); length field must equal `buf.length / 4`.
+- Outbound I/O: `pack_stream.put(buf).submit(expectsReply)` via
+  [`lib/framebuffer.js`](lib/framebuffer.js); length field must equal
+  `buf.length / 4`. `submit()` marks the end of a request and lets the
+  buffering policy decide when to write; `flush()` writes immediately and is
+  for the handshake, `X.flush()` and connection teardown only.
 - Extensions self-register: `X.require('name', cb)` loads `lib/ext/name.js`.
 - Tests that talk to the server clean up after themselves (`X.terminate()`
   in `after`); leaked windows/clients make later files flaky.
