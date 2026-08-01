@@ -99,7 +99,13 @@ X.ChangeWindowAttributes(root, {                // void request, checked:
 Resource ids (windows, pixmaps, GCs, …) are allocated client-side with
 `X.AllocID()` and can be recycled with `X.ReleaseID(id)` once the resource is
 destroyed. When you are done with the connection, call `X.terminate()`; the
-client emits `'end'` when the stream closes.
+client emits `'end'` when the stream closes. `X.close(cb)` is the polite
+version — it round-trips first, so requests already issued are known to have
+been processed, and its callback fires once the connection is actually gone.
+That matters if another connection follows: an X server resets when its last
+client disconnects, and a connection opened inside that window is dropped
+mid-setup (which is now reported as a connect error rather than never
+calling back).
 
 See [core-requests.md](core-requests.md) for the complete reference.
 
