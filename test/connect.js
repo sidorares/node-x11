@@ -60,6 +60,44 @@ describe('Client', () => {
     }
   });
 
+  it('reports a connection dropped during setup instead of hanging', done => {
+    // a server that hangs up mid-setup — resetting after its last client
+    // left, or refusing authorisation without a word — used to leave the
+    // connect callback waiting forever
+    const { EventEmitter } = require('events');
+    const stream = new EventEmitter();
+    stream.write = () => true;
+    stream.end = () => {};
+    x11.createClient({ display: ':0', stream }, err => {
+        assert(err instanceof Error);
+        assert.match(err.message, /closed before setup/);
+        done();
+    });
+    setImmediate(() => stream.emit('close'));
+  });
+
+  it('closes before it reports the connection closed', done => {
+    // the callback used to fire when end() was called, not when the socket
+    // was gone: an X server resets when its last client disconnects, so a
+    // program that reconnects in that window loses the new connection
+    const client = x11.createClient((err, dpy) => {
+        assert.ifError(err);
+        dpy.client.close(() => {
+            const stream = dpy.client.stream;
+            assert.ok(stream.readableEnded || stream.destroyed,
+                'close() should report only once the server has let go');
+            // and the connection that follows survives the server's reset
+            const next = x11.createClient(err2 => {
+                assert.ifError(err2);
+                next.terminate();
+                done();
+            });
+            next.on('error', done);
+        });
+    });
+    client.on('error', done);
+  });
+
   it('returns error when connecting to non existent display', done => {
     let errorCbCalled = false;
     const client = x11.createClient({ display : ':44' }, (err, display) => {
