@@ -152,10 +152,12 @@ against the current client, `createClient({ bufferRequests: … })` alone takes
 a 2000-request ntk frame from 2003 writes to 1–2, because `_runFrame()` emits
 a frame in one synchronous run and ends with the frame fence's
 `GetInputFocus`, whose reply gate flushes exactly at the frame boundary. The
-`X.flush()` at `_present()` the issue proposes is redundant there and would
-split writes in a multi-window app. What is left for ntk: pass the option
-through and size `maxSize` to a frame (16 KB default = ~5 writes for a 72 KB
-frame, 256 KB = 1); `tcpNoDelay` already defaults to on with buffering.
+`X.flush()` at `_present()` the issue proposes is therefore redundant, and it
+would pin one write per window-frame — where `flushOnReply: false` plus the
+end-of-tick flush lets several windows' frames in one tick coalesce into a
+single write. What is left for ntk: pass the option through and size
+`maxSize` to a frame (16 KB default = ~5 writes for a 72 KB frame, 256 KB =
+1); `tcpNoDelay` already defaults to on with buffering.
 
 **Clipboard:** [#120](https://github.com/sidorares/ntk/issues/120) XFixes
 selection-changed events, [#119](https://github.com/sidorares/ntk/issues/119)
