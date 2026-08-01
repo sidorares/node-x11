@@ -13,7 +13,11 @@ than carried forward.
 
 ---
 
-# node-x11 — 9 open
+Since the audit, [#244](https://github.com/sidorares/node-x11/issues/244)
+(output buffering) has been implemented — opt-in `bufferRequests`, see
+"Buffering the output" in `docs/README.md`.
+
+# node-x11 — 8 open
 
 ## Worth doing next
 
@@ -58,18 +62,6 @@ the deprecated directory-main — fold it into any other PR. The real fix is
 converting `lib/` to ESM sources, which is a major, and the tempting shortcut
 does not work: a thin ESM wrapper over CJS still `require()`s builtins
 underneath, which is the exact failing construct.
-
-## Deferred by choice
-
-### [#244](https://github.com/sidorares/node-x11/issues/244) — Buffer the output stream (2026-07-31)
-
-Every request is `put()` + unconditional `flush()`, and `flush()` hands each
-buffer to `socket.write` individually — N requests, N syscalls, no writev, no
-cork. Nothing calls `setNoDelay`, so Nagle is on for TCP and small writes
-stall on the previous ACK. Xlib has had a 16 KB output buffer since 1987.
-
-Real and structural, but perf-only, and perf is deferred. Note it pairs with
-the flush/backpressure machinery #195 added, so the groundwork exists.
 
 ## Old, and closeable rather than workable
 
@@ -153,7 +145,17 @@ one-write-per-frame, [#124](https://github.com/sidorares/ntk/issues/124)
 maxLines/ellipsis, [#123](https://github.com/sidorares/ntk/issues/123)
 half-leading, [#122](https://github.com/sidorares/ntk/issues/122) downscale
 before upload. #124 and #123 are self-contained TextLayout work with obvious
-tests; #125 and #122 are perf, deferred.
+tests; #122 is perf, deferred.
+
+#125 has shrunk to a one-liner now that node-x11 buffers output: measured
+against the current client, `createClient({ bufferRequests: … })` alone takes
+a 2000-request ntk frame from 2003 writes to 1–2, because `_runFrame()` emits
+a frame in one synchronous run and ends with the frame fence's
+`GetInputFocus`, whose reply gate flushes exactly at the frame boundary. The
+`X.flush()` at `_present()` the issue proposes is redundant there and would
+split writes in a multi-window app. What is left for ntk: pass the option
+through and size `maxSize` to a frame (16 KB default = ~5 writes for a 72 KB
+frame, 256 KB = 1); `tcpNoDelay` already defaults to on with buffering.
 
 **Clipboard:** [#120](https://github.com/sidorares/ntk/issues/120) XFixes
 selection-changed events, [#119](https://github.com/sidorares/ntk/issues/119)

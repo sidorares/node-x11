@@ -26,6 +26,8 @@ x11.createClient((err, display) => {
 | `display` | display string, e.g. `':0'`, `'localhost:1.0'` or a literal socket path (default: `$DISPLAY`) |
 | `debug` | log outgoing requests and capture per-request stack traces for errors |
 | `disableBigRequests` | skip the automatic BIG-REQUESTS handshake done at connect time |
+| `bufferRequests` | batch outgoing requests into fewer socket writes: `true`, or `{ maxSize, maxDelay, flushOnReply, shouldFlush }` — see [Buffering the output](../reference/index.md#buffering-the-output) |
+| `tcpNoDelay` | turn Nagle's algorithm off on a TCP connection (default: on when `bufferRequests` is set) |
 | `stream` | an already-connected duplex stream to use instead of opening a socket (see [Custom transports](custom-transports.md)) |
 | `auth` | authentication override, `{ name, data }` (see [Custom transports](custom-transports.md)) |
 

@@ -24,7 +24,7 @@ function makeExt() {
     eventParsers: {},
     pack_stream: {
       put: (buf) => written.push(buf),
-      flush: () => {},
+      submit: () => {},
     },
     QueryExtension: (name, cb) => {
       assert.strictEqual(name, 'Apple-WM');
@@ -47,7 +47,7 @@ describe('Apple-WM', () => {
       seq_num: 0,
       replies: {},
       eventParsers: {},
-      pack_stream: { put: () => {}, flush: () => {} },
+      pack_stream: { put: () => {}, submit: () => {} },
       QueryExtension: (name, cb) =>
         cb(null, { present: true, majorOpcode: MAJOR, firstEvent: FIRST_EVENT }),
     };

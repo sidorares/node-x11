@@ -35,7 +35,7 @@ function createRig(done) {
             put(buf) {
                 pending.push(buf);
             },
-            flush() {
+            submit() {
                 if (pending.length === 0)
                     return;
                 const req = Buffer.concat(pending);

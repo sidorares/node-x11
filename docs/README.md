@@ -27,6 +27,8 @@ x11.createClient((err, display) => {
 | `display` | display string, e.g. `':0'`, `'localhost:1.0'` or a literal socket path (default: `$DISPLAY`) |
 | `debug` | log outgoing requests and capture per-request stack traces for errors |
 | `disableBigRequests` | skip the automatic BIG-REQUESTS handshake done at connect time |
+| `bufferRequests` | batch outgoing requests into fewer socket writes: `true`, or `{ maxSize, maxDelay, flushOnReply, shouldFlush }` — see [Buffering the output](#buffering-the-output) |
+| `tcpNoDelay` | turn Nagle's algorithm off on a TCP connection (default: on when `bufferRequests` is set) |
 
 The client connects over a unix socket when the display refers to the local
 host (on macOS the display must be a literal socket path, XQuartz launchd
@@ -142,6 +144,73 @@ Sequence numbers are 16-bit on the wire but full-width on the client
 (`err.seq` keeps growing past 65535); the client transparently inserts a
 cheap round-trip request once per 60000 reply-less requests to keep the
 mapping unambiguous, the same way libxcb does.
+
+### Buffering the output
+
+By default every request is written to the socket as it is issued: one
+`write()` per request, and on a TCP connection one packet per request. A
+frame that draws a hundred small rectangles is a hundred sub-MTU writes.
+`bufferRequests` batches them instead:
+
+```js
+x11.createClient({ bufferRequests: true }, (err, display) => { /* ... */ });
+```
+
+Requests then accumulate in a 16 KB buffer — the size Xlib has used since
+X11R1 — and leave in one write. Buffering never costs a round trip of
+latency, because the batch is written as soon as any of these happens:
+
+- it reaches `maxSize` bytes (default `16384`);
+- its oldest request is `maxDelay` ms old (default `5`; `Infinity` disables
+  the gate, and the age is sampled every few requests rather than on each
+  one). This is what keeps a producer that holds the event loop for several
+  frames from starving the server;
+- a request that expects a reply is issued (`flushOnReply`, default `true`);
+- the event loop is about to wait for I/O — nothing is ever left sitting in
+  the buffer while the process is idle;
+- `X.flush()` is called, the connection is closed with `X.terminate()`, or
+  the process exits — including a hard `process.exit()`, which runs no
+  further timers.
+
+A toolkit that knows its own frame boundaries can take over the middle two
+gates with `shouldFlush`:
+
+```js
+const X = x11.createClient({
+    bufferRequests: {
+        maxSize: 64 * 1024,
+        shouldFlush: () => false   // never on my own; I flush per frame
+    }
+}, /* ... */);
+
+function frame() {
+    draw(X);
+    X.flush();
+}
+```
+
+`shouldFlush(info)` is called once per request with the pending batch's
+`bytes`, `packets`, `age` in ms, and whether this request `expectsReply`. It
+returns `true` to write now, `false` to keep buffering, or `undefined` to
+leave the decision to the gates above. The `maxSize` cap and the flush
+before the event loop polls always apply, so a `shouldFlush` that never says
+yes still cannot make the client sit on data.
+
+What actually happened is on `X.pack_stream.stats`: `packets` and `bytes`
+queued, `writes` issued to the socket, and `allocs` output buffers allocated
+(the buffer is reused, so this stays flat no matter how many requests are
+sent).
+
+On TCP the client also disables Nagle's algorithm by default when buffering
+— as libxcb does, because batched requests already leave in full segments
+and Nagle's interaction with delayed ACKs would only add latency. Pass
+`tcpNoDelay: false` to keep it on.
+
+A toolkit driving a frame clock usually needs nothing beyond switching this
+on: the requests of one frame are issued in a single synchronous run, so
+they are batched, and the round trip such toolkits already use to pace
+frames flushes them at exactly the frame boundary. Size `maxSize` to a
+frame's worth of bytes to make that one write rather than a handful.
 
 ## Listening for events
 
