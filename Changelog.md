@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.1](https://github.com/sidorares/node-x11/compare/v3.6.0...v3.6.1) (2026-08-01)
+
+
+### Bug Fixes
+
+* close() must report when the connection is really gone ([#262](https://github.com/sidorares/node-x11/issues/262)) ([d8a1c8f](https://github.com/sidorares/node-x11/commit/d8a1c8f604d0d0fe927b36d322b449d057b206f1))
+
 ## [3.6.0](https://github.com/sidorares/node-x11/compare/v3.5.0...v3.6.0) (2026-08-01)
 
 
