@@ -9,9 +9,15 @@
       const ext = createGlxExtension({
           backend,             // WebGLBackend or RecordingBackend
           getDrawableSurface,  // see contract below
-          visualId             // GL-capable visual advertised to clients
+          visualId,            // GL-capable visual advertised to clients
+          indirectContexts     // false = act like a server without +iglx
       });
       server.registerExtension('GLX', ext);
+
+  `indirectContexts: false` reproduces the default configuration of Xorg
+  >= 1.17 and Xwayland: queries all answer normally, and context creation
+  alone fails with BadValue, value 0. Useful for testing what a client does
+  on the servers most people actually have.
 
   Framework contract (matches lib/xserver's registerExtension, but kept
   duck-typed so the extension also runs against a minimal fake in tests):
@@ -204,9 +210,21 @@ function createGlxExtension(options = {}) {
                 ext.majorOpcode, minor);
     }
 
+    // core BadValue, which is not in the extension's error range
+    const BAD_VALUE = 2;
+
     // ---- bookkeeping helpers ---------------------------------------------
 
-    function registerContext(xid) {
+    // With options.indirectContexts false the emulator behaves like a server
+    // started without +iglx: every query request still works, and context
+    // creation alone fails with BadValue, value 0 — the shape real Xorg and
+    // Xwayland produce, and the only signal a client has to go on.
+    function registerContext(xid, client, minor) {
+        if (options.indirectContexts === false) {
+            if (typeof client.sendError === 'function')
+                client.sendError(BAD_VALUE, 0, ext.majorOpcode, minor);
+            return;
+        }
         contexts.set(xid, {
             xid: xid,
             decoder: new RenderDecoder(backend),
@@ -355,11 +373,11 @@ function createGlxExtension(options = {}) {
     // minor 16 (VendorPrivate, no reply); body: code@0, then per-vop layout.
     // The generic form carries contextTag@4 and data from 8; the SGIX
     // requests keep that 12-byte header shape with payload from body 8.
-    function vendorPrivate(client, body) {
+    function vendorPrivate(client, body, minor) {
         const code = body.readUInt32LE(0);
         switch (code) {
         case vop.CreateContextWithConfigSGIX:
-            registerContext(body.readUInt32LE(8));
+            registerContext(body.readUInt32LE(8), client, minor);
             break;
         case vop.CreateGLXPixmapWithConfigSGIX:
             glxDrawables.set(body.readUInt32LE(20), {
@@ -461,7 +479,7 @@ function createGlxExtension(options = {}) {
         }
 
         case 3:     // CreateContext: ctx, visual, screen, shareList, isDirect
-            return registerContext(body.readUInt32LE(0));
+            return registerContext(body.readUInt32LE(0), client, minor);
 
         case 4:     // DestroyContext
             return contexts.delete(body.readUInt32LE(0));
@@ -507,7 +525,7 @@ function createGlxExtension(options = {}) {
             return glxDrawables.delete(body.readUInt32LE(0));
 
         case 16:    // VendorPrivate
-            return vendorPrivate(client, body);
+            return vendorPrivate(client, body, minor);
 
         case 17:    // VendorPrivateWithReply
             return vendorPrivateWithReply(client, body);
@@ -538,7 +556,7 @@ function createGlxExtension(options = {}) {
             });
 
         case 24:    // CreateNewContext: ctx, fbconfig, screen, renderType, ...
-            return registerContext(body.readUInt32LE(0));
+            return registerContext(body.readUInt32LE(0), client, minor);
 
         case 25:    // QueryContext -> attribute pairs
             return attribPairsReply(client, [
@@ -574,7 +592,7 @@ function createGlxExtension(options = {}) {
             });
 
         case 34:    // CreateContextAttribsARB
-            return registerContext(body.readUInt32LE(0));
+            return registerContext(body.readUInt32LE(0), client, minor);
 
         // ---- GL single requests (contextTag at body 0, args from 4) ------
 

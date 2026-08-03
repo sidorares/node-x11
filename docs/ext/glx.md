@@ -26,7 +26,11 @@ the X connection. Modern X servers (Xorg ≥ 1.17, XQuartz, Xvfb) ship with
 indirect GLX contexts **disabled**; `CreateContext` then fails with
 `Bad param value` (BadValue, value 0) and every context operation after it
 fails with `GLXBadContext`. Query requests (`QueryVersion`, `GetFBConfigs`,
-...) work regardless.
+...) work regardless — which is what makes this confusing to diagnose: the
+extension is present, reports GLX 1.4 and offers a full set of fbconfigs.
+The `BadValue` from `CreateContext` is the only signal, so pass that request
+a callback (see [CreateContext](#createcontextctx-visual-screen-sharelistctx-isdirect-cb))
+rather than inferring the state from the `GLXBadContext` fallout.
 
 - **XQuartz (macOS)**:
 
@@ -152,10 +156,27 @@ Opcode 2. One GL command too big for `Render`, split into `requestTotal`
 parts; `requestNum` is 1-based. `data` is padded to 4 bytes automatically.
 No reply. Used internally by the pipeline's `TexImage2D`.
 
-### CreateContext(ctx, visual, screen, shareListCtx, isDirect)
+### CreateContext(ctx, visual, screen, shareListCtx, isDirect, [cb])
 Opcode 3. Creates GLX context `ctx` (client-allocated XID) for `visual`.
 `shareListCtx` shares display lists (0 for none); pass `isDirect` 0 — this
 client renders indirectly. No reply.
+
+`cb(err)` is optional and reports failure: it gets the X error, or `null`
+once a later packet proves the server got past this request. Return truthy
+from it to claim the error, otherwise it still reaches `client.on('error')`
+— the same contract as a core void request. Worth using: a server without
+`+iglx` answers `BadValue` with `badParam` 0 here (see [server
+setup](#server-setup-indirect-glx-must-be-enabled)), and without a callback
+that is an unattributed error followed by a misleading `GLXBadContext` from
+whatever context request you send next.
+
+```js
+GLX.CreateContext(ctx, visual, 0, 0, 0, err => {
+    if (err && err.error === 2 && err.badParam === 0)
+        console.log('this server refuses indirect GLX contexts (needs +iglx)');
+    return true; // handled
+});
+```
 
 ### DestroyContext(ctx)
 Opcode 4. No reply.
@@ -268,9 +289,10 @@ Opcode 22 (GLX 1.3 fbconfig flavour of CreateGLXPixmap). No reply.
 ### DestroyPixmap(glxpixmap)
 Opcode 23. No reply.
 
-### CreateNewContext(ctx, fbconfig, screen, renderType, shareListCtx, isDirect)
+### CreateNewContext(ctx, fbconfig, screen, renderType, shareListCtx, isDirect, [cb])
 Opcode 24. GLX 1.3 context creation from an fbconfig. `renderType` is
-`GLX.glxAttrib.RGBA_TYPE` or `COLOR_INDEX_TYPE`. No reply.
+`GLX.glxAttrib.RGBA_TYPE` or `COLOR_INDEX_TYPE`. No reply; optional `cb(err)`
+as in [CreateContext](#createcontextctx-visual-screen-sharelistctx-isdirect-cb).
 
 ### QueryContext(ctx, cb)
 Opcode 25. `cb(err, attribs)` — `{FBCONFIG_ID, VISUAL_ID, SCREEN,
@@ -307,10 +329,12 @@ Opcode 32. No reply.
 Opcode 33 (GLX_ARB_create_context). `versions` is `[[major, minor], ...]`
 of supported GL versions. No reply.
 
-### CreateContextAttribsARB(ctx, fbconfig, screen, shareListCtx, isDirect, attribs)
+### CreateContextAttribsARB(ctx, fbconfig, screen, shareListCtx, isDirect, attribs, [cb])
 Opcode 34 (GLX_ARB_create_context). Attribute-driven context creation;
 codes in `GLX.glxAttrib.CONTEXT_*` (e.g. `CONTEXT_MAJOR_VERSION_ARB`,
-`CONTEXT_PROFILE_MASK_ARB`), values in `GLX.glxConst`. No reply.
+`CONTEXT_PROFILE_MASK_ARB`), values in `GLX.glxConst`. No reply; optional
+`cb(err)` as in
+[CreateContext](#createcontextctx-visual-screen-sharelistctx-isdirect-cb).
 
 ### SetClientInfo2ARB(major, minor, versions, glExtensions, glxExtensions)
 Opcode 35. Like `SetClientInfoARB` but `versions` entries are
