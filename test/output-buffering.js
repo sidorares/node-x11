@@ -372,12 +372,18 @@ describe('output buffering (#244)', () => {
         X.GetImage(2, pixmap, 0, 0, W, H, 0xffffffff, (err, image) => {
             assert.ifError(err);
             const bytesPP = depth <= 8 ? 1 : (depth <= 16 ? 2 : 4);
+            // A depth-24 image is delivered 4 bytes to the pixel, and the
+            // spare byte is undefined padding — Xvfb leaves it 0, Xorg here
+            // leaves it 0xff. Compare only the bits the depth defines, or the
+            // pixel never matches white_pixel on servers that fill the pad.
+            const mask = depth >= 32 ? 0xffffffff : 2 ** depth - 1;
+            const significant = value => (value % (mask + 1) + (mask + 1)) % (mask + 1);
             let lit = 0;
             for (let y = 0; y < H; y++) {
                 let pixel = 0;
                 for (let i = 0; i < bytesPP; ++i)
-                    pixel += image.data[(y * W + y) * bytesPP + i] << (8 * i);
-                if ((pixel >>> 0) === white) lit++;
+                    pixel += image.data[(y * W + y) * bytesPP + i] * 256 ** i;
+                if (significant(pixel) === significant(white)) lit++;
             }
             assert.strictEqual(lit, H, 'every pixel of the diagonal was drawn');
             // 20 requests, and the reply forced at most one write
