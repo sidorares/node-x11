@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.8.0](https://github.com/sidorares/node-x11/compare/v3.7.2...v3.8.0) (2026-08-03)
+
+
+### Features
+
+* **glx:** let CreateContext report why it failed ([#272](https://github.com/sidorares/node-x11/issues/272)) ([e4c873d](https://github.com/sidorares/node-x11/commit/e4c873df9d552d858d6d856313fdca540881ba11))
+
 ## [3.7.2](https://github.com/sidorares/node-x11/compare/v3.7.1...v3.7.2) (2026-08-03)
 
 
