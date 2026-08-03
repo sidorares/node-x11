@@ -493,14 +493,25 @@ describe('output buffering (#244)', () => {
             ok = X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, chunk);
             writes++;
         }
-        assert.strictEqual(ok, false, `no backpressure after ${writes} writes`);
-        X.once('drain', () => {
+        const finish = () => {
             X.sync(err => {
                 X.DestroyWindow(wid);
                 X.ReleaseID(wid);
                 done(err);
             });
-        });
+        };
+        // Whether the socket ever backs up depends on how fast the *server*
+        // drains it, not on anything this library does: on a quick machine
+        // Xvfb consumes these as fast as they can be written and `write()`
+        // never reports a full buffer. That is not a failure, and asserting
+        // otherwise makes this test fail on fast CI runners. The contract
+        // itself — a false return once the socket is full, nothing lost — is
+        // pinned deterministically by the FakeSocket test above; what is worth
+        // checking here is that when a real socket does back up, 'drain'
+        // follows and the connection is still usable afterwards.
+        if (ok)
+            return finish();
+        X.once('drain', finish);
     });
   });
 });
