@@ -29,6 +29,7 @@ x11.createClient((err, display) => {
 | `disableBigRequests` | skip the automatic BIG-REQUESTS handshake done at connect time |
 | `bufferRequests` | batch outgoing requests into fewer socket writes: `true`, or `{ maxSize, maxDelay, flushOnReply, shouldFlush }` — see [Buffering the output](#buffering-the-output) |
 | `tcpNoDelay` | turn Nagle's algorithm off on a TCP connection (default: on when `bufferRequests` is set) |
+| `shm` | MIT-SHM segment provider: unset for the built-in one on local connections, `false`/`'off'` to disable, or a provider object — see [ext/shm.md](ext/shm.md) |
 
 The client connects over a unix socket when the display refers to the local
 host (on macOS the display must be a literal socket path, XQuartz launchd
@@ -67,6 +68,10 @@ The `display` passed to the callback describes the connection setup block:
   rather than assume little-endian. Not to be confused with
   `display.image_byte_order`, which is the server's pixel order for
   `GetImage`/`PutImage`.
+- `display.isLocalSocket` — true only for a same-machine unix-socket
+  connection (not TCP, not an injected/custom transport). Same-host fast paths
+  such as [MIT-SHM](ext/shm.md) gate on it (necessary, not sufficient — the
+  segment still has to attach).
 
 ## Making requests
 

@@ -163,3 +163,162 @@ describe('MIT-SHM extension', () => {
         this.X.on('end', done);
     });
 });
+
+// The high-level, provider-backed API. Unlike the wire tests above, these need
+// a real attachable segment: the built-in provider (an fd-passed /dev/shm file)
+// works on a local unix connection to a SHM 1.2 server (Linux CI/Xvfb). Where
+// that is not available — a remote display, a server without 1.2, a platform
+// without /dev/shm — `usable()` reports false and the round-trip tests skip,
+// exactly as a real caller would fall back to core PutImage.
+describe('MIT-SHM shared segments (provider-backed)', () => {
+    before(function(done) {
+        const self = this;
+        x11.createClient((err, dpy) => {
+            should.not.exist(err);
+            self.X = dpy.client;
+            self.display = dpy;
+            self.root = dpy.screen[0].root;
+            self.depth = dpy.screen[0].root_depth;
+            self.X.require('shm', (err, ext) => {
+                should.not.exist(err);
+                self.shm = ext;
+                ext.usable((e, ok) => {
+                    should.not.exist(e);
+                    self.ok = ok;
+                    done();
+                });
+            });
+        });
+    });
+
+    it('exposes isLocalSocket on the display', function() {
+        this.display.isLocalSocket.should.be.a.Boolean();
+    });
+
+    it('usable() resolves a boolean, cached, consistent with the provider', function(done) {
+        const self = this;
+        this.ok.should.be.a.Boolean();
+        if (this.ok) {
+            should.exist(this.shm.provider);
+            this.shm.fdCapable.should.equal(true);
+        }
+        // second call is cached and must agree
+        this.shm.usable((e, ok2) => {
+            should.not.exist(e);
+            ok2.should.equal(self.ok);
+            done();
+        });
+    });
+
+    it('createSegment -> putImage round-trips real pixels', function(done) {
+        if (!this.ok) return this.skip();
+        const self = this;
+        const W = 64, H = 64, size = W * H * 4;
+        this.shm.createSegment(size, (err, seg) => {
+            should.not.exist(err);
+            seg.shmseg.should.be.a.Number();
+            seg.size.should.equal(size);
+            for (let i = 0; i < size; i++)
+                seg.buffer[i] = (i * 37) & 0xff;
+            const pid = self.X.AllocID();
+            const gc = self.X.AllocID();
+            self.X.CreatePixmap(pid, self.root, self.depth, W, H);
+            self.X.CreateGC(gc, pid);
+            seg.putImage(pid, gc, { width: W, height: H, depth: self.depth });
+            self.X.GetImage(2, pid, 0, 0, W, H, 0xffffffff, (err, img) => {
+                should.not.exist(err);
+                let bad = 0;
+                for (let i = 0; i < size; i += 4)
+                    if (img.data[i] !== seg.buffer[i] ||
+                        img.data[i + 1] !== seg.buffer[i + 1] ||
+                        img.data[i + 2] !== seg.buffer[i + 2]) bad++;
+                bad.should.equal(0);
+                self.X.FreeGC(gc);
+                self.X.FreePixmap(pid);
+                seg.detach(done);
+            });
+        });
+    });
+
+    it('shm GetImage reads pixels back into the segment buffer', function(done) {
+        if (!this.ok) return this.skip();
+        const self = this;
+        const W = 48, H = 48, size = W * H * 4;
+        this.shm.createSegment(size, (err, seg) => {
+            should.not.exist(err);
+            for (let i = 0; i < size; i++)
+                seg.buffer[i] = (i * 53) & 0xff;
+            const pid = self.X.AllocID();
+            const gc = self.X.AllocID();
+            self.X.CreatePixmap(pid, self.root, self.depth, W, H);
+            self.X.CreateGC(gc, pid);
+            seg.putImage(pid, gc, { width: W, height: H, depth: self.depth });
+            const reference = Buffer.from(seg.buffer);
+            seg.buffer.fill(0);
+            seg.getImage(pid, 0, 0, W, H, 0xffffffff, undefined, 0, (err, rep) => {
+                should.not.exist(err);
+                rep.size.should.equal(size);
+                let bad = 0;
+                for (let i = 0; i < size; i += 4)
+                    if (seg.buffer[i] !== reference[i] ||
+                        seg.buffer[i + 1] !== reference[i + 1] ||
+                        seg.buffer[i + 2] !== reference[i + 2]) bad++;
+                bad.should.equal(0);
+                self.X.FreeGC(gc);
+                self.X.FreePixmap(pid);
+                seg.detach(done);
+            });
+        });
+    });
+
+    it('emits ShmCompletion on the segment when putImage sends an event', function(done) {
+        if (!this.ok) return this.skip();
+        const self = this;
+        const W = 32, H = 32, size = W * H * 4;
+        this.shm.createSegment(size, (err, seg) => {
+            should.not.exist(err);
+            const pid = self.X.AllocID();
+            const gc = self.X.AllocID();
+            self.X.CreatePixmap(pid, self.root, self.depth, W, H);
+            self.X.CreateGC(gc, pid);
+            seg.once('complete', offset => {
+                offset.should.equal(0);
+                self.X.FreeGC(gc);
+                self.X.FreePixmap(pid);
+                seg.detach(done);
+            });
+            seg.putImage(pid, gc, { width: W, height: H, depth: self.depth, sendEvent: true });
+        });
+    });
+
+    after(function(done) {
+        this.X.terminate();
+        this.X.on('end', done);
+    });
+});
+
+// Disabling SHM must be a clean, non-throwing "no fast path", so callers can
+// probe once and route to core requests.
+describe('MIT-SHM disabled (shm: false)', () => {
+    it('usable() is false and createSegment fails without throwing', function(done) {
+        x11.createClient({ shm: false }, (err, dpy) => {
+            should.not.exist(err);
+            const X = dpy.client;
+            dpy.isLocalSocket.should.be.a.Boolean();
+            X.require('shm', (err, ext) => {
+                should.not.exist(err);
+                ext.fdCapable.should.equal(false);
+                should.not.exist(ext.provider);
+                ext.usable((e, ok) => {
+                    should.not.exist(e);
+                    ok.should.equal(false);
+                    ext.createSegment(4096, err => {
+                        should.exist(err);
+                        X.terminate();
+                        X.on('end', done);
+                    });
+                });
+            });
+        });
+    });
+});
