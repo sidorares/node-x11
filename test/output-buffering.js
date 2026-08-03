@@ -372,12 +372,18 @@ describe('output buffering (#244)', () => {
         X.GetImage(2, pixmap, 0, 0, W, H, 0xffffffff, (err, image) => {
             assert.ifError(err);
             const bytesPP = depth <= 8 ? 1 : (depth <= 16 ? 2 : 4);
+            // A depth-24 image is delivered 4 bytes to the pixel, and the
+            // spare byte is undefined padding — Xvfb leaves it 0, Xorg here
+            // leaves it 0xff. Compare only the bits the depth defines, or the
+            // pixel never matches white_pixel on servers that fill the pad.
+            const mask = depth >= 32 ? 0xffffffff : 2 ** depth - 1;
+            const significant = value => (value % (mask + 1) + (mask + 1)) % (mask + 1);
             let lit = 0;
             for (let y = 0; y < H; y++) {
                 let pixel = 0;
                 for (let i = 0; i < bytesPP; ++i)
-                    pixel += image.data[(y * W + y) * bytesPP + i] << (8 * i);
-                if ((pixel >>> 0) === white) lit++;
+                    pixel += image.data[(y * W + y) * bytesPP + i] * 256 ** i;
+                if (significant(pixel) === significant(white)) lit++;
             }
             assert.strictEqual(lit, H, 'every pixel of the diagonal was drawn');
             // 20 requests, and the reply forced at most one write
@@ -487,14 +493,25 @@ describe('output buffering (#244)', () => {
             ok = X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, chunk);
             writes++;
         }
-        assert.strictEqual(ok, false, `no backpressure after ${writes} writes`);
-        X.once('drain', () => {
+        const finish = () => {
             X.sync(err => {
                 X.DestroyWindow(wid);
                 X.ReleaseID(wid);
                 done(err);
             });
-        });
+        };
+        // Whether the socket ever backs up depends on how fast the *server*
+        // drains it, not on anything this library does: on a quick machine
+        // Xvfb consumes these as fast as they can be written and `write()`
+        // never reports a full buffer. That is not a failure, and asserting
+        // otherwise makes this test fail on fast CI runners. The contract
+        // itself — a false return once the socket is full, nothing lost — is
+        // pinned deterministically by the FakeSocket test above; what is worth
+        // checking here is that when a real socket does back up, 'drain'
+        // follows and the connection is still usable afterwards.
+        if (ok)
+            return finish();
+        X.once('drain', finish);
     });
   });
 });
