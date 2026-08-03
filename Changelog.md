@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.2](https://github.com/sidorares/node-x11/compare/v3.7.1...v3.7.2) (2026-08-03)
+
+
+### Bug Fixes
+
+* **shm:** don't throw when a connection closes mid-attach ([#269](https://github.com/sidorares/node-x11/issues/269)) ([7b2d632](https://github.com/sidorares/node-x11/commit/7b2d632f73d7127031a200f68d255ba944e6cce3))
+
 ## [3.7.1](https://github.com/sidorares/node-x11/compare/v3.7.0...v3.7.1) (2026-08-03)
 
 
