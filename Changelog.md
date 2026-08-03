@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.1](https://github.com/sidorares/node-x11/compare/v3.7.0...v3.7.1) (2026-08-03)
+
+
+### Bug Fixes
+
+* PutImage and AddGlyphs are malformed with disableBigRequests ([#267](https://github.com/sidorares/node-x11/issues/267)) ([0577d03](https://github.com/sidorares/node-x11/commit/0577d03774f3a5d6f9fb6f3d7c7ffb1aa2491d0e))
+
 ## [3.7.0](https://github.com/sidorares/node-x11/compare/v3.6.1...v3.7.0) (2026-08-03)
 
 
