@@ -208,17 +208,43 @@ describe('GLX extension', function() {
         }));
     });
 
+    // The callback is what makes "this server refuses indirect contexts"
+    // diagnosable: every query request succeeds on such a server, so the
+    // BadValue from CreateContext is the only signal, and without a callback
+    // it arrives unattributed on client.on('error').
+    it('CreateContext should report success or failure through its callback', function(done) {
+        const GLX = this.GLX;
+        if (!this.visualConfig || this.connDead)
+            return this.skip();
+        const probe = this.X.AllocID();
+        GLX.CreateContext(probe, this.visualConfig.visualID, 0, 0, 0, guard(done, (err) => {
+            if (!err)
+                GLX.DestroyContext(probe);
+            else {
+                // BadValue (2), value 0: indirect GLX contexts disabled
+                err.error.should.equal(2);
+                err.majorOpcode.should.equal(GLX.majorOpcode);
+                err.minorOpcode.should.equal(3);
+                err.badParam.should.equal(0);
+            }
+            done();
+            return true; // handled: keep it off client.on('error')
+        }));
+    });
+
     describe('indirect contexts', function() {
         // probe whether the server allows indirect GLX contexts; skip the
-        // whole block otherwise (servers not started with +iglx)
+        // whole block otherwise (servers not started with +iglx). The
+        // CreateContext callback is the direct answer — a server that
+        // refuses indirect contexts fails it with BadValue, value 0
         before(function(done) {
             const self = this;
             const GLX = this.GLX;
             if (!this.visualConfig || this.connDead)
                 return done();
             const probe = this.X.AllocID();
-            GLX.CreateContext(probe, this.visualConfig.visualID, 0, 0, 0);
-            GLX.IsDirect(probe, (err) => {
+            GLX.CreateContext(probe, this.visualConfig.visualID, 0, 0, 0, (err) => {
+                self.iglxError = err;
                 self.hasIndirect = !err;
                 if (!err)
                     GLX.DestroyContext(probe);
