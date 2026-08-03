@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.0](https://github.com/sidorares/node-x11/compare/v3.6.1...v3.7.0) (2026-08-03)
+
+
+### Features
+
+* **shm:** zero-dependency MIT-SHM shared-memory image transport ([#265](https://github.com/sidorares/node-x11/issues/265)) ([16f4013](https://github.com/sidorares/node-x11/commit/16f401383033c6c8a945934a1b932c5551859718))
+
 ## [3.6.1](https://github.com/sidorares/node-x11/compare/v3.6.0...v3.6.1) (2026-08-01)
 
 
