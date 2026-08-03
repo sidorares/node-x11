@@ -322,3 +322,39 @@ describe('MIT-SHM disabled (shm: false)', () => {
         });
     });
 });
+
+// A segment attach is asynchronous — the descriptor goes out after a flush,
+// and the confirming round trip after that. A client that closes in between
+// used to make the attach path issue a request on a closing connection, which
+// throws out of a callback and takes the process down. Closing mid-attach must
+// report an error on the callback instead.
+describe('MIT-SHM attach racing connection close', () => {
+    it('reports an error instead of throwing when the client closes mid-attach', function(done) {
+        x11.createClient((err, dpy) => {
+            should.not.exist(err);
+            const X = dpy.client;
+            X.on('error', () => {}); // teardown noise is not the subject
+            X.require('shm', (err, ext) => {
+                should.not.exist(err);
+                if (!ext.provider) {
+                    X.terminate();
+                    return X.on('end', () => done());
+                }
+                let settled = false;
+                ext.createSegment(64 * 1024, err => {
+                    // may succeed (won the race) or fail, but must not throw
+                    settled = true;
+                    if (err) err.should.be.an.Error();
+                });
+                // close() while the attach is still in flight: it sets the
+                // client's closing flag, which is what made the confirming
+                // round trip throw out of the fd-send callback
+                X.close();
+                setTimeout(() => {
+                    settled.should.equal(true, 'the attach callback was answered');
+                    done();
+                }, 300);
+            });
+        });
+    });
+});
