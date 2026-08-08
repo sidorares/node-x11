@@ -1,0 +1,16 @@
+{
+  "name": "x11-example-dri3",
+  "private": true,
+  "version": "0.0.0",
+  "description": "node-x11 direct rendering demo: X11 window + GPU OpenGL ES cube shown through DRI3 + Present (zero-copy dma-buf pixmaps)",
+  "license": "MIT",
+  "dependencies": {
+    "x11": "file:../..",
+    "x11-dri": "github:sidorares/node-x11-dri"
+  },
+  "scripts": {
+    "start": "node cube.js",
+    "start:async": "node cube.js --async",
+    "software": "node software.js"
+  }
+}
