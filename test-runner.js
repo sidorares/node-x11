@@ -15,6 +15,7 @@ const extensionTests = {
     'damage.js': 'DAMAGE',
     'dbe.js': 'DOUBLE-BUFFER',
     'dpms.js': 'DPMS',
+    'dri3-live.js': 'DRI3',
     'fixes.js': 'XFIXES',
     'ge.js': 'Generic Event Extension',
     'glx.js': 'GLX',

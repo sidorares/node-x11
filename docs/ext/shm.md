@@ -177,10 +177,10 @@ server has processed it or `cb(err)` if it failed (an attach can raise
 
 ### AttachFd(shmseg, fd, readOnly, cb?)
 Like `Attach`, but hands the server the open file descriptor `fd` (a regular
-file or memfd you keep owning) instead of a SysV id. Needs `fdCapable`. Because
-the descriptor is written out of band, **no other request may be issued between
-`AttachFd(...)` and its callback** — `createSegment` observes this for you. Void;
-`cb` as for `Attach`. (SHM 1.2.)
+file or memfd you keep owning — what actually travels is a self-dup made
+through `/proc/self/fd`) instead of a SysV id. Needs `fdCapable`. The request
+rides the ordinary output queue like any other, so it may be freely mixed with
+other requests. Void; `cb` as for `Attach`. (SHM 1.2.)
 
 ### Detach(shmseg, cb?)
 Detaches the segment from the server; the SEG XID becomes invalid. Void, `cb` as
