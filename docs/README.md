@@ -70,8 +70,8 @@ The `display` passed to the callback describes the connection setup block:
   `GetImage`/`PutImage`.
 - `display.isLocalSocket` — true only for a same-machine unix-socket
   connection (not TCP, not an injected/custom transport). Same-host fast paths
-  such as [MIT-SHM](ext/shm.md) gate on it (necessary, not sufficient — the
-  segment still has to attach).
+  such as [MIT-SHM](ext/shm.md) and [DRI3](ext/dri3.md) gate on it (necessary,
+  not sufficient — the segment still has to attach, the buffer to import).
 
 ## Making requests
 
@@ -296,6 +296,7 @@ extension name. Requiring an extension twice returns the cached instance.
 | `damage` | DAMAGE | [ext/damage.md](ext/damage.md) |
 | `dbe` | DOUBLE-BUFFER | [ext/dbe.md](ext/dbe.md) |
 | `dpms` | DPMS | [ext/dpms.md](ext/dpms.md) |
+| `dri3` | DRI3 | [ext/dri3.md](ext/dri3.md) |
 | `fixes` | XFIXES | [ext/fixes.md](ext/fixes.md) |
 | `ge` | Generic Event Extension | [ext/ge.md](ext/ge.md) |
 | `glx` | GLX | [ext/glx.md](ext/glx.md) |

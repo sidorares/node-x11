@@ -1,6 +1,11 @@
 # GLX extension
 
-OpenGL rendering over the X protocol (indirect rendering). The module covers
+OpenGL rendering over the X protocol (indirect rendering). This is the
+legacy path — every GL call is serialized through the server and capped at
+GL 1.x; modern servers only enable it when started with `+iglx`. For the
+modern path (client-side GPU rendering, dma-buf pixmaps, vsync'd
+presentation) see [DRI3](dri3.md) + [Present](present.md) and
+`examples/dri3/cube.js`. The module covers
 the full GLX 1.4 core request set (context, drawable and pbuffer management,
 single-op GL queries, `Render`/`RenderLarge` command batching), the
 `GLX_ARB_create_context` requests, and the vendor-private requests of the

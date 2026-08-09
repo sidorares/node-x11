@@ -1,6 +1,6 @@
 # node-x11
 
-X11 protocol client for Node.js: implements the core X11 protocol, as well as Xrender, Damage, Composite, Big-Requests, Dpms, Screensaver, XFixes, Shape, XTest, XC-Misc, GLX, and Apple-WM extensions.
+X11 protocol client for Node.js: implements the core X11 protocol, as well as Xrender, Damage, Composite, Big-Requests, Dpms, Screensaver, XFixes, Shape, XTest, XC-Misc, GLX, DRI3, Present, and Apple-WM extensions — including the modern direct-rendering path (GPU frames as dma-buf pixmaps via DRI3 + Present, see [docs/ext/dri3.md](docs/ext/dri3.md)).
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/sidorares/node-x11?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![CI](https://github.com/sidorares/node-x11/actions/workflows/ci.yml/badge.svg)](https://github.com/sidorares/node-x11/actions/workflows/ci.yml)
