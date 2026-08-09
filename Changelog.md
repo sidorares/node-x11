@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.9.0](https://github.com/sidorares/node-x11/compare/v3.8.0...v3.9.0) (2026-08-09)
+
+
+### Features
+
+* **dri3:** direct rendering — DRI3 protocol, fd-carrying request queue, Present examples ([#274](https://github.com/sidorares/node-x11/issues/274)) ([b777859](https://github.com/sidorares/node-x11/commit/b777859231f84a35c283a1912088075892b02b3d))
+
 ## [3.8.0](https://github.com/sidorares/node-x11/compare/v3.7.2...v3.8.0) (2026-08-03)
 
 
