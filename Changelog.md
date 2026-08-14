@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.9.1](https://github.com/sidorares/node-x11/compare/v3.9.0...v3.9.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* **framebuffer:** drain queued reads without recursing per packet ([#277](https://github.com/sidorares/node-x11/issues/277)) ([3b1b7e1](https://github.com/sidorares/node-x11/commit/3b1b7e10709142364d811cb9fa72101d0ef53c30)), closes [#276](https://github.com/sidorares/node-x11/issues/276)
+
 ## [3.9.0](https://github.com/sidorares/node-x11/compare/v3.8.0...v3.9.0) (2026-08-09)
 
 
