@@ -18,7 +18,7 @@ X.require('apple-wm', (err, AppleWM) => {
     AppleWM.SetWindowLevel(win, AppleWM.WindowLevel.Floating);
     X.on('event', ev => {
         if (ev.name === 'AppleWMControllerNotify' &&
-            ev.type === AppleWM.EventKind.Controller.CloseWindow) {
+            ev.kind === AppleWM.EventKind.Controller.CloseWindow) {
             // user picked Close from the native menu
         }
     });
@@ -101,14 +101,15 @@ Minor opcode 13. Marks window `child` as a transient attached to `parent`
 ## Events
 
 Enable delivery with `SelectInput`. All three events share one parsed
-shape: `{name, type, time, arg}` where `name` is the event name below,
-`type` is the kind code (see `EventKind`), `time` is the server timestamp
-and `arg` is a kind-specific 32-bit argument (e.g. the window id for
-per-window controller actions).
+shape: `{name, type, seq, kind, time, arg}` where `name` is the event name
+below, `type` is the wire event type (`firstEvent + events.*`), `seq` is
+the sequence number, `kind` is the kind code (see `EventKind`), `time` is
+the server timestamp and `arg` is a kind-specific 32-bit argument (e.g.
+the window id for per-window controller actions).
 
 ### AppleWMControllerNotify
 First event + 0, selected by `NotifyMask.Controller`. Sent when the user
-drives X11 windows from the native side. `type` is one of
+drives X11 windows from the native side. `kind` is one of
 `EventKind.Controller`: `MinimizeWindow` 0, `ZoomWindow` 1, `CloseWindow`
 2, `BringAllToFront` 3, `WideWindow` 4, `HideAll` 5, `ShowAll` 6,
 `WindowMenuItem` 9, `WindowMenuNotify` 10, `NextWindow` 11,
@@ -116,11 +117,11 @@ drives X11 windows from the native side. `type` is one of
 
 ### AppleWMActivationNotify
 First event + 1, selected by `NotifyMask.Activation`. X11.app gained or
-lost the native foreground. `type` is one of `EventKind.Activation`:
+lost the native foreground. `kind` is one of `EventKind.Activation`:
 `IsActive` 0, `IsInactive` 1, `ReloadPreferences` 2.
 
 ### AppleWMPasteboardNotify
-First event + 2, selected by `NotifyMask.Pasteboard`. `type` is
+First event + 2, selected by `NotifyMask.Pasteboard`. `kind` is
 `EventKind.Pasteboard.CopyToPasteboard` (0) — the server wants the current
 selection copied to the macOS pasteboard.
 
