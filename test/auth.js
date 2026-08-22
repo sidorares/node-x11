@@ -63,6 +63,12 @@ describe('Xauthority', () => {
             getAuthString(display, host, family, (err, cookie) =>
                 err ? reject(err) : resolve(cookie)));
 
+    /** Like lookup, but also resolves the deferred no-match warning (if any). */
+    const lookupWithReport = (display = '0', host = 'myhost', family = 'pipe') =>
+        new Promise((resolve, reject) =>
+            getAuthString(display, host, family, (err, cookie, warnIfRefused) =>
+                err ? reject(err) : resolve({ cookie, warnIfRefused })));
+
     it('selects a FamilyWild cookie for any address', async () => {
         // the bug: matching tested cookie.family, which parseXauth never sets,
         // so this entry could never be chosen and the connection went out with
@@ -114,20 +120,38 @@ describe('Xauthority', () => {
         assert.strictEqual(cookie.authName, '', 'wildcard is over the address, not the display');
     });
 
-    it('says which file it read and what was in it when nothing matches', async () => {
-        // the silent half of the bug: without this the only symptom is the
-        // server's generic "Authorization required", identical to having no
-        // Xauthority file at all
+    it('stays quiet when nothing matches, until the server actually refuses', async () => {
+        // the server may well accept the unauthenticated connection, and then
+        // the mismatch cost nothing — warning up front was both noise and a
+        // copy of the file's contents in whatever log captured stderr
         const file = useAuthFile(entry(FAMILY_LOCAL, 'otherhost', '0', 'MIT-MAGIC-COOKIE-1', KEY));
 
-        const cookie = await lookup('0', 'myhost');
+        const { cookie, warnIfRefused } = await lookupWithReport('0', 'myhost');
         assert.strictEqual(cookie.authName, '');
+        assert.deepStrictEqual(warnings, [], 'the outcome is not known yet, so nothing to say');
+
+        // the server refused: now the mismatch is the diagnosis
+        warnIfRefused();
         assert.strictEqual(warnings.length, 1);
         const said = warnings[0];
+        assert.ok(said.includes('the server refused the connection'),
+            'describes what happened, not a prediction');
         assert.ok(said.includes(file), 'names the file it read');
         assert.ok(said.includes('"myhost"'), 'names what it was looking for');
         assert.ok(said.includes('"otherhost"'), 'names what it found instead');
         assert.ok(!said.includes(KEY.toString('latin1')), 'never prints the key itself');
+
+        warnIfRefused();
+        assert.strictEqual(warnings.length, 1, 'the same diagnosis is printed once');
+    });
+
+    it('hands back no refusal report when a cookie matched', async () => {
+        useAuthFile(entry(FAMILY_LOCAL, 'myhost', '0', 'MIT-MAGIC-COOKIE-1', KEY));
+
+        const { cookie, warnIfRefused } = await lookupWithReport('0', 'myhost');
+        assert.strictEqual(cookie.authName, 'MIT-MAGIC-COOKIE-1');
+        assert.strictEqual(warnIfRefused, undefined,
+            'a refusal with a matching cookie is not the no-entry story');
     });
 
     it('stays quiet when there is no Xauthority file at all', async () => {

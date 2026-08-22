@@ -111,4 +111,69 @@ describe('Client', () => {
         done('should not reach here before first done()');
     });
   });
+
+  it('prints the Xauthority no-match diagnosis only when the server refuses', done => {
+    // the warning used to fire on every connection, before the server had
+    // answered, and was usually wrong about the outcome (react-x11#371). Here
+    // the server does refuse, so the diagnosis must still arrive.
+    const fs = require('fs');
+    const os = require('os');
+    const path = require('path');
+    const net = require('net');
+
+    // an Xauthority whose single entry cannot match this connection:
+    // family Local (256), an address no machine has, display "0"
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'x11-noauth-'));
+    const authFile = path.join(home, 'authfile');
+    const fields = [Buffer.from('no-such-host-entry'), Buffer.from('0'),
+        Buffer.from('MIT-MAGIC-COOKIE-1'), Buffer.alloc(16, 0xcd)];
+    fs.writeFileSync(authFile, Buffer.concat([Buffer.from([1, 0])].concat(
+        fields.flatMap(f => [Buffer.from([f.length >> 8, f.length & 0xff]), f]))));
+    const savedXauthority = process.env.XAUTHORITY;
+    process.env.XAUTHORITY = authFile;
+
+    const warnings = [];
+    const originalWarn = console.warn;
+    console.warn = (...args) => warnings.push(args.join(' '));
+
+    let finished = false;
+    const finish = err => {
+        if (finished) return;
+        finished = true;
+        console.warn = originalWarn;
+        if (savedXauthority === undefined) delete process.env.XAUTHORITY;
+        else process.env.XAUTHORITY = savedXauthority;
+        fs.rmSync(home, { recursive: true, force: true });
+        server.close(() => done(err));
+    };
+
+    const reason = 'Authorization required, but no authorization protocol specified';
+    const server = net.createServer(sock => {
+        sock.once('data', () => {
+            // X11 setup Failed reply; the client reads the status byte and
+            // the reason length, skips the rest of the header, then the text
+            sock.end(Buffer.concat([
+                Buffer.from([0, reason.length]), Buffer.alloc(6), Buffer.from(reason)
+            ]));
+        });
+    });
+    server.listen(0, '127.0.0.1', () => {
+        // createClient dials TCP port 6000 + displayNum
+        const displayNum = server.address().port - 6000;
+        const client = x11.createClient({ display: `127.0.0.1:${displayNum}` }, () => {});
+        client.on('error', err => {
+            try {
+                assert.match(err.message, /Authorization required/);
+                assert.strictEqual(warnings.length, 1,
+                    `expected exactly the diagnosis, got: ${JSON.stringify(warnings)}`);
+                assert.ok(warnings[0].includes('the server refused the connection'),
+                    'describes what happened, not a prediction');
+                assert.ok(warnings[0].includes(authFile), 'names the file it read');
+                finish();
+            } catch (e) {
+                finish(e);
+            }
+        });
+    });
+  });
 });
