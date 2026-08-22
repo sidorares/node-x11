@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.9.2](https://github.com/sidorares/node-x11/compare/v3.9.1...v3.9.2) (2026-08-22)
+
+
+### Bug Fixes
+
+* **auth:** warn about an unmatched Xauthority only when the server refuses ([#281](https://github.com/sidorares/node-x11/issues/281)) ([fddd969](https://github.com/sidorares/node-x11/commit/fddd969f9a34be0d68e0f2594531d5e47c9cc176))
+* GrabKeyboard wrote the grab modes inside the time field ([#283](https://github.com/sidorares/node-x11/issues/283)) ([ce11571](https://github.com/sidorares/node-x11/commit/ce11571bcf4597113a0e1ff3aa861f1281e77922))
+
 ## [3.9.1](https://github.com/sidorares/node-x11/compare/v3.9.0...v3.9.1) (2026-08-14)
 
 
