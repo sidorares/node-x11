@@ -79,6 +79,7 @@ are dropped when it disconnects. No reply.
 ### ScreenSaverNotify
 Delivered after `SelectInput`. Parsed fields:
 
+- `type` — wire event type (`firstEvent + Saver.events.ScreenSaverNotify`)
 - `state` — new saver state (`Saver.State`; `Cycle: 2` for cycle events)
 - `seq` — sequence number
 - `time` — server timestamp

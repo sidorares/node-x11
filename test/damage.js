@@ -35,6 +35,8 @@ describe('DAMAGE extension', () => {
                 return;
             X.removeListener('event', listener);
             ev.drawable.should.equal(wid);
+            // routing by type must work as it does for every other event
+            ev.type.should.equal(this.damage.firstEvent + this.damage.events.DamageNotify);
             this.damage.Destroy(damage);
             X.FreeGC(gc);
             X.DestroyWindow(wid);

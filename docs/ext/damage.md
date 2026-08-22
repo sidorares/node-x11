@@ -72,6 +72,7 @@ Delivered when a monitored drawable changes, subject to the report level.
 Not selected via an event mask — creating a damage object selects delivery.
 Parsed fields:
 
+- `type` — wire event type (`firstEvent + Damage.events.DamageNotify`)
 - `level` — report level of the damage object (`Damage.ReportLevel`); the
   server may set bit `0x80` when more events for the same drawable follow
 - `seq` — sequence number
