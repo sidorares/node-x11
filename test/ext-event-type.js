@@ -4,11 +4,7 @@
 // that reports only `name` is invisible to a type-keyed dispatcher.
 //
 // Hermetic: the client is stubbed, so this needs no X server.
-//
-// Apple-WM is the documented exception: its three notifies publish the kind
-// code (EventKind.*) as `event.type`, which is what docs/ext/apple-wm.md
-// tells consumers to switch on. Correcting that is a breaking change, so it
-// is left alone here rather than fixed in passing.
+
 
 const assert = require('assert');
 const fs = require('fs');
@@ -50,11 +46,7 @@ describe('extension event parsers', () => {
     const files = fs.readdirSync(path.join(__dirname, '..', 'lib', 'ext'))
         .filter(f => f.endsWith('.js'));
 
-    const skip = new Set(['apple-wm.js']);
-
     for (const file of files) {
-        if (skip.has(file))
-            continue;
         const parsers = loadParsers(file);
         const types = Object.keys(parsers).map(Number);
         if (types.length === 0)

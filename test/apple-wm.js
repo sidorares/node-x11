@@ -80,6 +80,22 @@ describe('Apple-WM', () => {
     }
   });
 
+  it('parses a notify into name/type/kind/time/arg', () => {
+    const { X } = makeExt();
+    // xAppleWMNotifyEvent: type, kind, sequenceNumber, time, pad1, arg
+    // -> the parser gets bytes 8+, so arg sits at raw offset 2
+    const raw = Buffer.alloc(24);
+    raw.writeUInt32LE(0x12345678, 2);
+    const type = FIRST_EVENT + 0;
+    const ev = X.eventParsers[type](type, 9, 0xaabbccdd, 2 /* CloseWindow */, raw);
+    assert.strictEqual(ev.name, 'AppleWMControllerNotify');
+    assert.strictEqual(ev.type, type, 'type is the wire event type');
+    assert.strictEqual(ev.kind, 2, 'kind is the detail byte (EventKind.*)');
+    assert.strictEqual(ev.seq, 9);
+    assert.strictEqual(ev.time, 0xaabbccdd);
+    assert.strictEqual(ev.arg, 0x12345678);
+  });
+
   it('encodes FrameHitTest with px/py after the pad word', () => {
     const { ext, last } = makeExt();
     ext.FrameHitTest(
