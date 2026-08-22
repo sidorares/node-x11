@@ -1,5 +1,16 @@
 # Changelog
 
+## [4.0.0](https://github.com/sidorares/node-x11/compare/v3.9.2...v4.0.0) (2026-08-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **ext:** Apple-WM notify events report the EventKind code as `event.kind`; `event.type` is now the wire event type.
+
+### Bug Fixes
+
+* **ext:** report the wire event type on every extension event ([#284](https://github.com/sidorares/node-x11/issues/284)) ([8fddbcc](https://github.com/sidorares/node-x11/commit/8fddbcc6d4598f1fba7f173c50be16f8dafc9a1a))
+
 ## [3.9.2](https://github.com/sidorares/node-x11/compare/v3.9.1...v3.9.2) (2026-08-22)
 
 
