@@ -164,6 +164,21 @@ describe('xserver: grabs', () => {
         });
     });
 
+    it('GrabKeyboard marshals time and the modes at their protocol offsets', done => {
+        // Regression: the modes used to be written at bytes 10/11 — inside the
+        // time field — so a real server saw a garbage timestamp and both modes
+        // as Synchronous. Distinct values on every field catch any reshuffle.
+        A.GrabKeyboard(winA, 0, 0x12345678, 1, 0, (err, status) => {
+            if (err) return done(err);
+            assert.strictEqual(status, 0);
+            assert.strictEqual(server.grabs.keyboard.time, 0x12345678);
+            assert.strictEqual(server.grabs.keyboard.pointerMode, 1);
+            assert.strictEqual(server.grabs.keyboard.keybMode, 0);
+            A.UngrabKeyboard(0);
+            sync(A, () => done());
+        });
+    });
+
     it('GrabKey activates a keyboard grab for the matching key only', done => {
         // A passively grabs key 38 on the root (ancestor of every window)
         A.GrabKey(root, 0, 0x8000, 38, 1, 1);
