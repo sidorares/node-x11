@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1](https://github.com/sidorares/node-x11/compare/v4.0.0...v4.0.1) (2026-08-23)
+
+
+### Performance Improvements
+
+* cache QueryExtension replies for the life of a connection ([#287](https://github.com/sidorares/node-x11/issues/287)) ([8300184](https://github.com/sidorares/node-x11/commit/830018433a0c7f17f1f1e99290300214a0083017))
+
 ## [4.0.0](https://github.com/sidorares/node-x11/compare/v3.9.2...v4.0.0) (2026-08-23)
 
 
