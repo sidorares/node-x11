@@ -655,6 +655,12 @@ Opcode 98. `cb(err, ext)` — `{present, majorOpcode, firstEvent,
 firstError}`. Normally not called directly: `X.require(module, cb)` performs
 it (and the extension setup) for you, see [README.md](README.md#extensions).
 
+A server's extension set is fixed for the life of a connection, so replies are
+cached and a repeat query answers without a round trip — including a
+`present: 0` answer, which is what keeps code that re-probes for a missing
+extension off the wire. Each call gets its own reply object, so it is safe to
+add properties to one.
+
 ### ListExtensions(cb)
 Opcode 99. `cb(err, names)` — array of extension name strings.
 
