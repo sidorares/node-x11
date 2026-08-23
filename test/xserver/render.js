@@ -84,6 +84,31 @@ describe('xserver: RENDER', () => {
             assert.ok(render.mono1, 'mono1');
         });
 
+        it('QueryPictFormats decodes the screens section', done => {
+            render.QueryPictFormats((err, res) => {
+                if (err) return done(err);
+                assert.strictEqual(res.screens.length, 1);
+                const screen = res.screens[0];
+                assert.strictEqual(screen.fallback, render.rgb24);
+                assert.deepStrictEqual(screen.depths, [{
+                    depth: 24,
+                    visuals: [{
+                        visual: display.screen[0].root_visual,
+                        format: render.rgb24
+                    }]
+                }]);
+                assert.deepStrictEqual(res.subpixels, [render.Subpixel.Unknown]);
+                done();
+            });
+        });
+
+        it('findVisualFormat answers for the root visual', () => {
+            assert.strictEqual(
+                render.findVisualFormat(display.screen[0].root_visual),
+                render.rgb24);
+            assert.strictEqual(render.findVisualFormat(0x12345), undefined);
+        });
+
         it('QueryFilters lists nearest/bilinear/convolution', done => {
             render.QueryFilters((err, res) => {
                 if (err) return done(err);

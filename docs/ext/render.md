@@ -24,13 +24,17 @@ X.require('render', (err, Render) => {
 });
 ```
 
-While requiring, the module calls `QueryPictFormat` and scans the reply for
-the standard formats, exposing their PICTFORMAT ids as properties:
+While requiring, the module calls `QueryPictFormat`, keeps the whole reply as
+`Render.pictFormats`, and scans it for the standard formats, exposing their
+PICTFORMAT ids as properties:
 
 - `Render.mono1` — 1-bit alpha (a1)
 - `Render.rgb24` — 24-bit TrueColor without alpha (x8r8g8b8)
 - `Render.rgba32` — 32-bit TrueColor with alpha (a8r8g8b8)
 - `Render.a8` — 8-bit alpha-only
+
+Those four cover the visuals a client picks for itself; for a visual chosen by
+someone else, see `findVisualFormat` below.
 
 Colors are given as `[r, g, b, a]` arrays of floats in 0..1 (clamped, scaled
 to 16 bits per channel). Coordinates and matrix/filter values are JS numbers
@@ -52,6 +56,28 @@ Two things about colors are easy to get wrong, and both fail quietly:
   `const rgba = (r, g, b, a) => [r * a, g * a, b * a, a]` and calling that is
   the readable way to keep it straight; the examples do.
 
+## Visual to format lookup
+
+### findVisualFormat(visual)
+Returns the PICTFORMAT id RENDER uses for `visual`, or `undefined` if RENDER
+describes no format for it. Synchronous: it answers out of the screens section
+of the `QueryPictFormat` reply cached while requiring the extension, so no
+round trip and no callback. Visual ids are unique across screens, so the
+screen the visual belongs to does not have to be named.
+
+The case for it is a visual the client did not choose — a compositing manager
+wrapping a redirected window's pixmap gets the window's visual id from
+`GetWindowAttributes`, and the format that describes it is whatever the server
+says, not what its depth suggests (depth 32 alone does not tell RGBA from
+BGRA, and a 565 visual matches none of the standard formats):
+
+```js
+X.GetWindowAttributes(win, (err, attrs) => {
+    const pic = X.AllocID();
+    Render.CreatePicture(pic, pixmap, Render.findVisualFormat(attrs.visual));
+});
+```
+
 ## Requests
 
 ### QueryVersion(clientMajor, clientMinor, cb)
@@ -59,7 +85,13 @@ Two things about colors are easy to get wrong, and both fail quietly:
 carries no version fields unless you call this yourself.
 
 ### QueryPictFormat(cb) / QueryPictFormats(cb)
-`cb(err, {formats})` — `formats` is an array of 12-element arrays:
+`cb(err, {formats, screens, subpixels})`. `QueryPictFormats` is a
+protocol-name alias. Called automatically by `X.require`, which keeps the
+reply as `Render.pictFormats`.
+
+`formats` lists every picture format the server supports. Each entry is a
+12-element array that also carries the same fields under names — `f[2]` and
+`f.depth` are one field, not two, so old positional code keeps working:
 
 ```
 [id, type, depth,
@@ -67,9 +99,27 @@ carries no version fields unless you call this yourself.
  blueShift, blueMask, alphaShift, alphaMask, colormap]
 ```
 
-`QueryPictFormats` is a protocol-name alias. The screen/depth/visual and
-subpixel sections of the reply are not parsed. Called automatically by
-`X.require` to discover the standard formats above.
+`type` is `Render.PictType.Direct` or `.Indexed`; `colormap` is a colormap id
+or 0 (None). Shifts and masks describe the channel layout of a direct format:
+the red channel of `x8r8g8b8` is `redShift: 16, redMask: 255`. Note the masks
+are the mask *value*, not its width.
+
+`screens` has one entry per screen, in the order of `display.screen`:
+
+```js
+{ fallback,                              // PICTFORMAT for drawables with no
+  depths: [                              //   matching visual (e.g. pixmaps)
+    { depth, visuals: [ { visual, format } ] }
+  ] }
+```
+
+This is the mapping from a visual id to the format that describes it — use
+`findVisualFormat` rather than walking it by hand. A visual the server cannot
+composite (a rarely-supported depth) has no entry.
+
+`subpixels` is one `Render.Subpixel` value per screen, the physical subpixel
+order the screen reports for LCD glyph anti-aliasing. Servers older than
+RENDER 0.6 send none, so the array can be shorter than `screens`.
 
 ### QueryPictIndexValues(pictformat, cb)
 `cb(err, values)` — array of `{pixel, red, green, blue, alpha}`. Only valid
@@ -243,6 +293,7 @@ does not name a defined ...").
     blend modes Multiply..HSLLuminosity (0x30..0x3e).
   - `Render.PolyEdge = {Sharp: 0, Smooth: 1}`,
     `Render.PolyMode = {Precise: 0, Imprecise: 1}`
+  - `Render.PictType = {Indexed: 0, Direct: 1}`
   - `Render.Repeat = {None: 0, Normal: 1, Pad: 2, Reflect: 3}`
   - `Render.Subpixel = {Unknown: 0, HorizontalRGB: 1, HorizontalBGR: 2,
     VerticalRGB: 3, VerticalBGR: 4, None: 5}`
