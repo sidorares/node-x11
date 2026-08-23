@@ -90,6 +90,79 @@ describe('RENDER extension', () => {
         });
     });
 
+    it('QueryPictFormats should name the fields of every format entry', done => {
+        render.QueryPictFormats((err, res) => {
+            should.not.exist(err);
+            const rgb24 = res.formats.find(f => f.id === render.rgb24);
+            should.exist(rgb24);
+            // named fields alias the positional ones, they are one entry
+            rgb24.id.should.equal(rgb24[0]);
+            rgb24.type.should.equal(rgb24[1]);
+            rgb24.depth.should.equal(rgb24[2]);
+            rgb24.redShift.should.equal(rgb24[3]);
+            rgb24.redMask.should.equal(rgb24[4]);
+            rgb24.greenShift.should.equal(rgb24[5]);
+            rgb24.greenMask.should.equal(rgb24[6]);
+            rgb24.blueShift.should.equal(rgb24[7]);
+            rgb24.blueMask.should.equal(rgb24[8]);
+            rgb24.alphaShift.should.equal(rgb24[9]);
+            rgb24.alphaMask.should.equal(rgb24[10]);
+            rgb24.colormap.should.equal(rgb24[11]);
+            rgb24.type.should.equal(render.PictType.Direct);
+            rgb24.depth.should.equal(24);
+            done();
+        });
+    });
+
+    it('QueryPictFormats should decode the screens and subpixel sections', done => {
+        render.QueryPictFormats((err, res) => {
+            should.not.exist(err);
+            res.screens.should.be.an.Array();
+            res.screens.length.should.equal(display.screen.length);
+            const ids = res.formats.map(f => f.id);
+            res.screens.forEach(screen => {
+                ids.should.containEql(screen.fallback);
+                screen.depths.should.be.an.Array();
+                screen.depths.length.should.be.above(0);
+                screen.depths.forEach(d => {
+                    d.depth.should.be.a.Number();
+                    d.visuals.forEach(v => {
+                        v.visual.should.be.a.Number();
+                        ids.should.containEql(v.format);
+                    });
+                });
+            });
+            // one subpixel order per screen since RENDER 0.6
+            res.subpixels.should.be.an.Array();
+            res.subpixels.forEach(s => {
+                s.should.be.within(render.Subpixel.Unknown, render.Subpixel.None);
+            });
+            done();
+        });
+    });
+
+    it('findVisualFormat should map the root visual to a format of its depth', () => {
+        const format = render.findVisualFormat(display.screen[0].root_visual);
+        should.exist(format);
+        const info = render.pictFormats.formats.find(f => f.id === format);
+        should.exist(info);
+        info.depth.should.equal(depth);
+        should.not.exist(render.findVisualFormat(0xdeadbeef));
+    });
+
+    it('findVisualFormat should cover every visual of the connection setup', () => {
+        // the setup block lists the server's visuals; RENDER describes the
+        // ones it can composite, and must not invent ids for the others
+        const ids = render.pictFormats.formats.map(f => f.id);
+        Object.keys(display.screen[0].depths).forEach(d => {
+            Object.keys(display.screen[0].depths[d]).forEach(visual => {
+                const format = render.findVisualFormat(Number(visual));
+                if (format !== undefined)
+                    ids.should.containEql(format);
+            });
+        });
+    });
+
     it('QueryPictIndexValues should return Match error for a direct (non-indexed) format', done => {
         // Xvfb only has TrueColor/direct formats, so the server must answer
         // with a Match error - proves the request is correctly formed
