@@ -27,7 +27,9 @@ say on the wire).
   the client)
 - Source: [`lib/ext/dri3.js`](../../lib/ext/dri3.js) ·
   Tests: [`test/dri3.js`](../../test/dri3.js) (encoding, no server needed),
-  [`test/dri3-live.js`](../../test/dri3-live.js) (against a DRI3 server)
+  [`test/dri3-live.js`](../../test/dri3-live.js) (against a DRI3 server),
+  [`test/bun/fdpass.test.js`](../../test/bun/fdpass.test.js) (the Bun
+  descriptor transport)
 - Spec: [dri3proto.txt](https://gitlab.freedesktop.org/xorg/proto/xorgproto/-/blob/master/dri3proto.txt)
 - Working samples: [`examples/dri3/`](../../examples/dri3/) — a
   self-contained folder (own `package.json`, `npm install && npm start`)
@@ -56,7 +58,7 @@ native companion package [`x11-dri`](https://github.com/sidorares/node-x11-dri)
 (`npm install x11-dri`) provides two such producers (an OpenGL ES 2 renderer
 and udmabuf) plus `dup()`; the `x11` package itself stays pure JS.
 
-## Descriptors only flow client → server
+## Which direction descriptors can flow
 
 Requests that *send* descriptors (`PixmapFromBuffer`, `PixmapFromBuffers`,
 `FenceFromFD`, `ImportSyncobj`) work on any fd-capable connection — the
@@ -66,10 +68,16 @@ matching how they are produced (`gbm_bo_get_fd` returns a fresh fd whose only
 purpose is this send). Keep a copy with `dup()` first if you need one.
 
 The four requests whose **replies carry descriptors** — `Open`,
-`BufferFromPixmap`, `FDFromFence`, `BuffersFromPixmap` — are not wired: a
-descriptor arriving on the connection aborts the Node process before any JS
-runs (the libuv abort described in `lib/fdpass.js`), so they report an error
-instead of touching the wire. In practice none of them is needed:
+`BufferFromPixmap`, `FDFromFence`, `BuffersFromPixmap` — need a connection
+that can *receive* one, which depends on the runtime:
+
+| runtime | sending | receiving |
+|---|---|---|
+| Node | yes, on a local unix socket | no: an arriving descriptor aborts the process (the libuv abort described in `lib/fdpass.js`) |
+| Bun | yes, on a local unix socket | with `createClient({ receiveFds: true })` — see [Running under Bun](../README.md#running-under-bun) |
+
+Where they are unavailable they report an explanatory error instead of
+touching the wire, and in practice none of them is needed:
 
 - instead of `Open` (get a DRM device fd from the server), open a **render
   node** directly — `fs.openSync('/dev/dri/renderD128', 'r+')` — which
@@ -80,7 +88,9 @@ instead of touching the wire. In practice none of them is needed:
   create the buffers client-side and import them.
 
 `DRI3.fdCapable` tells whether this connection can send descriptors at all
-(false on TCP or on a transport without the fd-capable socket).
+(false on TCP or on a transport without the fd-capable socket);
+`DRI3.fdReceiveCapable` whether the four requests above will work.
+Descriptors that arrive are **owned by the caller** — close them when done.
 
 ## Requests
 
@@ -123,9 +133,31 @@ major/minor (`fs.fstatSync(fd).rdev` decoded). Void.
 Imports (and frees) a DRM timeline syncobj for explicit synchronization with
 Present 1.4 servers. The fd is consumed.
 
-### Open / BufferFromPixmap / FDFromFence / BuffersFromPixmap
-Refused with an explanatory error — their replies carry descriptors (see
-above).
+### Open(drawable, provider, cb) — needs a receiving connection
+`cb(err, fd)` with the DRM device descriptor for `drawable`'s screen, already
+authenticated for direct rendering; `provider` picks the GPU on a multi-GPU
+screen (`0` for the default one). The descriptor is yours to close.
+
+### BufferFromPixmap(pixmap, cb) — needs a receiving connection
+The inverse of `PixmapFromBuffer`: exports the pixmap's storage as a dma-buf.
+`cb(err, { fd, size, width, height, stride, depth, bpp })`. The pixels behind
+the descriptor are the server's, live; the descriptor is yours to close.
+
+### BuffersFromPixmap(pixmap, cb) — DRI3 ≥ 1.2, needs a receiving connection
+The multi-planar, modifier-aware inverse of `PixmapFromBuffers`.
+`cb(err, { width, height, modifier, depth, bpp, planes })` with `planes` an
+array of `{fd, stride, offset}` — shaped like the `opts` `PixmapFromBuffers`
+takes, so a buffer can be handed straight to another screen. `modifier` is a
+**BigInt**. Every plane descriptor is yours to close.
+
+### FDFromFence(drawable, fence, cb) — needs a receiving connection
+The inverse of `FenceFromFD`: `cb(err, fd)` with the poll-able fence
+descriptor behind a SYNC fence. The descriptor is yours to close.
+
+Each of the four needs a callback (there would be nothing to hand the
+descriptors to) and reports an error, rather than touching the wire, when the
+connection cannot receive descriptors — see
+[Which direction descriptors can flow](#which-direction-descriptors-can-flow).
 
 ## Constants
 

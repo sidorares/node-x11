@@ -97,7 +97,15 @@ Passing a descriptor uses Node's internal `pipe_wrap` binding (there is no
 public API for `SCM_RIGHTS`). It is isolated in [`lib/fdpass.js`](../../lib/fdpass.js)
 and fully guarded: under `--permission`, in a browser bundle, or if the binding
 ever disappears, the connection silently falls back to a plain socket and
-`usable()` reports false.
+`usable()` reports false. Under Bun, where those bindings do not exist, the
+same descriptor is passed with `sendmsg(2)` through `bun:ffi`
+([`lib/fdpass-bun.js`](../../lib/fdpass-bun.js)) — picked automatically, so
+`AttachFd` behaves the same on either runtime.
+
+`CreateSegment` (minor opcode 7, where the *server* allocates the segment and
+returns its descriptor) is not implemented: receiving a descriptor aborts the
+Node process, and the built-in provider has no use for it — it allocates the
+segment itself.
 
 ### Writing a provider
 

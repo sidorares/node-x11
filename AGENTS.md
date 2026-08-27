@@ -54,6 +54,7 @@ No build step, no transpilation: `lib/` is what ships.
 ```sh
 npm run test:local   # = ./scripts/test-local.sh
 npm run lint         # eslint: no-var / prefer-const / no-redeclare
+npm run test:bun     # = bun test test/bun (only if bun is installed)
 ```
 
 Full suite takes ~2 s. It starts (or reuses) a private Xvfb on display `:99`
@@ -72,6 +73,10 @@ Details the script handles for you:
 - `test-runner.js` (not plain mocha) is the entry point: it probes the server
   and skips `dpms.js` / `xtest.js` / `randr.js` when the extension is missing.
   To run a single file directly: `DISPLAY=… npx mocha test/<file>.js`.
+- `test/bun/` is the one suite Node cannot run: the descriptor transport built
+  on `bun:ffi` (`lib/fdpass-bun.js`). It needs `bun` on PATH; its X-server
+  tests skip themselves when `DISPLAY` is unset. Subdirectories of `test/` are
+  invisible to `test-runner.js`, so `npm test` is unaffected either way.
 
 ## Repo map
 
@@ -85,6 +90,7 @@ Details the script handles for you:
 | `lib/generated/` | Auto-generated parsers from `autogen/proto/` (`npm run gen:protocol`) |
 | `lib/auth.js` | `~/.Xauthority` parsing / auth negotiation |
 | `lib/ext/*.js` | Protocol extensions (render, randr, glx, xtest, dpms, …) |
+| `lib/fdpass.js`, `lib/fdpass-bun.js` | File-descriptor passing (`SCM_RIGHTS`) for MIT-SHM/DRI3: Node bindings and the Bun `bun:ffi` transport |
 | `lib/keysyms.js` | Generated keysym table (see `lib/keysyms.update.sh`) |
 | `lib/xserver.js` | Experimental X server implementation |
 | `autogen/` | Scripts that generate request stubs from XML protocol specs (xcb-proto) |

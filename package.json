@@ -54,6 +54,7 @@
     "test:local": "./scripts/test-local.sh",
     "test:glx-emu": "mocha test/glx-emu/ --timeout 10000",
     "test:xserver": "mocha test/xserver/ --timeout 10000",
+    "test:bun": "bun test test/bun",
     "lint": "eslint .",
     "gen:events": "node autogen/generate-events.js",
     "gen:replies": "node autogen/generate-replies.js",

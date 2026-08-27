@@ -15,6 +15,11 @@ protocol prefix (`x11.registerDisplayProtocol(name, connect)` +
 `myproto/host:0`), and `createClient({ stream })` accepts any duplex stream.
 See the [custom transports guide](https://sidorares.github.io/node-x11/docs/guides/custom-transports).
 
+It runs under [Bun](https://bun.sh) too, including the parts that pass file
+descriptors over the connection (MIT-SHM segments, DRI3 buffers) — and there,
+uniquely, descriptors can also be *received*: see
+[Running under Bun](docs/README.md#running-under-bun).
+
 ## Install
 
     npm install x11

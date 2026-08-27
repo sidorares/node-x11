@@ -259,6 +259,10 @@ describe('DRI3 extension (encoding)', () => {
         }));
     });
 
+    it('reports that the connection cannot receive descriptors', () => {
+        DRI3.fdReceiveCapable.should.equal(false);
+    });
+
     it('fails cleanly and consumes the descriptor when the connection cannot pass fds', done => {
         const plain = fakeClient({}); // stream without sendFds
         requireDri3(plain, ext => {
@@ -271,6 +275,164 @@ describe('DRI3 extension (encoding)', () => {
                 done();
             });
         });
+    });
+});
+
+// The reverse direction: replies that carry descriptors. Only a transport
+// that can receive them puts these four requests on the wire (Bun with
+// createClient({ receiveFds: true }) — see lib/fdpass-bun.js), so the fake
+// stream here grows the takeFds() queue such a transport exposes.
+describe('DRI3 extension (replies carrying descriptors)', () => {
+
+    let h;
+    let DRI3;
+    let arrived; // descriptors the "transport" has queued, in arrival order
+
+    const receivingStream = () => {
+        arrived = [];
+        return {
+            _fdCapable: true,
+            _fdReceiving: true,
+            sendFds: () => {},
+            takeFds: n => arrived.splice(0, n)
+        };
+    };
+
+    // answer the pending reply with `body` (the reply from byte 8 on) and
+    // `nfd` in the header's data byte, after handing `fds` to the transport
+    const respondWithFds = (body, fds) => {
+        arrived.push(...fds);
+        h.respond(h.X.seq_num, body, fds.length);
+    };
+
+    const openNull = () => fs.openSync('/dev/null', 'r');
+
+    beforeEach(done => {
+        h = fakeClient(receivingStream());
+        requireDri3(h, ext => {
+            DRI3 = ext;
+            h.sent.length = 0;
+            done();
+        });
+    });
+
+    it('reports that the connection can receive descriptors', () => {
+        DRI3.fdReceiveCapable.should.equal(true);
+    });
+
+    it('encodes Open and hands back the device descriptor', done => {
+        const fd = openNull();
+        DRI3.Open(0x321, 0, (err, deviceFd) => {
+            should.not.exist(err);
+            deviceFd.should.equal(fd);
+            fs.closeSync(deviceFd);
+            done();
+        });
+        const { buf } = h.sent[0];
+        buf.length.should.equal(12);           // sz_xDRI3OpenReq
+        buf.readUInt8(0).should.equal(OPCODE);
+        buf.readUInt8(1).should.equal(1);      // minor opcode
+        buf.readUInt16LE(2).should.equal(3);
+        buf.readUInt32LE(4).should.equal(0x321);
+        buf.readUInt32LE(8).should.equal(0);   // provider
+        respondWithFds(Buffer.alloc(24), [fd]);
+    });
+
+    it('encodes BufferFromPixmap and parses the buffer description', done => {
+        const fd = openNull();
+        DRI3.BufferFromPixmap(0x600001, (err, buffer) => {
+            should.not.exist(err);
+            buffer.should.eql({
+                fd, size: 65536, width: 64, height: 32, stride: 256, depth: 24, bpp: 32
+            });
+            fs.closeSync(buffer.fd);
+            done();
+        });
+        const { buf } = h.sent[0];
+        buf.length.should.equal(8);            // sz_xDRI3BufferFromPixmapReq
+        buf.readUInt8(1).should.equal(3);
+        buf.readUInt16LE(2).should.equal(2);
+        buf.readUInt32LE(4).should.equal(0x600001);
+        const body = Buffer.alloc(24);
+        body.writeUInt32LE(65536, 0);          // size
+        body.writeUInt16LE(64, 4);             // width
+        body.writeUInt16LE(32, 6);             // height
+        body.writeUInt16LE(256, 8);            // stride
+        body.writeUInt8(24, 10);               // depth
+        body.writeUInt8(32, 11);               // bpp
+        respondWithFds(body, [fd]);
+    });
+
+    it('encodes FDFromFence and hands back the fence descriptor', done => {
+        const fd = openNull();
+        DRI3.FDFromFence(0x42, 0x99, (err, fenceFd) => {
+            should.not.exist(err);
+            fenceFd.should.equal(fd);
+            fs.closeSync(fenceFd);
+            done();
+        });
+        const { buf } = h.sent[0];
+        buf.length.should.equal(12);           // sz_xDRI3FDFromFenceReq
+        buf.readUInt8(1).should.equal(5);
+        buf.readUInt32LE(4).should.equal(0x42);
+        buf.readUInt32LE(8).should.equal(0x99);
+        respondWithFds(Buffer.alloc(24), [fd]);
+    });
+
+    it('encodes BuffersFromPixmap and parses planes, strides and offsets', done => {
+        const fd0 = openNull();
+        const fd1 = openNull();
+        DRI3.BuffersFromPixmap(0xAB, (err, buffers) => {
+            should.not.exist(err);
+            buffers.width.should.equal(128);
+            buffers.height.should.equal(64);
+            buffers.depth.should.equal(24);
+            buffers.bpp.should.equal(32);
+            buffers.modifier.should.equal(0x0100000000000001n); // > 2^53: BigInt
+            buffers.planes.should.eql([
+                { fd: fd0, stride: 512, offset: 0 },
+                { fd: fd1, stride: 256, offset: 32768 }
+            ]);
+            buffers.planes.forEach(p => fs.closeSync(p.fd));
+            done();
+        });
+        const { buf } = h.sent[0];
+        buf.length.should.equal(8);            // sz_xDRI3BuffersFromPixmapReq
+        buf.readUInt8(1).should.equal(8);
+        buf.readUInt16LE(2).should.equal(2);
+        buf.readUInt32LE(4).should.equal(0xAB);
+        const body = Buffer.alloc(24 + 4 * 4);
+        body.writeUInt16LE(128, 0);            // width
+        body.writeUInt16LE(64, 2);             // height
+        body.writeBigUInt64LE(0x0100000000000001n, 8); // modifier
+        body.writeUInt8(24, 16);               // depth
+        body.writeUInt8(32, 17);               // bpp
+        body.writeUInt32LE(512, 24);           // strides
+        body.writeUInt32LE(256, 28);
+        body.writeUInt32LE(0, 32);             // offsets
+        body.writeUInt32LE(32768, 36);
+        respondWithFds(body, [fd0, fd1]);
+    });
+
+    it('reports a reply whose descriptors did not all arrive, and closes what did', done => {
+        const fd = openNull();
+        DRI3.BuffersFromPixmap(1, err => {
+            should.exist(err);
+            err.message.should.match(/declared 2 descriptors but 1 arrived/);
+            should.throws(() => fs.fstatSync(fd)); // closed, not leaked
+            done();
+        });
+        const body = Buffer.alloc(24 + 4 * 4);
+        arrived.push(fd);
+        h.respond(h.X.seq_num, body, 2); // the reply claims two
+    });
+
+    it('requires a callback: there would be nothing to hand the descriptors to', () => {
+        should.throws(() => DRI3.Open(1, 0), /needs a callback/);
+        should.throws(() => DRI3.BufferFromPixmap(1), /needs a callback/);
+        should.throws(() => DRI3.FDFromFence(1, 2), /needs a callback/);
+        should.throws(() => DRI3.BuffersFromPixmap(1), /needs a callback/);
+        h.sent.length.should.equal(0);
     });
 });
 
