@@ -35,6 +35,20 @@ jobs:
       - run: npm run test:xserver
       - run: npm run test:glx-emu
 
+  # The Bun descriptor transport (lib/fdpass-bun.js): sendmsg/recvmsg through
+  # bun:ffi, which Node's suite cannot exercise.
+  test-bun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install Xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Run the Bun suite under Xvfb
+        run: xvfb-run -a -s "-screen 0 1280x1024x24 -nolisten tcp" bun test test/bun
+
   test:
     runs-on: ubuntu-latest
     # Tests run inside debian bookworm containers rather than on the runner:

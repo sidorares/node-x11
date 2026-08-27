@@ -30,6 +30,7 @@ x11.createClient((err, display) => {
 | `bufferRequests` | batch outgoing requests into fewer socket writes: `true`, or `{ maxSize, maxDelay, flushOnReply, shouldFlush }` — see [Buffering the output](#buffering-the-output) |
 | `tcpNoDelay` | turn Nagle's algorithm off on a TCP connection (default: on when `bufferRequests` is set) |
 | `shm` | MIT-SHM segment provider: unset for the built-in one on local connections, `false`/`'off'` to disable, or a provider object — see [ext/shm.md](ext/shm.md) |
+| `receiveFds` | ask for a connection that can also *receive* file descriptors from the server (Bun only) — see [Running under Bun](#running-under-bun) |
 
 The client connects over a unix socket when the display refers to the local
 host (on macOS the display must be a literal socket path, XQuartz launchd
@@ -52,6 +53,33 @@ which looks the same as having no cookie file at all.
 
 `createClient` returns the client object immediately; subscribe to `'error'`
 on it to catch connection-phase failures.
+
+### Running under Bun
+
+The library runs unchanged under [Bun](https://bun.sh). The one part of X11
+that is not plain bytes on a socket is **file-descriptor passing** — MIT-SHM's
+`ShmAttachFd` and DRI3's `PixmapFromBuffer` hand the server a descriptor as
+`SCM_RIGHTS` ancillary data — and that needs a different implementation per
+runtime: Node reaches it through internal bindings
+([`lib/fdpass.js`](../lib/fdpass.js)), Bun through `sendmsg(2)` called with
+`bun:ffi` ([`lib/fdpass-bun.js`](../lib/fdpass-bun.js)). Both are picked
+automatically on a local unix-socket display, so shared memory and DRI3 buffer
+imports work the same on either runtime.
+
+Receiving descriptors is where the two differ. Under Node there is no way to
+do it at all: a descriptor arriving on the connection aborts the process before
+any JavaScript runs. Under Bun it works, on request:
+
+```js
+x11.createClient({ receiveFds: true }, (err, display) => { /* ... */ });
+```
+
+That connection is read with `recvmsg(2)` instead of by Bun's own socket
+reader — which would drop the ancillary data — so it costs a thread blocked in
+`poll(2)`, and is therefore opt-in. It is what makes DRI3 `Open`,
+`BufferFromPixmap`, `BuffersFromPixmap` and `FDFromFence` usable (see
+[ext/dri3.md](ext/dri3.md)); everything else behaves identically. Under Node
+the option is ignored, and those four requests keep reporting an error.
 
 ### The display object
 
