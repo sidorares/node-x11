@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.0](https://github.com/sidorares/node-x11/compare/v4.0.1...v4.1.0) (2026-08-27)
+
+
+### Features
+
+* **bun:** pass file descriptors with bun:ffi, and receive them ([#290](https://github.com/sidorares/node-x11/issues/290)) ([91bfade](https://github.com/sidorares/node-x11/commit/91bfadee6138394ddc6f6e3334a4bdd1b1129fcb))
+
 ## [4.0.1](https://github.com/sidorares/node-x11/compare/v4.0.0...v4.0.1) (2026-08-23)
 
 
