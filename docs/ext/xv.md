@@ -1,14 +1,18 @@
 # XVideo (Xv) extension
 
 Access to hardware video adaptors: scaled/color-converted image output
-(and video input) through per-adaptor "ports". This module implements the
-query/port-management half of the protocol; the actual video-path requests
-are not implemented (see Notes).
+(and video input) through per-adaptor "ports". This module implements
+adaptor/port management and the image path — handing an adaptor a YUV (or
+RGB) frame and letting it convert and scale in hardware. The capture side
+(PutVideo/GetVideo and friends) is not implemented, apart from the
+`StopVideo` teardown every client needs (see Notes).
 
 - Module: `X.require('xv', cb)` (X name `XVideo`, version reported by the
   server, 2.2 on current Xorg/Xvfb)
 - Source: [`lib/ext/xv.js`](../../lib/ext/xv.js) ·
-  Tests: [`test/xv.js`](../../test/xv.js)
+  Tests: [`test/xv.js`](../../test/xv.js),
+  [`test/xserver/xv.js`](../../test/xserver/xv.js) ·
+  Example: [`examples/xv/testpattern.js`](../../examples/xv/testpattern.js)
 - Spec: [xv-protocol-v2.txt](https://xorg.freedesktop.org/releases/X11R7.7/doc/videoproto/xv-protocol-v2.txt)
 
 ```js
@@ -80,10 +84,103 @@ scanlineOrder}`. `id` is the FOURCC as a number, `guid` a 16-byte Buffer,
 `type` an `Xv.ImageFormatInfoType`, `format` an `Xv.ImageFormatInfoFormat`,
 `scanlineOrder` an `Xv.ScanlineOrder`, `compOrder` a string.
 
+### QueryImageAttributes(port, id, width, height, cb)
+`cb(err, {numPlanes, dataSize, width, height, pitches, offsets})` — how a
+frame of image format `id` (from `ListImageFormats`) at `width x height` has
+to be laid out in memory for this port. The server may round the size up
+(planar formats need even dimensions, every plane's pitch is padded), so use
+the `width`/`height` it answers, allocate `dataSize` bytes, and write plane
+`i` at `offsets[i]` with `pitches[i]` bytes per row. Call this before
+`PutImage`, not after.
+
+### PutImage(port, drawable, gc, id, img, [cb])
+Hands the adaptor one frame. `img` is
+`{srcX, srcY, srcWidth, srcHeight, drwX, drwY, drwWidth, drwHeight, width,
+height, data}`: `width`/`height` describe the image in `data` (laid out per
+`QueryImageAttributes`), `src*` selects the part of it to show, `drw*` is the
+destination rectangle in `drawable`. The adaptor scales and colour-converts
+between the two.
+
+```js
+Xv.QueryImageAttributes(port, format.id, 640, 480, (err, plane) => {
+    const frame = Buffer.alloc(plane.dataSize);
+    // ... fill plane 0 at plane.offsets[0], plane.pitches[0] bytes per row
+    Xv.PutImage(port, win, gc, format.id, {
+        srcX: 0, srcY: 0, srcWidth: plane.width, srcHeight: plane.height,
+        drwX: 0, drwY: 0, drwWidth: 1280, drwHeight: 960,
+        width: plane.width, height: plane.height, data: frame
+    });
+});
+```
+
+Two things to know about `data`:
+
+- **It is queued by reference, not copied** (core `PutImage` copies; this one
+  does not, because a frame is large and the point of Xv is to move fewer
+  bytes). Do not overwrite it until the server has read it: alternate two
+  buffers, or wait for `cb`. `ShmPutImage` with `sendEvent` is the proper
+  recycling discipline.
+- **A frame past 256 KiB needs BIG-REQUESTS**, which is enabled by default;
+  the request switches to the extended length encoding on its own. A frame
+  past `display.max_request_length * 4` bytes (that limit is 256 KiB when the
+  connection was made with `disableBigRequests`) is refused before anything
+  is sent — through `cb` if you passed one, otherwise as a thrown `Error` —
+  because a server that reads a length it cannot accept drops the whole
+  connection, not just the request. There is no way to split one XvPutImage:
+  send a smaller frame and let the adaptor scale it up, or use
+  `ShmPutImage`, whose size is bounded by the segment rather than the
+  request.
+
+`cb` is optional and makes this a *checked* void request: it fires with
+`null` once the server has processed the frame, or with the error
+(`XvBadPort`, `BadMatch` for a format the port does not take, `BadAlloc`).
+It forces a round trip, so use it while bringing a pipeline up, not on every
+frame of a playback loop.
+
+### ShmPutImage(port, drawable, gc, shmseg, id, img, [cb])
+`PutImage` with the pixels already in a shared memory segment instead of on
+the wire. `img` takes the same fields except `data`, plus `offset` (where the
+frame starts in the segment) and `sendEvent`. `shmseg` is a segment XID from
+[MIT-SHM](shm.md) — `Shm.createSegment(size, cb)` gives you one with a
+`buffer` to render into.
+
+With `sendEvent: true` the server sends a `ShmCompletion` event once it has
+finished reading the segment, which is what lets you reuse that buffer
+safely; `lib/ext/shm.js` routes it to the segment, so
+`segment.on('complete', ...)` fires:
+
+```js
+Shm.createSegment(plane.dataSize, (err, segment) => {
+    segment.on('complete', () => { /* safe to render the next frame */ });
+    segment.buffer.fill(0x80);
+    segment.commit(0);
+    Xv.ShmPutImage(port, win, gc, segment.shmseg, format.id, {
+        srcX: 0, srcY: 0, srcWidth: w, srcHeight: h,
+        drwX: 0, drwY: 0, drwWidth: w, drwHeight: h,
+        width: w, height: h, offset: 0, sendEvent: true
+    });
+});
+```
+
+### StopVideo(port, drawable, [cb])
+Stops whatever `port` is putting into `drawable` and drops the association
+between the two — the teardown half of `PutImage`, and what makes a server
+send `XvVideoNotify` with reason `Stopped`. Call it when the window a port
+was feeding goes away. Void; `cb` is checked as for `PutImage`.
+
+### SelectVideoNotify(drawable, onoff, [cb])
+Subscribes to (`onoff` true) or unsubscribes from `XvVideoNotify` events for
+`drawable`. Takes a drawable rather than a port, so it works even on a server
+with no adaptors. Void; `cb` is checked as for `PutImage`.
+
+### SelectPortNotify(port, onoff, [cb])
+Subscribes to (`onoff` true) or unsubscribes from `XvPortNotify` events for
+`port` — sent whenever one of its attributes changes, including changes made
+by other clients.
+
 ## Events
 
-Selecting these requires SelectVideoNotify/SelectPortNotify, which are not
-implemented (see Notes); the parsers are registered for completeness.
+Both need the matching Select request above before a server sends them.
 
 ### XvVideoNotify
 Video started/stopped on a drawable. Fields: `type`, `seq`, `reason`
@@ -111,12 +208,23 @@ A port attribute changed. Fields: `type`, `seq`, `time`, `port`,
   InvalidTime: 3, BadReply: 4, BadAlloc: 5}`,
   `Xv.VideoNotifyReason = {Started: 0, Stopped: 1, Busy: 2, Preempted: 3,
   HardError: 4}`.
-- Not implemented: the video-path requests PutVideo (5), PutStill (6),
-  GetVideo (7), GetStill (8), StopVideo (9), SelectVideoNotify (10),
-  SelectPortNotify (11), QueryImageAttributes (17), PutImage (18),
-  ShmPutImage (19). These need a working port to do anything, and Xvfb
-  (the CI server) exposes the extension with zero adaptors, so they cannot
-  be exercised; they are omitted rather than shipped untested.
-- test/xv.js validates the port-based requests against a bogus port: a
-  controlled `XvBadPort` error proves correct request framing. With a real
-  adaptor present the same tests take the success path.
+- Not implemented: the capture-side requests PutVideo (5), PutStill (6),
+  GetVideo (7) and GetStill (8). They drive a video *input* port — a capture
+  card scanning into a drawable — which no current driver ships, and none of
+  them can be exercised anywhere in CI. `StopVideo` (9) *is* implemented
+  despite belonging to the same group: it is how an image client releases a
+  drawable.
+- **There may well be no adaptor.** `QueryAdaptors` returning `[]` is the
+  normal case on anything but a machine with a GPU driver that offers
+  textured video: Xvfb (the CI server) and XQuartz both advertise
+  `X-Video Extension version 2.2` and answer "no adaptors present". A client
+  that wants Xv has to check the list and fall back to core `PutImage`.
+- Testing, given the above: test/xv.js runs against the real server and
+  checks that each port-based request reaches it well formed — a controlled
+  `XvBadPort` rather than a `BadLength`, with the connection still in step
+  afterwards — and takes the success path instead when a real adaptor is
+  present. test/xserver/xv.js registers a test adaptor
+  (test/xserver/xv-adaptor.js) on the pure-JS X server and drives the image
+  path to completion: YUY2 and I420 frames decoded and compared pixel by
+  pixel, plane pitches and offsets, scaling, the BIG-REQUESTS encoding, and
+  the notify events including the Started/Stopped pair around StopVideo.
