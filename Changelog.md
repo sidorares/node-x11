@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.0](https://github.com/sidorares/node-x11/compare/v4.1.0...v4.2.0) (2026-09-07)
+
+
+### Features
+
+* **xv:** implement the image path and the notify selectors ([#295](https://github.com/sidorares/node-x11/issues/295)) ([86abdda](https://github.com/sidorares/node-x11/commit/86abddae48b7e0439518bf8e649fc250aa4963ef))
+
 ## [4.1.0](https://github.com/sidorares/node-x11/compare/v4.0.1...v4.1.0) (2026-08-27)
 
 
