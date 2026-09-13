@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.1](https://github.com/sidorares/node-x11/compare/v4.2.0...v4.2.1) (2026-09-13)
+
+
+### Bug Fixes
+
+* **fdpass-bun:** EINTR from poll is a retry, not a failure ([#297](https://github.com/sidorares/node-x11/issues/297)) ([1ab8e53](https://github.com/sidorares/node-x11/commit/1ab8e53cbd9febd30a5e82c6c54b2a03a2a65028))
+
 ## [4.2.0](https://github.com/sidorares/node-x11/compare/v4.1.0...v4.2.0) (2026-09-07)
 
 
