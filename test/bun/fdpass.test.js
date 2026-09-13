@@ -339,6 +339,91 @@ test('connect reports a missing socket as ENOENT so the caller can fall back', a
     expect(err.code).toBe('ENOENT');
 });
 
+// --- the runtime interrupting the reader ------------------------------------
+
+// A WebAssembly module with `n` exported functions, each a small counting loop:
+//   (func (param i32) (result i32) (local i32)
+//     (loop (br_if 0 (i32.lt_s (local.tee 1 (i32.add (local.get 1) (i32.const 1)))
+//                              (local.get 0))))
+//     (local.get 1))
+function wasmModuleWith(n) {
+    const leb = v => {
+        const out = [];
+        do { let b = v & 0x7f; v >>>= 7; if (v) b |= 0x80; out.push(b); } while (v);
+        return out;
+    };
+    const vec = items => [...leb(items.length), ...items.flat()];
+    const section = (id, payload) => [id, ...leb(payload.length), ...payload];
+    const body = [
+        0x01, 0x01, 0x7f,             // one i32 local
+        0x03, 0x40,                   // loop
+        0x20, 0x01, 0x41, 0x01, 0x6a, //   local.get 1; i32.const 1; i32.add
+        0x22, 0x01,                   //   local.tee 1
+        0x20, 0x00, 0x48,             //   local.get 0; i32.lt_s
+        0x0d, 0x00,                   //   br_if 0
+        0x0b,                         // end
+        0x20, 0x01, 0x0b              // local.get 1; end
+    ];
+    const exportOf = i => {
+        const name = Buffer.from(`f${i}`);
+        return [...leb(name.length), ...name, 0x00, ...leb(i)];
+    };
+    return new Uint8Array([
+        0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+        ...section(1, vec([[0x60, 0x01, 0x7f, 0x01, 0x7f]])),                 // type (i32) -> i32
+        ...section(3, vec(Array.from({ length: n }, () => [0x00]))),          // n functions of it
+        ...section(7, vec(Array.from({ length: n }, (_, i) => exportOf(i)))), // exported f0..f{n-1}
+        ...section(10, vec(Array.from({ length: n }, () => [...leb(body.length), ...body])))
+    ]);
+}
+
+// The runtime suspends every JavaScript thread with a signal (SIGPWR on
+// Linux) whenever its WebAssembly compiler threads install newly compiled
+// code — twice per function as it tiers up — and the reader thread, blocked
+// in poll(2), sees each of those as EINTR. With the socket quiet they come
+// consecutively, so a 32-function module is 64 of them: exactly the count
+// that, taken for failures, got the connection declared dead. Twice that
+// here. Measured on Linux/arm64; where the runtime has no reason to
+// interrupt the reader this passes for free.
+test('a receiving connection sits through the runtime interrupting its reader', async () => {
+    const { client, peer } = await connectPair({ receiveFds: true });
+    const errors = [];
+    client.on('error', err => errors.push(err));
+    const chunks = [];
+    client.on('data', chunk => chunks.push(chunk.toString()));
+    const received = async want => {
+        const deadline = Date.now() + 5000;
+        while (chunks.join('') !== want && Date.now() < deadline)
+            await Bun.sleep(1);
+        expect(chunks.join('')).toBe(want);
+    };
+
+    // one round trip first, so the reader is known to be blocked in poll(2)
+    // (and not still starting up) when the interruptions begin
+    peerSend(peer, Buffer.from('HI'), []);
+    await received('HI');
+
+    const functions = 64;
+    const { exports } = new WebAssembly.Instance(new WebAssembly.Module(wasmModuleWith(functions)));
+    let sum = 0;
+    for (let round = 0; round < 4; round++) {
+        for (let i = 0; i < functions; i++)
+            for (let k = 0; k < 10000; k++) sum += exports[`f${i}`](48);
+        await Bun.sleep(50); // let the compiler threads finish and install
+    }
+    expect(sum).toBeGreaterThan(0);
+    await Bun.sleep(200);
+
+    expect(errors).toEqual([]);
+    expect(client.destroyed).toBe(false);
+    // and it still reads
+    peerSend(peer, Buffer.from('STILL'), []);
+    await received('HISTILL');
+
+    libc.close(peer);
+    client.destroy();
+}, 20000);
+
 // --- against a real X server -------------------------------------------------
 
 const haveDisplay = !!process.env.DISPLAY;
