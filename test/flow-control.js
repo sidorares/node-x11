@@ -156,5 +156,35 @@ describe('flow control', () => {
             done();
         });
     });
+
+    // Extension requests are packed by hand in lib/ext/*.js and never pass
+    // through the core request proxy. Before the anchor check moved into
+    // submit(), 65536 of them in a row wrapped the 16-bit wire number with
+    // nothing coming back in between, and the next reply was widened to the
+    // wrong sequence number: its callback never ran. A frame of a few
+    // hundred thousand RENDER composites is enough to do it.
+    it('keeps a reply after 66000 extension requests on its callback', function(done) {
+        this.timeout(20000);
+        X.require('render', (err, Render) => {
+            if (err)
+                return done(err);
+            const depth = display.screen[0].root_depth;
+            const pixmap = X.AllocID();
+            X.CreatePixmap(pixmap, root, depth, 1, 1);
+            const pic = X.AllocID();
+            Render.CreatePicture(pic, pixmap, Render.rgb24);
+            // an empty rectangle list: valid, reply-less and draws nothing
+            for (let i = 0; i < 66000; i++)
+                Render.FillRectangles(Render.PictOp.Over, pic, [0, 0, 0, 0], []);
+            X.GetInputFocus((err, focus) => {
+                assert.ifError(err);
+                assert.ok(focus, 'the reply reached its callback');
+                assert.ok(X.seq_num > 66000, 'sequence numbers are full-width');
+                Render.FreePicture(pic);
+                X.FreePixmap(pixmap);
+                X.sync(done);
+            });
+        });
+    });
   });
 });
