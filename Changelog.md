@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.2](https://github.com/sidorares/node-x11/compare/v4.2.1...v4.2.2) (2026-09-25)
+
+
+### Bug Fixes
+
+* **core:** extension requests keep the 16-bit sequence anchor ([#299](https://github.com/sidorares/node-x11/issues/299)) ([#300](https://github.com/sidorares/node-x11/issues/300)) ([bfb731c](https://github.com/sidorares/node-x11/commit/bfb731cee3428e172792f93d2274d5b615f7790f))
+
 ## [4.2.1](https://github.com/sidorares/node-x11/compare/v4.2.0...v4.2.1) (2026-09-13)
 
 
