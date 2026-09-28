@@ -53,15 +53,15 @@ describe('xserver: RENDER fast paths', () => {
             depth === 32 ? render.rgba32 : depth === 8 ? render.a8 : render.rgb24);
         if (depth === 8) {
             for (let y = 0; y < H; y++) {
-                const a = Math.round((y / (H - 1)) * 65535);
+                const a = y / (H - 1);
                 render.FillRectangles(render.PictOp.Src, pic, [0, 0, 0, a], [0, y, W, 1]);
             }
             return { pixmap, pic };
         }
         for (let y = 0; y < H; y++) {
-            const v = Math.round((y / (H - 1)) * 65535);
+            const v = y / (H - 1);
             render.FillRectangles(render.PictOp.Src, pic,
-                [v, 65535 - v, (v * 3) % 65535, depth === 32 ? v : 65535],
+                [v, 1 - v, (v * 3) % 1, depth === 32 ? v : 1],
                 [0, y, W, 1]);
         }
         return { pixmap, pic };
@@ -75,7 +75,7 @@ describe('xserver: RENDER fast paths', () => {
         const pic = X.AllocID();
         render.CreatePicture(pic, pixmap, render.a8);
         for (let x = 0; x < W; x++) {
-            const a = Math.round((((x * seed) % W) / (W - 1)) * 65535);
+            const a = ((x * seed) % W) / (W - 1);
             render.FillRectangles(render.PictOp.Src, pic, [0, 0, 0, a], [x, 0, 1, H]);
         }
         return { pixmap, pic };
@@ -89,9 +89,9 @@ describe('xserver: RENDER fast paths', () => {
         const pic = X.AllocID();
         render.CreatePicture(pic, pixmap, depth === 32 ? render.rgba32 : render.rgb24);
         for (let y = 0; y < H; y++) {
-            const v = Math.round((((y * seed) % H) / (H - 1)) * 65535);
+            const v = ((y * seed) % H) / (H - 1);
             render.FillRectangles(render.PictOp.Src, pic,
-                [65535 - v, v, (v * 7) % 65535, depth === 32 ? (v + 20000) % 65535 : 65535],
+                [1 - v, v, (v * 7) % 1, depth === 32 ? (v + 0.3) % 1 : 1],
                 [0, y, W, 1]);
         }
         return { pixmap, pic };
@@ -102,7 +102,7 @@ describe('xserver: RENDER fast paths', () => {
     function renderWith(fast, depth, paint, cb) {
         renderExt._setFastPaths(fast);
         const { pixmap, pic } = mkDest(depth);
-        paint(pic);
+        paint(pic, pixmap);
         // read the server's raster directly: GetImage would mask depth-32
         // alpha away and hide exactly the kind of difference we are hunting
         X.GetInputFocus(() => {
@@ -208,7 +208,7 @@ describe('xserver: RENDER fast paths', () => {
         it('a solid source with no mask matches', done => {
             bothAgree(24, pic => {
                 const solid = X.AllocID();
-                render.CreateSolidFill(solid, [0x4000, 0x8000, 0x2000, 0xc000]);
+                render.CreateSolidFill(solid, 0.25, 0.5, 0.125, 0.75);
                 render.Composite(render.PictOp.Over, solid, 0, pic, 0, 0, 0, 0, 0, 0, W, H);
             }, 'solid source', done);
         });
@@ -300,7 +300,7 @@ describe('xserver: RENDER fast paths', () => {
         it('a clipped solid source matches', done => {
             bothAgree(24, pic => {
                 const solid = X.AllocID();
-                render.CreateSolidFill(solid, [0x4000, 0x8000, 0x2000, 0x9000]);
+                render.CreateSolidFill(solid, 0.25, 0.5, 0.125, 0.5625);
                 render.SetPictureClipRectangles(pic, 0, 0, [3, 1, 7, 11, 12, 2, 8, 9]);
                 render.Composite(render.PictOp.Over, solid, 0, pic, 0, 0, 0, 0, 0, 0, W, H);
             }, 'clipped solid source', done);
@@ -360,10 +360,31 @@ describe('xserver: RENDER fast paths', () => {
             }, '1x1 repeat through mask', done);
         });
 
+        // The faintest coverage an antialiased edge leaves: a mask of 0 is
+        // left alone under Over, and 1 must not be taken for it — onto a
+        // dark pixel it still lights a channel.
+        for (const depth of [24, 32]) {
+            it(`a faint mask, 0 to 23 of 255, matches onto depth ${depth}`, done => {
+                bothAgree(depth, pic => {
+                    const solid = X.AllocID();
+                    render.CreateSolidFill(solid, 1, 1, 1, 1);
+                    const maskPixmap = X.AllocID();
+                    X.CreatePixmap(maskPixmap, root, 8, W, H);
+                    const mask = X.AllocID();
+                    render.CreatePicture(mask, maskPixmap, render.a8);
+                    for (let x = 0; x < W; x++)
+                        render.FillRectangles(render.PictOp.Src, mask,
+                            [0, 0, 0, x / 255], [x, 0, 1, H]);
+                    render.Composite(render.PictOp.Over, solid, mask, pic,
+                        0, 0, 0, 0, 0, 0, W, H);
+                }, `faint mask depth ${depth}`, done);
+            });
+        }
+
         it('a solid source through a mask matches', done => {
             bothAgree(24, pic => {
                 const solid = X.AllocID();
-                render.CreateSolidFill(solid, [0xc000, 0x2000, 0x6000, 0xffff]);
+                render.CreateSolidFill(solid, 0.75, 0.125, 0.375, 1);
                 const mask = mkAlphaPixmap(3);
                 render.Composite(render.PictOp.Over, solid, mask.pic, pic,
                     0, 0, 0, 0, 0, 0, W, H);
@@ -436,7 +457,7 @@ describe('xserver: RENDER fast paths', () => {
         it('a solid source onto an a8 destination matches', done => {
             bothAgree(8, pic => {
                 const solid = X.AllocID();
-                render.CreateSolidFill(solid, [0, 0, 0, 0x9000]);
+                render.CreateSolidFill(solid, 0, 0, 0, 0.5625);
                 render.Composite(render.PictOp.Over, solid, 0, pic, 0, 0, 0, 0, 0, 0, W, H);
             }, 'solid onto a8', done);
         });
@@ -455,5 +476,107 @@ describe('xserver: RENDER fast paths', () => {
                 render.Composite(render.PictOp.Over, src.pic, 0, pic, 0, 0, 0, 0, 0, 0, W, H);
             }, 'a8 onto rgb24', done);
         });
+    });
+
+    // a8 onto a8 is how a mask meets a clip: ntk renders a clipped glyph
+    // run's coverage, then combines it with the clip's through an operator.
+    // The fast path reads the answer from a table per operator.
+    describe('a8 onto a8 matches the general loop', () => {
+        for (let op = 0; op < OPS.length; op++) {
+            it(`${OPS[op]}`, done => {
+                bothAgree(8, pic => {
+                    const src = mkAlphaPixmap(5);
+                    render.Composite(op, src.pic, 0, pic, 0, 0, 0, 0, 0, 0, W, H);
+                }, `a8 onto a8 ${OPS[op]}`, done);
+            });
+        }
+
+        it('clipped, and offset in the source', done => {
+            bothAgree(8, pic => {
+                const src = mkAlphaPixmap(7);
+                render.SetPictureClipRectangles(pic, 0, 0, [2, 1, 8, 10, 12, 4, 8, 8]);
+                render.Composite(render.PictOp.In, src.pic, 0, pic, 3, 2, 0, 0, 1, 1, 18, 12);
+            }, 'clipped a8 In', done);
+        });
+    });
+
+    // Every antialiased fill and stroke that is not a rectangle reaches the
+    // server as trapezoids or triangles, composited through the coverage
+    // they accumulate. A constant source with Over has a span of its own.
+    describe('trapezoids and triangles match the general loop', () => {
+        // a slanted trapezoid, a sliver of a triangle (a stroke: most of its
+        // box has no coverage) and one that runs off the destination
+        const TRAPS = [
+            1.25, 9.5, 2.5, 1.25, 0.75, 9.5, 15.25, 1.25, 20.5, 9.5
+        ];
+        const TRIS = [
+            2.5, 14.75, 21.25, 1.5, 21.75, 2.5,
+            18.5, 6.25, 30.5, 11.75, 16.25, 20.5
+        ];
+        function paintShapes(op, src) {
+            return pic => {
+                render.Trapezoids(op, src(), 0, 0, pic, 0, TRAPS);
+                render.Triangles(op, src(), 0, 0, pic, 0, TRIS);
+            };
+        }
+        const solid = () => {
+            const id = X.AllocID();
+            render.CreateSolidFill(id, 0.25, 0.5625, 0.125, 0.6875);
+            return id;
+        };
+        const dot = () => {
+            const pixmap = X.AllocID();
+            X.CreatePixmap(pixmap, root, 32, 1, 1);
+            const id = X.AllocID();
+            render.CreatePicture(id, pixmap, render.rgba32);
+            render.FillRectangles(render.PictOp.Src, id, [0.5, 0.25, 0.125, 1], [0, 0, 1, 1]);
+            render.ChangePicture(id, { repeat: 1 });
+            return id;
+        };
+        for (const depth of [24, 32, 8]) {
+            for (const [name, src] of [['solid', solid], ['1x1 repeating', dot]]) {
+                for (const op of [3, 1, 12]) {
+                    it(`${OPS[op]}: a ${name} source onto depth ${depth}`, done => {
+                        bothAgree(depth, paintShapes(op, src),
+                            `shapes ${OPS[op]} ${name} depth ${depth}`, done);
+                    });
+                }
+            }
+            it(`Add into a cleared picture, as a clip mask is made, depth ${depth}`, done => {
+                bothAgree(depth, pic => {
+                    render.FillRectangles(render.PictOp.Src, pic, [0, 0, 0, 0], [0, 0, W, H]);
+                    paintShapes(render.PictOp.Add, solid)(pic);
+                }, `clip mask depth ${depth}`, done);
+            });
+            // A core request stores whatever pixel it is given, bits above
+            // the depth included; a composite writes only the depth's bits,
+            // even where it leaves the colour alone.
+            const highBits = pixmap => {
+                const gc = X.AllocID();
+                X.CreateGC(gc, pixmap, { foreground: 0xffffffff });
+                X.PolyFillRectangle(pixmap, gc, [0, 0, W, H / 2]);
+            };
+            it(`shapes onto a destination with bits above its depth, depth ${depth}`, done => {
+                bothAgree(depth, (pic, pixmap) => {
+                    highBits(pixmap);
+                    paintShapes(render.PictOp.Over, solid)(pic);
+                }, `shapes, high bits, depth ${depth}`, done);
+            });
+            if (depth !== 8) {
+                it(`a mask onto a destination with bits above its depth, depth ${depth}`, done => {
+                    bothAgree(depth, (pic, pixmap) => {
+                        highBits(pixmap);
+                        render.Composite(render.PictOp.Over, solid(), mkAlphaPixmap(5).pic, pic,
+                            0, 0, 0, 0, 0, 0, W, H);
+                    }, `mask, high bits, depth ${depth}`, done);
+                });
+            }
+            it(`clipped, onto depth ${depth}`, done => {
+                bothAgree(depth, pic => {
+                    render.SetPictureClipRectangles(pic, 0, 0, [2, 1, 8, 10, 12, 4, 8, 8]);
+                    paintShapes(render.PictOp.Over, solid)(pic);
+                }, `clipped shapes depth ${depth}`, done);
+            });
+        }
     });
 });
