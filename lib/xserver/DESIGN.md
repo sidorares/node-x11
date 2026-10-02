@@ -152,6 +152,38 @@ specialisation, confirm it actually fires — a benchmark row that moves, or
 the pixel-bucket counting described above — rather than trusting a green
 suite.
 
+### Trapezoids and triangles
+
+`Trapezoids`, `Triangles`, `TriStrip`, `TriFan` and `AddTraps` rasterize
+as the X.Org server does, byte for byte, because a client cannot tell this
+server from that one by its masks: a toolkit's hermetic tests run here and
+its users' windows on Xorg. The rasterizer is `lib/render-raster.js`, a
+port of pixman's (renderproto's Precise mode: 17 x 15 samples per pixel at
+8 bits, one at the centre at 1 bit), shared with clients that want to
+compute the same masks themselves. Around it, the request handlers follow
+fb's `fbTrapezoids`/`fbTriangles`/`fbShapes`/`fbAddTraps` and pixman's
+`pixman_composite_trapezoids`:
+
+- with a `maskFormat`, every shape goes into one mask of its alpha depth;
+  with None, each shape is composited by itself, through an a8 mask or an
+  a1 one if the destination's `polyEdge` is Sharp — the X.Org default,
+  though renderproto says Smooth;
+- the mask spans the shapes' extents, or the whole destination for an
+  operator a transparent source changes the destination with (Clear, Src,
+  In, InReverse, Out, AtopReverse, Saturate);
+- only the part of the mask on the destination is allocated, as a
+  `window`, and the shapes are still clipped against the whole: pixman's
+  edge step makes a mask cut at a shape's top differ, now and then, from
+  the uncut one;
+- `AddTraps` adds into the picture directly, ignoring its clip, and leaves
+  a picture that is not a1 or a8 alone, as pixman does.
+
+Compositing through the mask is this server's float arithmetic, not
+pixman's integer one, so it agrees exactly where the arithmetic is exact
+(Add, Src and In of an opaque source, Over of an opaque one) and can be a
+level off for translucent sources. `test/render-precise.js` checks all of
+it against a real server on random geometry.
+
 ## Raster contract (`raster.js`)
 
 All drawing goes through `Raster` with a `gc` state object:

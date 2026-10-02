@@ -340,17 +340,72 @@ describe('xserver: RENDER', () => {
 
     describe('geometry', () => {
 
-        it('Triangles fills with antialiased edges', done => {
+        it('Triangles through an a8 mask fills with antialiased edges', done => {
+            const { pixmap, pic } = mkCanvas();
+            const solid = X.AllocID();
+            render.CreateSolidFill(solid, 1, 1, 1, 1);
+            render.Triangles(render.PictOp.Over, solid, 0, 0, pic, render.a8,
+                [0, 0, 8, 0, 0, 8]);
+            readBack(pixmap, data => {
+                assert.ok(red(px(data, 1, 1)) > 200, 'inside');
+                assert.strictEqual(px(data, 7, 7), BLACK);
+                // the hypotenuse runs corner to corner through this pixel:
+                // 128 of its 255 samples are inside, as Xvfb draws it
+                assert.strictEqual(red(px(data, 3, 4)), 128);
+                done();
+            });
+        });
+
+        it('with no maskFormat, a picture draws Sharp edges, as X.Org does', done => {
+            // renderproto says a picture's poly-edge defaults to Smooth; the
+            // X.Org server has always made it Sharp, so a shape with no
+            // maskFormat is aliased there unless the destination asks
             const { pixmap, pic } = mkCanvas();
             const solid = X.AllocID();
             render.CreateSolidFill(solid, 1, 1, 1, 1);
             render.Triangles(render.PictOp.Over, solid, 0, 0, pic, 0,
                 [0, 0, 8, 0, 0, 8]);
             readBack(pixmap, data => {
-                assert.ok(red(px(data, 1, 1)) > 200, 'inside');
-                assert.strictEqual(px(data, 7, 7), BLACK);
-                const edge = red(px(data, 3, 4)); // hypotenuse crosses this pixel
-                assert.ok(edge > 0 && edge < 255, `antialiased edge, got ${edge}`);
+                for (let y = 0; y < 9; y++)
+                    for (let x = 0; x < 9; x++)
+                        assert.strictEqual(px(data, x, y), x + y < 7 ? WHITE : BLACK, `pixel ${x},${y}`);
+                done();
+            });
+        });
+
+        it('with no maskFormat each shape composites by itself', done => {
+            // half-white triangles that overlap: through one mask the
+            // overlap is drawn once, with none and Smooth edges twice
+            const { pixmap, pic } = mkCanvas();
+            const smooth = mkCanvas();
+            render.ChangePicture(smooth.pic, { polyEdge: render.PolyEdge.Smooth });
+            const half = X.AllocID();
+            render.CreateSolidFill(half, 0.5, 0.5, 0.5, 0.5);
+            const tris = [0, 0, 12, 0, 0, 12, 4, 4, 15, 4, 4, 15];
+            render.Triangles(render.PictOp.Over, half, 0, 0, pic, render.a8, tris);
+            render.Triangles(render.PictOp.Over, half, 0, 0, smooth.pic, 0, tris);
+            readBack(pixmap, once => {
+                readBack(smooth.pixmap, twice => {
+                    assert.strictEqual(red(px(once, 5, 5)), 127);
+                    assert.strictEqual(red(px(twice, 5, 5)), 191);
+                    assert.strictEqual(red(px(twice, 1, 1)), 127);
+                    done();
+                });
+            });
+        });
+
+        it('an operator a clear source acts with reaches the whole destination', done => {
+            // Src through the mask clears what the mask does not cover, all
+            // of the picture, not just the triangle's box
+            const { pixmap, pic } = mkCanvas();
+            render.FillRectangles(render.PictOp.Src, pic, [1, 1, 1, 1], [0, 0, W, H]);
+            const red1 = X.AllocID();
+            render.CreateSolidFill(red1, 1, 0, 0, 1);
+            render.Triangles(render.PictOp.Src, red1, 0, 0, pic, render.a8,
+                [2, 2, 6, 2, 2, 6]);
+            readBack(pixmap, data => {
+                assert.strictEqual(px(data, 2, 2), 0xff0000);
+                assert.strictEqual(px(data, 12, 12), BLACK);
                 done();
             });
         });
@@ -419,6 +474,27 @@ describe('xserver: RENDER', () => {
             });
         });
 
+        it('AddTraps ignores the clip, and pictures that are not alpha-only', done => {
+            // as fb hands the picture to pixman_add_traps, which rasterizes
+            // only into a1/a4/a8 images and sees no clip
+            const { pixmap, pic } = mkCanvas();
+            const mask = mkMask();
+            render.SetPictureClipRectangles(mask.pic, 0, 0, [0, 0, 1, 1]);
+            render.AddTraps(mask.pic, 0, 0, [1, 5, 2, 1, 5, 6]);
+            render.AddTraps(pic, 0, 0, [1, 5, 2, 1, 5, 6]);
+            readBack(pixmap, before => {
+                assert.ok([...before].every(v => v === 0), 'depth 24 untouched');
+                render.SetPictureClipRectangles(mask.pic, 0, 0, [0, 0, W, H]);
+                const solid = X.AllocID();
+                render.CreateSolidFill(solid, 1, 0, 0, 1);
+                render.Composite(render.PictOp.Over, solid, mask.pic, pic, 0, 0, 0, 0, 0, 0, W, H);
+                readBack(pixmap, data => {
+                    assert.strictEqual(px(data, 2, 3), 0xff0000);
+                    done();
+                });
+            });
+        });
+
         it('the client sends FIXED truncated toward zero, a tiny value as 0', () => {
             // floatToFix was parseInt(f * 65536), which reads a tiny
             // product in exponent notation: 4e-11 went out as 4 units
@@ -440,6 +516,17 @@ describe('xserver: RENDER', () => {
             const req = sent[sent.length - 1];
             assert.deepStrictEqual([0, 1, 2, 3, 4, 5].map(i => req.readInt32LE(12 + i * 4)),
                 [0, 0, 85196, -85196, 65535, -163840]);
+        });
+
+        it('rejects an unknown maskFormat', done => {
+            const { pic } = mkCanvas();
+            const solid = X.AllocID();
+            render.CreateSolidFill(solid, 1, 1, 1, 1);
+            X.once('error', err => {
+                assert.strictEqual(err.error, render.firstError + 0); // BadPictFormat
+                done();
+            });
+            render.Triangles(render.PictOp.Over, solid, 0, 0, pic, 0x7777, [0, 0, 8, 0, 0, 8]);
         });
     });
 

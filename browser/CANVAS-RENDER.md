@@ -84,11 +84,13 @@ And what does not map:
   `setTransform` is affine. A perspective matrix has to fall back.
 - **Repeat Pad and Reflect.** `createPattern` has no equivalent.
 - **Convolution filters.** No canvas equivalent worth the trouble.
-- **Exact antialiasing.** The server's trapezoid coverage is four
-  sub-bands per row with analytic horizontal coverage; canvas AA is
-  implementation-defined. Output would be close but not identical, so the
-  pixel-exact tests in `test/xserver/render.js` cannot be run against a
-  canvas backend unchanged.
+- **Exact antialiasing.** The server rasterizes trapezoids and triangles
+  as pixman does, byte for byte (`lib/render-raster.js`), as real X servers
+  do; canvas AA is implementation-defined. A canvas `fill` would be close
+  but not identical, so shapes would have to keep going through the
+  software rasterizer and be uploaded as a mask, or the pixel-exact tests
+  in `test/xserver/render.js` and `test/xserver/render-precise.js` would
+  no longer hold.
 
 ## Why it cannot be a drop-in extension
 

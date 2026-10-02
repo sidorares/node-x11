@@ -153,13 +153,18 @@ none) into `dst` with operator `op` (`Render.PictOp`). No reply.
 ### Trapezoids(op, src, srcX, srcY, dst, maskFormat, trapz)
 Rasterizes trapezoids; `trapz` is a flat list of 10 values per trapezoid:
 `top, bottom, leftX1, leftY1, leftX2, leftY2, rightX1, rightY1, rightX2,
-rightY2` (floats, converted to FIXED). Deprecated by the Render spec in
-favor of `Triangles`/`AddTraps`, but functional. No reply.
+rightY2` (floats, converted to FIXED). Each side is the whole line through
+its two points, cut at `top` and `bottom`, wherever the points lie.
+Deprecated by the Render spec in favor of `Triangles`/`AddTraps`, but
+functional. How the server turns it into pixels, `maskFormat` included, is
+under [Rasterization](#rasterization). No reply.
 
 ### Triangles(op, src, srcX, srcY, dst, maskFormat, tris)
 Rasterizes triangles; `tris` is a flat array of vertex coordinates
 `[x1, y1, x2, y2, x3, y3, ...]` (6 numbers per triangle, floats).
-`maskFormat` is a pictformat or 0. No reply.
+`maskFormat` is a pictformat or 0 — see [Rasterization](#rasterization):
+with 0, an X.Org server draws aliased edges unless the destination picture
+asks for `polyEdge: Render.PolyEdge.Smooth`. No reply.
 
 ### TriStrip(op, src, srcX, srcY, dst, maskFormat, points)
 Triangle strip; `points` is a flat array `[x1, y1, x2, y2, ...]`, each point
@@ -245,7 +250,9 @@ pairs (or `{cursor, delay}` objects). No reply.
 ### AddTraps(pic, offX, offY, trapList)
 Adds trapezoids to an alpha picture; `trapList` is a flat array of FIXED
 values (6 per trap: top `l, r, y` then bottom `l, r, y`), offset by
-`offX`,`offY`. No reply.
+`offX`,`offY` whole pixels. The coverage is added straight into the picture,
+saturating, ignoring its clip; an X.Org server only draws into an alpha-only
+picture (`a8`, `mono1`) and leaves any other unchanged. No reply.
 
 ### CreateSolidFill(pid, r, g, b, a)
 Creates a solid-fill source picture; channels are floats 0..1, premultiplied
@@ -275,6 +282,94 @@ at `p2` with radius `r2`; same `stops` format. No reply.
 ### ConicalGradient(pid, center, angle, stops) / CreateConicalGradient(...)
 Conical gradient around `center` (`[x, y]`) starting at `angle` degrees;
 same `stops` format. No reply.
+
+## Rasterization
+
+`Trapezoids`, `Triangles`, `TriStrip`, `TriFan` and `AddTraps` draw through
+an alpha mask the server rasterizes. RENDER's default poly-mode, Precise,
+defines it: for an 8-bit mask a grid of samples 17 across and 15 down in
+every pixel, so that a pixel's alpha is its count of covered samples
+(17 × 15 = 255), and each shape added into the mask. pixman implements it,
+and every common server rasterizes with pixman — fb (Xvfb, XQuartz) and
+glamor (Xorg's modesetting driver, Xwayland) alike — so the same shapes
+give the same mask, to the byte, on all of them. The JS server
+(`lib/xserver`) rasterizes with the same code.
+
+What else decides the pixels:
+
+- **`maskFormat`.** With a format, all the request's shapes are added into
+  one mask of that depth — an `a8` (or any format with 8 bits of alpha) is
+  antialiased, `mono1` is one sample per pixel at its centre — and the
+  source is composited through it once. With `0` (None) each trapezoid or
+  triangle is composited **by itself**, so where two of them overlap or
+  share an edge the operator applies twice: translucent paint comes out
+  darker along a triangle strip's diagonals. Pass `Render.a8` to draw a
+  shape made of several pieces.
+- **`polyEdge`, with no `maskFormat`.** The destination picture's
+  `polyEdge` picks the mask: Smooth is `a8`, Sharp is `a1`. renderproto
+  says a picture starts Smooth, but the X.Org server has always started
+  it Sharp — so a shape drawn with no `maskFormat` is **aliased** there
+  unless the picture was created or changed with
+  `{ polyEdge: Render.PolyEdge.Smooth }`. The JS server does the same.
+- **The operator's reach.** The mask is the size of the shapes' extents for
+  operators a transparent source leaves the destination alone with (Over,
+  Add, …), and of the whole destination for the others — Clear, Src, In,
+  InReverse, Out, AtopReverse, and Saturate — which therefore clear or
+  scale every pixel outside the shapes too. That is fb's rule (Xvfb,
+  XQuartz, and the triangle requests everywhere); glamor's `Trapezoids`
+  composites over the trapezoids' bounds whatever the operator. The JS
+  server follows fb.
+- **The source** is registered to the first point: for `Trapezoids` the
+  left line's first point, for the triangle requests the first triangle's
+  first point, rounded down to whole pixels; `srcX`/`srcY` are relative to
+  it.
+
+### Computing the server's mask: `x11/lib/render-raster.js`
+
+The rasterizer is a module of its own, with no Node APIs, so a client can
+compute the masks a server will draw — in Node or in a browser — and get
+the same bytes, for instance to rasterize a small mask locally and upload
+it rather than send the geometry, without the two routes ever disagreeing:
+
+```js
+const raster = require('x11/lib/render-raster');
+const fixed = v => Math.trunc(v * 65536);   // what the client puts on the wire
+
+const mask = { data: new Uint8Array(16 * 12), width: 16, height: 12 };
+raster.addTriangles(mask, 0, 0, [1.3, 0.7, 14.6, 3.2, 5.1, 11.4].map(fixed));
+// mask.data is what Triangles(Add, <opaque>, ..., a8 picture, Render.a8, ...)
+// leaves in a cleared 16x12 a8 picture
+```
+
+Coordinates are 16.16 integers, exactly what the requests carry — convert
+floats as the client does, with `Math.trunc(v * 65536)`. Offsets are whole
+pixels.
+
+| function | pixman equivalent |
+|---|---|
+| `addTraps(mask, xOff, yOff, traps)` — six per trap, `AddTraps` layout | `pixman_add_traps` |
+| `addTrapezoids(mask, xOff, yOff, trapezoids)` — ten per trapezoid, `Trapezoids` layout | `pixman_add_trapezoids` |
+| `addTriangles(mask, xOff, yOff, triangles)` — six per triangle | `pixman_add_triangles` |
+| `trianglesToTrapezoids(triangles)` → `Int32Array` | `triangle_to_trapezoids` |
+| `stripToTriangles(points)`, `fanToTriangles(points)` → `Int32Array` | the server's `TriStrip`/`TriFan` |
+| `trapezoidExtents(trapezoids)` → `{ x1, y1, x2, y2 }` or `null` | the mask box of `pixman_composite_trapezoids` |
+
+A mask is `{ data, width, height, bits = 8, window, stride }`. `data` holds
+one element per pixel, alpha in the low byte (or, with `bits: 1`, the low
+bit); shapes are added into what it holds, saturating at 255. Shapes are
+clipped to `width` × `height`. `window: { x, y, width, height }` makes
+`data` hold only that part of the mask, with the shapes still clipped to
+the whole: the bytes come out as that part of the whole mask would.
+
+That distinction is not academic. pixman steps each edge down from the
+first sample row inside its image, and its edge step does not update the
+edge's error term when a step carries nothing, so a mask that cuts a shape
+off at its top edge can differ from the same rows of an uncut one — rarely,
+by one level. A server composites `Trapezoids` and the triangle requests
+through a mask over the shapes' extents (`trapezoidExtents`, or the whole
+destination for the operators above), and `AddTraps` straight into the
+picture; rasterize over the same image, with a `window` for the part you
+want, and the bytes match.
 
 ## Events / errors
 
