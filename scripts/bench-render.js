@@ -117,12 +117,41 @@ function bodySetClip(dst, rects) {
     return b;
 }
 
+function bodySolidFill(pid, color) {
+    const b = Buffer.alloc(12);
+    b.writeUInt32LE(pid, 0);
+    b.writeUInt16LE(color[0], 4);
+    b.writeUInt16LE(color[1], 6);
+    b.writeUInt16LE(color[2], 8);
+    b.writeUInt16LE(color[3], 10);
+    return b;
+}
+
+// traps: [top, bottom, [lx1, ly1, lx2, ly2], [rx1, ry1, rx2, ry2]], in pixels
+function bodyTrapezoids(op, src, dst, traps) {
+    const b = Buffer.alloc(20 + traps.length * 40);
+    b.writeUInt8(op, 0);
+    b.writeUInt32LE(src, 4);
+    b.writeUInt32LE(dst, 8);
+    b.writeUInt32LE(0, 12); // mask format: none
+    b.writeInt16LE(0, 16);
+    b.writeInt16LE(0, 18);
+    traps.forEach(([top, bottom, l, r], i) => {
+        const o = 20 + i * 40;
+        const fixed = [top, bottom, ...l, ...r];
+        fixed.forEach((v, k) => b.writeInt32LE(Math.round(v * 65536), o + k * 4));
+    });
+    return b;
+}
+
 // minor opcodes, from the RENDER protocol
 const REQ = {
     CreatePicture: 4,
     SetPictureClipRectangles: 6,
     Composite: 8,
+    Trapezoids: 10,
     FillRectangles: 26,
+    CreateSolidFill: 33,
     CreateLinearGradient: 34
 };
 
@@ -180,7 +209,20 @@ function setup() {
     const a8Src = id();
     call(REQ.CreatePicture, bodyCreatePicture(a8Src, a8SrcPix, 0x103));
 
-    return { server, call, dst, src, argb, a8Dst, a8Src };
+    // a glyph run's mask: most of it no coverage at all, the rest a ramp
+    const a8GlyphPix = id();
+    const a8GlyphRaster = makePixmap(server, W, H, 8);
+    server.resources.set(a8GlyphPix, a8GlyphRaster);
+    for (let i = 0; i < a8GlyphRaster.raster.data.length; i++)
+        a8GlyphRaster.raster.data[i] = (i % W) % 16 < 2 ? (i * 37) & 0xff : 0;
+    const a8Glyphs = id();
+    call(REQ.CreatePicture, bodyCreatePicture(a8Glyphs, a8GlyphPix, 0x103));
+
+    // flat paint, the way a toolkit hands the server a colour
+    const solid = id();
+    call(REQ.CreateSolidFill, bodySolidFill(solid, [0x2980, 0x4040, 0x6b6b, 0xc000]));
+
+    return { server, call, dst, src, argb, a8Dst, a8Src, a8Glyphs, solid };
 }
 
 const { Raster } = require('../lib/xserver/raster');
@@ -211,7 +253,7 @@ function time(label, pixelsPerCall, fn) {
 }
 
 function main() {
-    const { call, dst, src, argb, a8Dst, a8Src } = setup();
+    const { call, dst, src, argb, a8Dst, a8Src, a8Glyphs, solid } = setup();
     const AREA = 512 * 384; // a window-sized region
     const rows = [];
 
@@ -235,6 +277,29 @@ function main() {
 
     rows.push(time('Composite Over through an a8 mask', AREA, () =>
         call(REQ.Composite, bodyComposite(3, argb, a8Src, dst, 0, 0, 0, 0, 0, 0, 512, 384))));
+
+    rows.push(time('Composite Over, solid through a glyph mask', AREA, () =>
+        call(REQ.Composite, bodyComposite(3, solid, a8Glyphs, dst, 0, 0, 0, 0, 0, 0, 512, 384))));
+
+    // how a clipped glyph run's mask meets the clip's
+    rows.push(time('Composite In, a8 -> a8', AREA, () =>
+        call(REQ.Composite, bodyComposite(5, a8Src, 0, a8Dst, 0, 0, 0, 0, 0, 0, 512, 384))));
+
+    // a one-pixel diagonal stroke across the window: the coverage box is the
+    // window, and almost none of it is covered
+    const stroke = [[0, 384, [0, 0, 511, 384], [1.5, 0, 512.5, 384]]];
+    rows.push(time('Trapezoids Over, a diagonal stroke', AREA, () =>
+        call(REQ.Trapezoids, bodyTrapezoids(3, solid, dst, stroke))));
+
+    // a clip path rasterised into an a8 mask by adding it up: a rounded box,
+    // as the three trapezoids a toolkit sends for its straight sides
+    const rounded = [
+        [0, 12, [12, 0, 0, 12], [500, 0, 512, 12]],
+        [12, 372, [0, 12, 0, 372], [512, 12, 512, 372]],
+        [372, 384, [0, 372, 12, 384], [512, 372, 500, 384]]
+    ];
+    rows.push(time('Trapezoids Add onto a8 (a clip mask)', AREA, () =>
+        call(REQ.Trapezoids, bodyTrapezoids(12, solid, a8Dst, rounded))));
 
     // gradient source
     const grad = id();

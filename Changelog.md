@@ -1,5 +1,24 @@
 # Changelog
 
+## [4.2.3](https://github.com/sidorares/node-x11/compare/v4.2.2...v4.2.3) (2026-09-29)
+
+
+### Bug Fixes
+
+* **xserver:** listen on the loopback unless a host is named ([#304](https://github.com/sidorares/node-x11/issues/304)) ([1bb89a9](https://github.com/sidorares/node-x11/commit/1bb89a9ba8c598c5c2393134e3452013e49ab40b))
+
+
+### Performance Improvements
+
+* **xserver:** RENDER's glyph masks, a8 blends and trapezoids skip what cannot change ([#302](https://github.com/sidorares/node-x11/issues/302)) ([2245a39](https://github.com/sidorares/node-x11/commit/2245a395a9c787bb1be161c8694661fb3fe38b01))
+
+## [4.2.2](https://github.com/sidorares/node-x11/compare/v4.2.1...v4.2.2) (2026-09-25)
+
+
+### Bug Fixes
+
+* **core:** extension requests keep the 16-bit sequence anchor ([#299](https://github.com/sidorares/node-x11/issues/299)) ([#300](https://github.com/sidorares/node-x11/issues/300)) ([bfb731c](https://github.com/sidorares/node-x11/commit/bfb731cee3428e172792f93d2274d5b615f7790f))
+
 ## [4.2.1](https://github.com/sidorares/node-x11/compare/v4.2.0...v4.2.1) (2026-09-13)
 
 

@@ -181,8 +181,11 @@ keep memory bounded:
 
 Sequence numbers are 16-bit on the wire but full-width on the client
 (`err.seq` keeps growing past 65535); the client transparently inserts a
-cheap round-trip request once per 60000 reply-less requests to keep the
-mapping unambiguous, the same way libxcb does.
+cheap round-trip request once per 60000 reply-less requests — core and
+extension requests alike — to keep the mapping unambiguous, the same way
+libxcb does. A request packed by hand outside this library (the way
+`lib/ext/*.js` packs one) must take its number with `X.seq_num++` before
+`X.pack_stream.submit()`, because the inserted request goes in behind it.
 
 ### Buffering the output
 

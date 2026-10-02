@@ -191,6 +191,11 @@ browser bundle boots and renders), `check-share` (share links round-trip).
   `buf.length / 4`. `submit()` marks the end of a request and lets the
   buffering policy decide when to write; `flush()` writes immediately and is
   for the handshake, `X.flush()` and connection teardown only.
+- A hand-packed request (every `lib/ext/*.js` request) takes its number with
+  `X.seq_num++` **before** `submit()`, never after: `submit()` is where the
+  client inserts the GetInputFocus that keeps 16-bit wire numbers widenable
+  (`_requestSubmitted`), and that request takes the next number. RENDER
+  incremented after `submit()` until the check moved there.
 - Extensions self-register: `X.require('name', cb)` loads `lib/ext/name.js`.
 - Tests that talk to the server clean up after themselves (`X.terminate()`
   in `after`); leaked windows/clients make later files flaky.
