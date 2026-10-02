@@ -299,5 +299,6 @@ does not name a defined ...").
     VerticalRGB: 3, VerticalBGR: 4, None: 5}`
   - `Render.Filters = {Nearest: 'nearest', Bilinear: 'bilinear',
     Convolution: 'convolution', Fast: 'fast', Good: 'good', Best: 'best'}`
-- FIXED conversion truncates toward zero (`parseInt(f * 65536)`), so tiny
-  negative values round up.
+- FIXED conversion truncates toward zero (`Math.trunc(f * 65536)`), so
+  tiny negative values round up to 0. A value 16.16 cannot hold (|f| ≥
+  32768, or infinite) throws a `RangeError` from the buffer write.

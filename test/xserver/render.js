@@ -418,6 +418,29 @@ describe('xserver: RENDER', () => {
                 done();
             });
         });
+
+        it('the client sends FIXED truncated toward zero, a tiny value as 0', () => {
+            // floatToFix was parseInt(f * 65536), which reads a tiny
+            // product in exponent notation: 4e-11 went out as 4 units
+            const pixmap = X.AllocID();
+            X.CreatePixmap(pixmap, root, 8, W, H);
+            const pic = X.AllocID();
+            render.CreatePicture(pic, pixmap, render.a8);
+            const sent = [];
+            const put = X.pack_stream.put;
+            X.pack_stream.put = function (buf) {
+                sent.push(Buffer.from(buf));
+                return put.apply(this, arguments);
+            };
+            try {
+                render.AddTraps(pic, 0, 0, [4e-11 / 65536, -4e-11 / 65536, 1.3, -1.3, 0.99999999999, -2.5]);
+            } finally {
+                X.pack_stream.put = put;
+            }
+            const req = sent[sent.length - 1];
+            assert.deepStrictEqual([0, 1, 2, 3, 4, 5].map(i => req.readInt32LE(12 + i * 4)),
+                [0, 0, 85196, -85196, 65535, -163840]);
+        });
     });
 
     describe('glyphs', () => {
