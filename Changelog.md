@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.3.0](https://github.com/sidorares/node-x11/compare/v4.2.3...v4.3.0) (2026-10-02)
+
+
+### Features
+
+* **render:** rasterize trapezoids and triangles byte for byte as pixman does ([#306](https://github.com/sidorares/node-x11/issues/306)) ([6bb2249](https://github.com/sidorares/node-x11/commit/6bb2249ebd2425efe65e018747bcc47effada24e))
+
 ## [4.2.3](https://github.com/sidorares/node-x11/compare/v4.2.2...v4.2.3) (2026-09-29)
 
 
