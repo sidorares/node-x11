@@ -23,6 +23,7 @@ const extensionTests = {
     'randr.js': 'RANDR',
     'record.js': 'RECORD',
     'render.js': 'RENDER',
+    'render-precise.js': 'RENDER',
     'res.js': 'X-Resource',
     'screen-saver.js': 'MIT-SCREEN-SAVER',
     'shape.js': 'SHAPE',

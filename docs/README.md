@@ -357,6 +357,10 @@ extension name. Requiring an extension twice returns the cached instance.
 - `x11.keySyms` — keysym tables (lazy-loaded)
 - `x11.gcFunction` — GC raster operation constants (lazy-loaded)
 - `x11.createServer` — experimental X server implementation
+- `require('x11/lib/render-raster')` — RENDER's Precise rasterization as the
+  servers do it, to compute locally, to the byte, the mask a `Trapezoids`,
+  `Triangles` or `AddTraps` request draws; no Node APIs, so it runs in a
+  browser too (see [ext/render.md](ext/render.md#rasterization))
 - Window class constants `x11.CopyFromParent` / `x11.InputOutput` /
   `x11.InputOnly` and `SendEvent` destinations `x11.PointerWindow` /
   `x11.InputFocus`
