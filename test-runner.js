@@ -1,5 +1,7 @@
 const x11 = require('./lib');
-const Mocha = require('mocha');
+// mocha 12 is ESM: Node 22's require() returns its namespace, not the
+// constructor, so take the named export every Node version agrees on.
+const { Mocha } = require('mocha');
 const fs = require('fs');
 const path = require('path');
 const async = require('async');
