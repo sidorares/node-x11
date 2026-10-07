@@ -54,6 +54,19 @@ server.root.raster                         // composited screen pixels (Uint32Ar
 - Event delivery: per-window per-client event masks (`SelectInput` via
   CreateWindow/ChangeWindowAttributes), device event propagation up the
   ancestor chain, pointer/keyboard grabs (basic active grabs), focus (basic).
+- Crossing events: a pointer move from one window to another
+  (`injectPointerMove`, `WarpPointer`) sends `LeaveNotify`/`EnterNotify` to
+  every window on the path through the two windows' nearest common ancestor,
+  with the core protocol's details: the two ends `Ancestor`, `Inferior` or
+  `Nonlinear`, each window between them `Virtual` or `NonlinearVirtual`,
+  naming its child on the way. So a window hears the pointer come and go
+  over a descendant that selects no input of its own. The flags byte carries
+  same-screen and whether the focus reaches the window. `test/xserver/crossing.js`
+  is the reference, and passes unchanged against Xvfb. Not modelled: the
+  crossings a real server sends when a window is mapped, unmapped, moved or
+  restacked under the pointer (the next move reports from whatever window is
+  under its starting point by then), the `Grab`/`Ungrab` modes, and handing
+  crossings to the grabbing client during a grab.
 - Substructure redirect: a client holding `SubstructureRedirect` on a parent
   receives `MapRequest`/`ConfigureRequest`/`CirculateRequest` instead of the
   request taking effect, which is what lets a window manager run against this
