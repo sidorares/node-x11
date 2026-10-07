@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.3.1](https://github.com/sidorares/node-x11/compare/v4.3.0...v4.3.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **xserver:** a pointer move reports its crossing to every window on the way, so a window hears the pointer leave from over a child ([#308](https://github.com/sidorares/node-x11/issues/308)) ([b902a54](https://github.com/sidorares/node-x11/commit/b902a542f37ea253495e46c2b9bf68ad221608ce))
+
 ## [4.3.0](https://github.com/sidorares/node-x11/compare/v4.2.3...v4.3.0) (2026-10-02)
 
 
