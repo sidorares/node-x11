@@ -1,6 +1,13 @@
 # node-x11
 
-X11 protocol client for Node.js: implements the core X11 protocol, as well as Xrender, Damage, Composite, Big-Requests, Dpms, Screensaver, XFixes, Shape, XTest, XC-Misc, GLX, DRI3, Present, and Apple-WM extensions — including the modern direct-rendering path (GPU frames as dma-buf pixmaps via DRI3 + Present, see [docs/ext/dri3.md](docs/ext/dri3.md)).
+Pure-JavaScript X11 protocol client for Node.js — no native code, no runtime
+dependencies. It implements all 120 core protocol requests and 34 core events,
+and the Apple-WM, BIG-REQUESTS, Composite, DAMAGE, DOUBLE-BUFFER, DPMS, DRI3,
+Generic Event, GLX, MIT-SCREEN-SAVER, MIT-SHM, Present, RANDR, RECORD, RENDER,
+SHAPE, SYNC, X-Resource, XC-MISC, XFIXES, XINERAMA, XInputExtension, XKEYBOARD,
+XTEST and XVideo extensions — including the modern direct-rendering path (GPU
+frames as dma-buf pixmaps via DRI3 + Present, see [docs/ext/dri3.md](docs/ext/dri3.md)).
+The API reference is in [docs/](docs/README.md).
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/sidorares/node-x11?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![CI](https://github.com/sidorares/node-x11/actions/workflows/ci.yml/badge.svg)](https://github.com/sidorares/node-x11/actions/workflows/ci.yml)
@@ -8,7 +15,8 @@ X11 protocol client for Node.js: implements the core X11 protocol, as well as Xr
 **Documentation & live demos: <https://sidorares.github.io/node-x11/>** — the
 [playground](https://sidorares.github.io/node-x11/playground) runs ordinary
 node-x11 code in your browser against a pure-JavaScript X server (`lib/xserver`)
-that ships with this package, including OpenGL via GLX-over-WebGL.
+that ships with this package, including OpenGL via GLX translated to WebGL
+(`browser/glx/`).
 
 The client also runs in browsers: `DISPLAY` strings accept a pluggable
 protocol prefix (`x11.registerDisplayProtocol(name, connect)` +
@@ -24,10 +32,13 @@ uniquely, descriptors can also be *received*: see
 
     npm install x11
 
-Windows users:
+Requires Node.js 18 or later, or Bun.
 
-1.  install [XMing](http://www.straightrunning.com/XmingNotes/) or [Cygwin/X](http://x.cygwin.com/)
-2.  get node-x11 copy (using [git](http://code.google.com/p/msysgit/downloads/list?can=3) or from [Github](https://github.com/sidorares/node-x11/archives/master))
+Windows: run an X server such as [VcXsrv](https://sourceforge.net/projects/vcxsrv/),
+[Xming](http://www.straightrunning.com/XmingNotes/) or [Cygwin/X](https://x.cygwin.com/).
+On Windows the client always connects over TCP (port 6000 + display number, to
+display `:0` on `localhost` when `DISPLAY` is unset), so the server has to
+accept TCP connections. Inside WSL, node-x11 is an ordinary Linux client.
 
 ## Example
 
@@ -80,53 +91,56 @@ x11.createClient((err, display) => {
 
 ## Screenshots
 
-![tetris game](https://lh6.googleusercontent.com/-RCRY9A7WwnA/Tlww0FHP7NI/AAAAAAAAAwo/nxfSxsw6xow/s400/tetris.png)
-![XRENDER gradients](https://lh4.googleusercontent.com/-VS0BMYYmq6M/Tlww0Y1ij0I/AAAAAAAAAws/pVWsPZ63Yeo/s400/render-gradients.png)
-![OpenGL glxgears](http://img-fotki.yandex.ru/get/4123/37511094.30/0_81712_6c2ebb11_L)
-![OpenGL teapot](http://img-fotki.yandex.ru/get/4132/37511094.30/0_81713_82a5ac48_L)
+![OpenGL glxgears](https://img-fotki.yandex.ru/get/4123/37511094.30/0_81712_6c2ebb11_L)
+![OpenGL teapot](https://img-fotki.yandex.ru/get/4132/37511094.30/0_81713_82a5ac48_L)
+
+[`examples/opengl/glxgears.js`](examples/opengl/glxgears.js) and
+[`examples/opengl/teapot.js`](examples/opengl/teapot.js) over indirect GLX.
+More, running in your browser: the [live demos](https://sidorares.github.io/node-x11/).
 
 ## In use
 
 - [ntk](https://github.com/sidorares/ntk) - higher level toolkit on top of X11
-- [node-remote](https://github.com/AndrewSwerlick/node-remote) - media center controller
+- [react-x11](https://github.com/sidorares/react-x11) - React renderer with X11 as a target, built on ntk
+- [node-remote](https://github.com/AndrewSwerlick/node-remote) - media center controller (archived)
 - [tiles](https://github.com/dominictarr/tiles) - tiling window manager
 - [vnc](https://github.com/sidorares/node-vnc) - vnc client.
 - [node-ewmh](https://github.com/santigimeno/node-ewmh) - set of EWMH helpers.
-- [OdieWM](https://github.com/bu/OdieWM) - window manager
+- [OdieWM](https://github.com/bu/OdieWM) - window manager (archived)
 - [Dbusmenu](https://github.com/sidorares/node-dbusmenu) - unity global menu client.
 - [AirWM](https://github.com/AirWM/AirWM) - tiling window manager
 - [npdf](https://github.com/sidorares/npdf) - pdf viewer
-- [tinywm](https://github.com/Airblader/node-tinywm) The famous [TinyWM](https://github.com/mackstann/tinywm) written in node.js
+- [tinywm](https://github.com/Airblader/node-tinywm) The famous [TinyWM](https://github.com/mackstann/tinywm) written in node.js (archived)
 - [basedwm](https://github.com/anko/basedwm) Infinite-desktop panning X window manager in LiveScript
 
 ## X11 resources/documentation:
 
-- [Xplain](https://github.com/magcius/xplain) - A series of articles to help explain the X Window System http://magcius.github.io/xplain/article/
-- [Official X11 docs](http://www.x.org/releases/X11R7.6/doc/)
-- [protocol specification](http://www.x.org/releases/X11R7.6/doc/xproto/x11protocol.pdf)
-- C Xlib to X11 request mapping table http://tronche.com/gui/x/xlib/appendix/a.html
-- [How to write composite manager](http://www.talisman.org/~erlkonig/misc/x11-composite-tutorial/)
-- [Extended Window Manager Hints specification](http://standards.freedesktop.org/wm-spec/wm-spec-1.3.html)
+- [Xplain](https://github.com/magcius/xplain) - A series of articles to help explain the X Window System https://magcius.github.io/xplain/article/
+- [Official X11 docs](https://www.x.org/releases/current/doc/)
+- [protocol specification](https://www.x.org/releases/current/doc/xproto/x11protocol.html)
+- C Xlib to X11 request mapping table https://tronche.com/gui/x/xlib/appendix/a.html
+- [Extended Window Manager Hints specification](https://specifications.freedesktop.org/wm-spec/latest/)
 
 ## Other implementations
 
-- C: XLib - http://www.sbin.org/doc/Xlib/ http://www.tronche.com/gui/x/xlib/ http://www.x.org/docs/X11/xlib.pdf
-- C: XCB - http://xcb.freedesktop.org/
-- Python: http://sourceforge.net/projects/python-xlib/ ( github fork: https://github.com/Ademan/python-xlib-branch pypi: http://pypi.python.org/pypi/Python%20Xlib )
+- C: Xlib - https://www.x.org/releases/current/doc/libX11/libX11/libX11.html https://tronche.com/gui/x/xlib/
+- C: XCB - https://xcb.freedesktop.org/
+- Python: https://github.com/python-xlib/python-xlib ( pypi: https://pypi.org/project/python-xlib/ )
 - https://github.com/alexer/python-xlib-render
 - Python/twisted: https://launchpad.net/twisted-x11
-- Perl: http://search.cpan.org/~smccam/X11-Protocol-0.56/Protocol.pm
+- Perl: https://metacpan.org/pod/X11::Protocol
 - Go: https://github.com/BurntSushi/xgb
-- Java: https://github.com/xderoche/J11
+- Java: https://github.com/xadorfr/J11
 - Java: https://github.com/moaxcp/x11
 - Ruby: https://github.com/dj2/x-ruby-bindings
-- Clojure: https://github.com/noodlewiz/xcljb
 - Guile: https://github.com/mwitmer/guile-xcb
-- Emacs lisp: https://github.com/ch11ng/xelb ( autogenerated from XCB XML )
+- Emacs lisp: https://github.com/emacs-exwm/xelb ( autogenerated from XCB XML )
 
-## Server side (protocol + functionality) implementations for js + DOM
+## X servers in JavaScript
 
-would be really great to make completely web based playground page, connecting node-x11 api to DOM based implementation
+node-x11 ships its own: `x11.createServer` / `lib/xserver`, the server the
+[playground](https://sidorares.github.io/node-x11/playground) runs in your
+browser. Earlier DOM-based servers:
 
 - https://github.com/GothAck/javascript-x-server
 - https://github.com/ttaubert/x-server-js
