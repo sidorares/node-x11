@@ -1,7 +1,6 @@
 const { describe, it, beforeEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 describe('Client', () => {
 
@@ -20,8 +19,8 @@ describe('Client', () => {
   });
 
   it('should handle more than 65535 requests in one connection', (t, done) => {
-      should.exist(display);
-      should.exist(display.screen);
+      assert.ok(display != null);
+      assert.ok(display.screen != null);
       const total = 70000;
       let left = total;
       const start = Date.now();

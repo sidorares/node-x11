@@ -4,7 +4,7 @@
 // fake `client` object implements the sendReply/sendError contract
 // documented in browser/glx/glx-extension.js.
 const { describe, it, beforeEach } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const glxClient = require('../../lib/ext/glx');
 const { createGlxExtension, RecordingBackend } = require('../../browser/glx');
 

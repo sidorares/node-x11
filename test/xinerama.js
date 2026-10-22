@@ -1,17 +1,17 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('XINERAMA extension', () => {
     let X, root, xinerama;
 
     before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             root = dpy.screen[0].root;
             X.require('xinerama', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 xinerama = ext;
                 done();
             });
@@ -21,39 +21,39 @@ describe('XINERAMA extension', () => {
     });
 
     it('QueryVersion should report at least 1.1', function() {
-        xinerama.major.should.be.aboveOrEqual(1);
-        xinerama.minor.should.be.aboveOrEqual(1);
+        assert.ok(xinerama.major >= 1);
+        assert.ok(xinerama.minor >= 1);
     });
 
     it('GetState should return a 0/1 flag for the root window', function(t, done) {
         xinerama.GetState(root, (err, state) => {
-            should.not.exist(err);
-            state.should.be.within(0, 1);
+            assert.ifError(err);
+            assert.ok(state >= 0 && state <= 1);
             done();
         });
     });
 
     it('GetScreenCount should return a number for the root window', function(t, done) {
         xinerama.GetScreenCount(root, (err, count) => {
-            should.not.exist(err);
-            count.should.be.a.Number();
-            count.should.be.aboveOrEqual(0);
+            assert.ifError(err);
+            assert.strictEqual(typeof count, 'number');
+            assert.ok(count >= 0);
             done();
         });
     });
 
     it('IsActive and QueryScreens should agree with each other', function(t, done) {
         xinerama.IsActive((err, state) => {
-            should.not.exist(err);
+            assert.ifError(err);
             xinerama.QueryScreens((err, screens) => {
-                should.not.exist(err);
-                screens.should.be.an.Array();
+                assert.ifError(err);
+                assert.ok(Array.isArray(screens));
                 if (state === 0) {
-                    screens.length.should.equal(0);
+                    assert.strictEqual(screens.length, 0);
                 } else {
-                    screens.length.should.be.above(0);
-                    screens[0].width.should.be.above(0);
-                    screens[0].height.should.be.above(0);
+                    assert.ok(screens.length > 0);
+                    assert.ok(screens[0].width > 0);
+                    assert.ok(screens[0].height > 0);
                 }
                 done();
             });

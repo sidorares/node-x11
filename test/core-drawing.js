@@ -1,6 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('Drawing requests', () => {
 
@@ -67,7 +67,7 @@ describe('Drawing requests', () => {
 
   function readBack(cb) {
       X.GetImage(2, pixmap, 0, 0, W, H, 0xffffffff, (err, img) => {
-          should.not.exist(err);
+          assert.ifError(err);
           cb(img.data);
       });
   }
@@ -75,9 +75,9 @@ describe('Drawing requests', () => {
   it('PolySegment should draw line segments', (t, done) => {
       X.PolySegment(pixmap, gc, [0, 10, 19, 10, 5, 0, 5, 4]);
       readBack(data => {
-          getPixel(data, 10, 10).should.equal(white >>> 0); // on segment 1
-          getPixel(data, 5, 2).should.equal(white >>> 0);   // on segment 2
-          getPixel(data, 10, 5).should.equal(black >>> 0);  // off both
+          assert.strictEqual(getPixel(data, 10, 10), white >>> 0); // on segment 1
+          assert.strictEqual(getPixel(data, 5, 2), white >>> 0);   // on segment 2
+          assert.strictEqual(getPixel(data, 10, 5), black >>> 0);  // off both
           done();
       });
   });
@@ -85,9 +85,9 @@ describe('Drawing requests', () => {
   it('PolyRectangle should draw outlines only', (t, done) => {
       X.PolyRectangle(pixmap, gc, [2, 2, 15, 15]);
       readBack(data => {
-          getPixel(data, 2, 2).should.equal(white >>> 0);   // corner
-          getPixel(data, 17, 17).should.equal(white >>> 0); // opposite corner
-          getPixel(data, 10, 10).should.equal(black >>> 0); // inside not filled
+          assert.strictEqual(getPixel(data, 2, 2), white >>> 0);   // corner
+          assert.strictEqual(getPixel(data, 17, 17), white >>> 0); // opposite corner
+          assert.strictEqual(getPixel(data, 10, 10), black >>> 0); // inside not filled
           done();
       });
   });
@@ -95,9 +95,9 @@ describe('Drawing requests', () => {
   it('PolyArc should draw an ellipse outline', (t, done) => {
       X.PolyArc(pixmap, gc, [2, 2, 16, 16, 0, 360 * 64]);
       readBack(data => {
-          getPixel(data, 2, 10).should.equal(white >>> 0);  // leftmost point
-          getPixel(data, 18, 10).should.equal(white >>> 0); // rightmost point
-          getPixel(data, 10, 10).should.equal(black >>> 0); // center untouched
+          assert.strictEqual(getPixel(data, 2, 10), white >>> 0);  // leftmost point
+          assert.strictEqual(getPixel(data, 18, 10), white >>> 0); // rightmost point
+          assert.strictEqual(getPixel(data, 10, 10), black >>> 0); // center untouched
           done();
       });
   });
@@ -105,8 +105,8 @@ describe('Drawing requests', () => {
   it('FillPoly should fill a triangle', (t, done) => {
       X.FillPoly(pixmap, gc, 2, 0, [0, 0, 19, 0, 10, 19]);
       readBack(data => {
-          getPixel(data, 10, 5).should.equal(white >>> 0);  // inside
-          getPixel(data, 0, 19).should.equal(black >>> 0);  // outside
+          assert.strictEqual(getPixel(data, 10, 5), white >>> 0);  // inside
+          assert.strictEqual(getPixel(data, 0, 19), black >>> 0);  // outside
           done();
       });
   });
@@ -121,8 +121,8 @@ describe('Drawing requests', () => {
       X.CreateGC(dstGC, dst, { foreground: white, background: black });
       X.CopyPlane(pixmap, dst, dstGC, 0, 0, 0, 0, W, H, plane);
       X.GetImage(2, dst, 0, 0, W, H, 0xffffffff, (err, img) => {
-          should.not.exist(err);
-          getPixel(img.data, 10, 10).should.equal(white >>> 0);
+          assert.ifError(err);
+          assert.strictEqual(getPixel(img.data, 10, 10), white >>> 0);
           X.FreeGC(dstGC);
           X.FreePixmap(dst);
           done();
@@ -136,7 +136,7 @@ describe('Drawing requests', () => {
       X.ImageText8(pixmap, gc, 2, 15, 'X');
       X.CloseFont(fid);
       readBack(data => {
-          countPixels(data, white).should.be.above(0);
+          assert.ok(countPixels(data, white) > 0);
           done();
       });
   });
@@ -148,14 +148,14 @@ describe('Drawing requests', () => {
       X.ImageText8(pixmap, gc, 2, 15, 'X');
       readBack(data8 => {
           const count8 = countPixels(data8, white);
-          count8.should.be.above(0);
+          assert.ok(count8 > 0);
           X.ChangeGC(gc, { foreground: black });
           X.PolyFillRectangle(pixmap, gc, [0, 0, W, H]); // reset to black
           X.ChangeGC(gc, { foreground: white });
           X.ImageText16(pixmap, gc, 2, 15, 'X');
           X.CloseFont(fid);
           readBack(data16 => {
-              countPixels(data16, white).should.equal(count8);
+              assert.strictEqual(countPixels(data16, white), count8);
               done();
           });
       });
@@ -168,14 +168,14 @@ describe('Drawing requests', () => {
       X.PolyText8(pixmap, gc, 2, 15, ['X1']);
       readBack(data8 => {
           const count8 = countPixels(data8, white);
-          count8.should.be.above(0);
+          assert.ok(count8 > 0);
           X.ChangeGC(gc, { foreground: black });
           X.PolyFillRectangle(pixmap, gc, [0, 0, W, H]); // reset to black
           X.ChangeGC(gc, { foreground: white });
           X.PolyText16(pixmap, gc, 2, 15, ['X1']);
           X.CloseFont(fid);
           readBack(data16 => {
-              countPixels(data16, white).should.equal(count8);
+              assert.strictEqual(countPixels(data16, white), count8);
               done();
           });
       });

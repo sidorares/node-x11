@@ -1,13 +1,13 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('CreateGC', () => {
     let X, root, white, black, wid, client, gc;
 
     before(function(t, done) {
         client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             root = dpy.screen[0].root;
             white = dpy.screen[0].white_pixel;
@@ -16,8 +16,8 @@ describe('CreateGC', () => {
             X.CreateWindow(wid, root, 0, 0, 1, 1); // 1x1 pixel window
             X.MapWindow(wid);
             X.QueryTree(root, (err, list) => {
-                should.not.exist(err);
-                list.children.indexOf(wid).should.not.equal(-1);
+                assert.ifError(err);
+                assert.notStrictEqual(list.children.indexOf(wid), -1);
                 done();
             });
         });
@@ -25,7 +25,7 @@ describe('CreateGC', () => {
 
     it('should create a Graphic Context correctly', function() {
         client.on('error', err => {
-            should.not.exist(err);
+            assert.ifError(err);
         });
 
         gc = X.AllocID();

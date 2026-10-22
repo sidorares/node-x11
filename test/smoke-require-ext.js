@@ -1,6 +1,6 @@
 const { describe, it } = require('node:test');
 const fs = require('fs');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 describe('all extension modules', () => {
   it('should not throw when require\'d', (t, done) => {

@@ -1,7 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 describe('Font requests', () => {
 
@@ -30,11 +29,11 @@ describe('Font requests', () => {
       const fid = X.AllocID();
       X.OpenFont(fid, 'fixed');
       X.QueryFont(fid, (err, font) => {
-          should.not.exist(err);
-          font.fontAscent.should.be.above(0);
-          font.maxBounds.characterWidth.should.be.above(0);
-          font.charInfos.length.should.be.above(0);
-          font.properties.length.should.be.above(0);
+          assert.ifError(err);
+          assert.ok(font.fontAscent > 0);
+          assert.ok(font.maxBounds.characterWidth > 0);
+          assert.ok(font.charInfos.length > 0);
+          assert.ok(font.properties.length > 0);
           X.CloseFont(fid);
           done();
       });
@@ -44,13 +43,13 @@ describe('Font requests', () => {
       const fid = X.AllocID();
       X.OpenFont(fid, 'fixed');
       X.QueryTextExtents(fid, 'hello', (err, extents) => {
-          should.not.exist(err);
+          assert.ifError(err);
           // "fixed" is monospaced: overall width = 5 * char width
-          extents.overallWidth.should.be.above(0);
+          assert.ok(extents.overallWidth > 0);
           X.QueryFont(fid, (err2, font) => {
-              should.not.exist(err2);
-              extents.overallWidth.should.equal(5 * font.maxBounds.characterWidth);
-              extents.fontAscent.should.equal(font.fontAscent);
+              assert.ifError(err2);
+              assert.strictEqual(extents.overallWidth, 5 * font.maxBounds.characterWidth);
+              assert.strictEqual(extents.fontAscent, font.fontAscent);
               X.CloseFont(fid);
               done();
           });
@@ -62,8 +61,8 @@ describe('Font requests', () => {
       X.OpenFont(fid, 'fixed');
       X.CloseFont(fid);
       X.QueryFont(fid, err => {
-          should.exist(err);
-          err.message.should.equal('Bad font');
+          assert.ok(err != null);
+          assert.strictEqual(err.message, 'Bad font');
           done();
           return true; // error handled - don't re-emit on client
       });
@@ -71,17 +70,17 @@ describe('Font requests', () => {
 
   it('ListFontsWithInfo should return same number of fonts as ListFonts', (t, done) => {
       X.ListFonts('*', 10, (err, names) => {
-          should.not.exist(err);
-          names.length.should.be.above(0);
+          assert.ifError(err);
+          assert.ok(names.length > 0);
           // note: names may differ from ListFonts (server resolves aliases), so
           // only compare the count and check per-font info is sane
           X.ListFontsWithInfo('*', 10, (err2, fonts) => {
-              should.not.exist(err2);
-              fonts.length.should.equal(names.length);
+              assert.ifError(err2);
+              assert.strictEqual(fonts.length, names.length);
               fonts.forEach(font => {
-                  font.name.length.should.be.above(0);
-                  font.maxBounds.characterWidth.should.be.above(0);
-                  font.fontAscent.should.be.above(0);
+                  assert.ok(font.name.length > 0);
+                  assert.ok(font.maxBounds.characterWidth > 0);
+                  assert.ok(font.fontAscent > 0);
               });
               done();
           });
@@ -90,12 +89,12 @@ describe('Font requests', () => {
 
   it('GetFontPath/SetFontPath roundtrip', (t, done) => {
       X.GetFontPath((err, paths) => {
-          should.not.exist(err);
-          paths.should.be.an.Array();
+          assert.ifError(err);
+          assert.ok(Array.isArray(paths));
           X.SetFontPath(paths);
           X.GetFontPath((err2, paths2) => {
-              should.not.exist(err2);
-              assert.deepEqual(paths2, paths);
+              assert.ifError(err2);
+              assert.deepStrictEqual(paths2, paths);
               done();
           });
       });

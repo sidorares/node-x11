@@ -1,7 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 describe('Colormap requests', () => {
 
@@ -49,25 +48,25 @@ describe('Colormap requests', () => {
 
   it('LookupColor should resolve named color "red"', (t, done) => {
       X.LookupColor(defaultCmap, 'red', (err, color) => {
-          should.not.exist(err);
-          color.exactRed.should.equal(0xffff);
-          color.exactGreen.should.equal(0);
-          color.exactBlue.should.equal(0);
+          assert.ifError(err);
+          assert.strictEqual(color.exactRed, 0xffff);
+          assert.strictEqual(color.exactGreen, 0);
+          assert.strictEqual(color.exactBlue, 0);
           done();
       });
   });
 
   it('AllocColor should return closest rgb and a queryable pixel', (t, done) => {
       X.AllocColor(defaultCmap, 0xffff, 0x8080, 0, (err, color) => {
-          should.not.exist(err);
-          color.red.should.equal(0xffff);
-          color.green.should.be.approximately(0x8080, 0x200);
-          color.blue.should.equal(0);
+          assert.ifError(err);
+          assert.strictEqual(color.red, 0xffff);
+          assert.ok(Math.abs(color.green - 0x8080) <= 0x200);
+          assert.strictEqual(color.blue, 0);
           X.QueryColors(defaultCmap, [color.pixel], (err2, colors) => {
-              should.not.exist(err2);
-              colors[0].red.should.equal(color.red);
-              colors[0].green.should.equal(color.green);
-              colors[0].blue.should.equal(color.blue);
+              assert.ifError(err2);
+              assert.strictEqual(colors[0].red, color.red);
+              assert.strictEqual(colors[0].green, color.green);
+              assert.strictEqual(colors[0].blue, color.blue);
               done();
           });
       });
@@ -75,14 +74,14 @@ describe('Colormap requests', () => {
 
   it('AllocNamedColor should allocate named color "blue"', (t, done) => {
       X.AllocNamedColor(defaultCmap, 'blue', (err, color) => {
-          should.not.exist(err);
-          color.exactBlue.should.equal(0xffff);
-          color.visualBlue.should.be.above(0);
+          assert.ifError(err);
+          assert.strictEqual(color.exactBlue, 0xffff);
+          assert.ok(color.visualBlue > 0);
           X.QueryColors(defaultCmap, [color.pixel], (err2, colors) => {
-              should.not.exist(err2);
-              colors.length.should.equal(1);
-              colors[0].blue.should.equal(color.visualBlue);
-              colors[0].red.should.equal(color.visualRed);
+              assert.ifError(err2);
+              assert.strictEqual(colors.length, 1);
+              assert.strictEqual(colors[0].blue, color.visualBlue);
+              assert.strictEqual(colors[0].red, color.visualRed);
               done();
           });
       });
@@ -92,22 +91,22 @@ describe('Colormap requests', () => {
       const white = display.screen[0].white_pixel;
       const black = display.screen[0].black_pixel;
       X.QueryColors(defaultCmap, [white, black], (err, colors) => {
-          should.not.exist(err);
-          colors.length.should.equal(2);
-          colors[0].red.should.equal(0xffff);
-          colors[0].green.should.equal(0xffff);
-          colors[0].blue.should.equal(0xffff);
-          colors[1].red.should.equal(0);
-          colors[1].green.should.equal(0);
-          colors[1].blue.should.equal(0);
+          assert.ifError(err);
+          assert.strictEqual(colors.length, 2);
+          assert.strictEqual(colors[0].red, 0xffff);
+          assert.strictEqual(colors[0].green, 0xffff);
+          assert.strictEqual(colors[0].blue, 0xffff);
+          assert.strictEqual(colors[1].red, 0);
+          assert.strictEqual(colors[1].green, 0);
+          assert.strictEqual(colors[1].blue, 0);
           done();
       });
   });
 
   it('ListInstalledColormaps should include the default colormap', (t, done) => {
       X.ListInstalledColormaps(root, (err, cmaps) => {
-          should.not.exist(err);
-          cmaps.should.containEql(defaultCmap);
+          assert.ifError(err);
+          assert.ok(cmaps.includes(defaultCmap));
           done();
       });
   });
@@ -120,12 +119,12 @@ describe('Colormap requests', () => {
       const cmap = createWritableCmap();
       X.InstallColormap(cmap);
       X.ListInstalledColormaps(root, (err, cmaps) => {
-          should.not.exist(err);
-          cmaps.should.containEql(cmap);
+          assert.ifError(err);
+          assert.ok(cmaps.includes(cmap));
           X.UninstallColormap(cmap);
           X.ListInstalledColormaps(root, (err2, cmaps2) => {
-              should.not.exist(err2);
-              cmaps2.should.not.containEql(cmap);
+              assert.ifError(err2);
+              assert.ok(!cmaps2.includes(cmap));
               X.FreeColormap(cmap);
               done();
           });
@@ -139,15 +138,15 @@ describe('Colormap requests', () => {
       }
       const cmap = createWritableCmap();
       X.AllocColorCells(0, cmap, 1, 0, (err, cells) => {
-          should.not.exist(err);
-          cells.pixels.length.should.equal(1);
+          assert.ifError(err);
+          assert.strictEqual(cells.pixels.length, 1);
           const pixel = cells.pixels[0];
           X.StoreColors(cmap, [{ pixel, red: 0xabab, green: 0x1212, blue: 0x7878 }]);
           X.QueryColors(cmap, [pixel], (err2, colors) => {
-              should.not.exist(err2);
-              colors[0].red.should.equal(0xabab);
-              colors[0].green.should.equal(0x1212);
-              colors[0].blue.should.equal(0x7878);
+              assert.ifError(err2);
+              assert.strictEqual(colors[0].red, 0xabab);
+              assert.strictEqual(colors[0].green, 0x1212);
+              assert.strictEqual(colors[0].blue, 0x7878);
               X.FreeColors(cmap, 0, [pixel]);
               X.FreeColormap(cmap);
               done();
@@ -162,14 +161,14 @@ describe('Colormap requests', () => {
       }
       const cmap = createWritableCmap();
       X.AllocColorCells(0, cmap, 1, 0, (err, cells) => {
-          should.not.exist(err);
+          assert.ifError(err);
           const pixel = cells.pixels[0];
           X.StoreNamedColor(cmap, pixel, 'red');
           X.QueryColors(cmap, [pixel], (err2, colors) => {
-              should.not.exist(err2);
-              colors[0].red.should.equal(0xffff);
-              colors[0].green.should.equal(0);
-              colors[0].blue.should.equal(0);
+              assert.ifError(err2);
+              assert.strictEqual(colors[0].red, 0xffff);
+              assert.strictEqual(colors[0].green, 0);
+              assert.strictEqual(colors[0].blue, 0);
               X.FreeColormap(cmap);
               done();
           });
@@ -183,11 +182,11 @@ describe('Colormap requests', () => {
       }
       const cmap = createWritableCmap();
       X.AllocColorPlanes(0, cmap, 1, 1, 1, 1, (err, res) => {
-          should.not.exist(err);
-          res.pixels.length.should.equal(1);
-          res.redMask.should.be.above(0);
-          res.greenMask.should.be.above(0);
-          res.blueMask.should.be.above(0);
+          assert.ifError(err);
+          assert.strictEqual(res.pixels.length, 1);
+          assert.ok(res.redMask > 0);
+          assert.ok(res.greenMask > 0);
+          assert.ok(res.blueMask > 0);
           X.FreeColormap(cmap);
           done();
       });
@@ -200,14 +199,14 @@ describe('Colormap requests', () => {
       }
       const cmap = createWritableCmap();
       X.AllocColorCells(0, cmap, 1, 0, (err, cells) => {
-          should.not.exist(err);
+          assert.ifError(err);
           const pixel = cells.pixels[0];
           X.StoreColors(cmap, [{ pixel, red: 0x4242, green: 0x4242, blue: 0x4242 }]);
           const cmap2 = X.AllocID();
           X.CopyColormapAndFree(cmap2, cmap);
           X.QueryColors(cmap2, [pixel], (err2, colors) => {
-              should.not.exist(err2);
-              colors[0].red.should.equal(0x4242);
+              assert.ifError(err2);
+              assert.strictEqual(colors[0].red, 0x4242);
               X.FreeColormap(cmap2);
               done();
           });

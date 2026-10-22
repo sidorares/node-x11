@@ -4,7 +4,7 @@
 // server, no GPU and no real descriptors-over-socket are involved — those
 // live in test/dri3-live.js (needs a DRI3 server) and in the examples.
 const { describe, it, beforeEach } = require('node:test');
-const should = require('should');
+const assert = require('node:assert/strict');
 const fs = require('fs');
 const FrameBuffer = require('../lib/framebuffer');
 const dri3 = require('../lib/ext/dri3');
@@ -27,7 +27,7 @@ function fakeClient(streamOverride) {
         _voidSyncs: [],
         _scheduleVoidSync(seq) { this._voidSyncs.push(seq); },
         QueryExtension(name, cb) {
-            name.should.equal('DRI3');
+            assert.strictEqual(name, 'DRI3');
             cb(null, { present: 1, majorOpcode: OPCODE, firstEvent: 0, firstError: 0 });
         }
     };
@@ -35,7 +35,7 @@ function fakeClient(streamOverride) {
     // the body from byte 8 on, plus the header's data byte
     const respond = (seq, body, opt) => {
         const handler = X.replies[seq];
-        should.exist(handler, `no reply handler registered for seq ${seq}`);
+        assert.ok(handler != null, `no reply handler registered for seq ${seq}`);
         delete X.replies[seq];
         handler[1](null, handler[0].call(X, body, opt));
     };
@@ -44,7 +44,7 @@ function fakeClient(streamOverride) {
 
 function requireDri3(harness, cb) {
     dri3.requireExt({ client: harness.X }, (err, ext) => {
-        should.not.exist(err);
+        assert.ifError(err);
         cb(ext);
     });
     // answer the automatic QueryVersion(1, 4) so requireExt completes
@@ -69,25 +69,25 @@ describe('DRI3 extension (encoding)', () => {
     });
 
     it('negotiates version 1.4 while requiring', () => {
-        DRI3.major.should.equal(1);
-        DRI3.minor.should.equal(4);
-        DRI3.fdCapable.should.equal(true);
+        assert.strictEqual(DRI3.major, 1);
+        assert.strictEqual(DRI3.minor, 4);
+        assert.strictEqual(DRI3.fdCapable, true);
     });
 
     it('encodes QueryVersion per dri3proto', (t, done) => {
         DRI3.QueryVersion(1, 2, (err, vers) => {
-            should.not.exist(err);
-            vers.should.eql([1, 2]);
+            assert.ifError(err);
+            assert.deepStrictEqual(vers, [1, 2]);
             done();
         });
         const { buf, fds } = h.sent[0];
-        should.not.exist(fds);
-        buf.length.should.equal(12);           // sz_xDRI3QueryVersionReq
-        buf.readUInt8(0).should.equal(OPCODE);
-        buf.readUInt8(1).should.equal(0);      // minor opcode
-        buf.readUInt16LE(2).should.equal(3);   // length in 4-byte units
-        buf.readUInt32LE(4).should.equal(1);
-        buf.readUInt32LE(8).should.equal(2);
+        assert.ok(fds == null);
+        assert.strictEqual(buf.length, 12);           // sz_xDRI3QueryVersionReq
+        assert.strictEqual(buf.readUInt8(0), OPCODE);
+        assert.strictEqual(buf.readUInt8(1), 0);      // minor opcode
+        assert.strictEqual(buf.readUInt16LE(2), 3);   // length in 4-byte units
+        assert.strictEqual(buf.readUInt32LE(4), 1);
+        assert.strictEqual(buf.readUInt32LE(8), 2);
         const body = Buffer.alloc(24);
         body.writeUInt32LE(1, 0);
         body.writeUInt32LE(2, 4);
@@ -100,18 +100,18 @@ describe('DRI3 extension (encoding)', () => {
             fd, width: 64, height: 32, stride: 256, depth: 24, bpp: 32
         });
         const { buf, fds } = h.sent[0];
-        fds.should.eql([fd]);
-        buf.length.should.equal(24);           // sz_xDRI3PixmapFromBufferReq
-        buf.readUInt8(1).should.equal(2);
-        buf.readUInt16LE(2).should.equal(6);
-        buf.readUInt32LE(4).should.equal(0x600001);
-        buf.readUInt32LE(8).should.equal(0x123);
-        buf.readUInt32LE(12).should.equal(256 * 32); // size defaults to stride*height
-        buf.readUInt16LE(16).should.equal(64);
-        buf.readUInt16LE(18).should.equal(32);
-        buf.readUInt16LE(20).should.equal(256);
-        buf.readUInt8(22).should.equal(24);
-        buf.readUInt8(23).should.equal(32);
+        assert.deepStrictEqual(fds, [fd]);
+        assert.strictEqual(buf.length, 24);           // sz_xDRI3PixmapFromBufferReq
+        assert.strictEqual(buf.readUInt8(1), 2);
+        assert.strictEqual(buf.readUInt16LE(2), 6);
+        assert.strictEqual(buf.readUInt32LE(4), 0x600001);
+        assert.strictEqual(buf.readUInt32LE(8), 0x123);
+        assert.strictEqual(buf.readUInt32LE(12), 256 * 32); // size defaults to stride*height
+        assert.strictEqual(buf.readUInt16LE(16), 64);
+        assert.strictEqual(buf.readUInt16LE(18), 32);
+        assert.strictEqual(buf.readUInt16LE(20), 256);
+        assert.strictEqual(buf.readUInt8(22), 24);
+        assert.strictEqual(buf.readUInt8(23), 32);
         fs.closeSync(fd);
     });
 
@@ -120,7 +120,7 @@ describe('DRI3 extension (encoding)', () => {
         DRI3.PixmapFromBuffer(1, 2, {
             fd, width: 4, height: 4, stride: 16, depth: 24, bpp: 32, size: 4096
         });
-        h.sent[0].buf.readUInt32LE(12).should.equal(4096);
+        assert.strictEqual(h.sent[0].buf.readUInt32LE(12), 4096);
         fs.closeSync(fd);
     });
 
@@ -131,10 +131,10 @@ describe('DRI3 extension (encoding)', () => {
             fd, width: 4, height: 4, stride: 16, depth: 24, bpp: 32
         }, err => { called = err; });
         const seq = h.X.seq_num;
-        h.X._voidSyncs.should.eql([seq]);
+        assert.deepStrictEqual(h.X._voidSyncs, [seq]);
         // no error arrives; the sweep resolves it with null like xcore does
-        h.X.replies[seq][1](null).should.be.true();
-        should.equal(called, null);
+        assert.strictEqual(h.X.replies[seq][1](null), true);
+        assert.strictEqual(called, null);
         // an error resolves it too, and reports handled
         fs.closeSync(fd);
     });
@@ -151,48 +151,48 @@ describe('DRI3 extension (encoding)', () => {
             ]
         });
         const { buf, fds } = h.sent[0];
-        fds.should.eql([fd0, fd1]);
-        buf.length.should.equal(64);           // sz_xDRI3PixmapFromBuffersReq
-        buf.readUInt8(1).should.equal(7);
-        buf.readUInt16LE(2).should.equal(16);
-        buf.readUInt32LE(4).should.equal(0xAB);
-        buf.readUInt32LE(8).should.equal(0xCD);
-        buf.readUInt8(12).should.equal(2);     // num_buffers
-        buf.readUInt16LE(16).should.equal(128);
-        buf.readUInt16LE(18).should.equal(64);
-        buf.readUInt32LE(20).should.equal(512);   // stride0
-        buf.readUInt32LE(24).should.equal(0);     // offset0
-        buf.readUInt32LE(28).should.equal(256);   // stride1
-        buf.readUInt32LE(32).should.equal(32768); // offset1
-        buf.readUInt32LE(36).should.equal(0);     // stride2 unused
-        buf.readUInt8(52).should.equal(24);
-        buf.readUInt8(53).should.equal(32);
-        buf.readBigUInt64LE(56).should.equal((1n << 56n) - 1n);
+        assert.deepStrictEqual(fds, [fd0, fd1]);
+        assert.strictEqual(buf.length, 64);           // sz_xDRI3PixmapFromBuffersReq
+        assert.strictEqual(buf.readUInt8(1), 7);
+        assert.strictEqual(buf.readUInt16LE(2), 16);
+        assert.strictEqual(buf.readUInt32LE(4), 0xAB);
+        assert.strictEqual(buf.readUInt32LE(8), 0xCD);
+        assert.strictEqual(buf.readUInt8(12), 2);     // num_buffers
+        assert.strictEqual(buf.readUInt16LE(16), 128);
+        assert.strictEqual(buf.readUInt16LE(18), 64);
+        assert.strictEqual(buf.readUInt32LE(20), 512);   // stride0
+        assert.strictEqual(buf.readUInt32LE(24), 0);     // offset0
+        assert.strictEqual(buf.readUInt32LE(28), 256);   // stride1
+        assert.strictEqual(buf.readUInt32LE(32), 32768); // offset1
+        assert.strictEqual(buf.readUInt32LE(36), 0);     // stride2 unused
+        assert.strictEqual(buf.readUInt8(52), 24);
+        assert.strictEqual(buf.readUInt8(53), 32);
+        assert.strictEqual(buf.readBigUInt64LE(56), (1n << 56n) - 1n);
         fs.closeSync(fd0);
         fs.closeSync(fd1);
     });
 
     it('rejects PixmapFromBuffers with 0 or more than 4 planes', (t, done) => {
         DRI3.PixmapFromBuffers(1, 2, { width: 1, height: 1, depth: 24, bpp: 32, planes: [] }, err => {
-            should.exist(err);
-            h.sent.length.should.equal(0);
+            assert.ok(err != null);
+            assert.strictEqual(h.sent.length, 0);
             done();
         });
     });
 
     it('encodes GetSupportedModifiers and parses 64-bit modifiers exactly', (t, done) => {
         DRI3.GetSupportedModifiers(0x321, 24, 32, (err, mods) => {
-            should.not.exist(err);
-            mods.windowModifiers.should.eql([0n, 0x0100000000000001n]);
-            mods.screenModifiers.should.eql([(1n << 56n) - 1n]);
+            assert.ifError(err);
+            assert.deepStrictEqual(mods.windowModifiers, [0n, 0x0100000000000001n]);
+            assert.deepStrictEqual(mods.screenModifiers, [(1n << 56n) - 1n]);
             done();
         });
         const { buf } = h.sent[0];
-        buf.length.should.equal(12);           // sz_xDRI3GetSupportedModifiersReq
-        buf.readUInt8(1).should.equal(6);
-        buf.readUInt32LE(4).should.equal(0x321);
-        buf.readUInt8(8).should.equal(24);
-        buf.readUInt8(9).should.equal(32);
+        assert.strictEqual(buf.length, 12);           // sz_xDRI3GetSupportedModifiersReq
+        assert.strictEqual(buf.readUInt8(1), 6);
+        assert.strictEqual(buf.readUInt32LE(4), 0x321);
+        assert.strictEqual(buf.readUInt8(8), 24);
+        assert.strictEqual(buf.readUInt8(9), 32);
         const body = Buffer.alloc(24 + 3 * 8);
         body.writeUInt32LE(2, 0);              // numWindowModifiers
         body.writeUInt32LE(1, 4);              // numScreenModifiers
@@ -206,39 +206,39 @@ describe('DRI3 extension (encoding)', () => {
         const fd = fs.openSync('/dev/null', 'r');
         DRI3.FenceFromFD(0x42, 0x99, true, fd);
         const { buf, fds } = h.sent[0];
-        fds.should.eql([fd]);
-        buf.length.should.equal(16);           // sz_xDRI3FenceFromFDReq
-        buf.readUInt8(1).should.equal(4);
-        buf.readUInt32LE(4).should.equal(0x42);
-        buf.readUInt32LE(8).should.equal(0x99);
-        buf.readUInt8(12).should.equal(1);
+        assert.deepStrictEqual(fds, [fd]);
+        assert.strictEqual(buf.length, 16);           // sz_xDRI3FenceFromFDReq
+        assert.strictEqual(buf.readUInt8(1), 4);
+        assert.strictEqual(buf.readUInt32LE(4), 0x42);
+        assert.strictEqual(buf.readUInt32LE(8), 0x99);
+        assert.strictEqual(buf.readUInt8(12), 1);
         fs.closeSync(fd);
     });
 
     it('encodes SetDRMDeviceInUse (DRI3 1.3)', () => {
         DRI3.SetDRMDeviceInUse(0x77, 226, 128);
         const { buf, fds } = h.sent[0];
-        should.not.exist(fds);
-        buf.length.should.equal(16);           // sz_xDRI3SetDRMDeviceInUseReq
-        buf.readUInt8(1).should.equal(9);
-        buf.readUInt32LE(4).should.equal(0x77);
-        buf.readUInt32LE(8).should.equal(226);
-        buf.readUInt32LE(12).should.equal(128);
+        assert.ok(fds == null);
+        assert.strictEqual(buf.length, 16);           // sz_xDRI3SetDRMDeviceInUseReq
+        assert.strictEqual(buf.readUInt8(1), 9);
+        assert.strictEqual(buf.readUInt32LE(4), 0x77);
+        assert.strictEqual(buf.readUInt32LE(8), 226);
+        assert.strictEqual(buf.readUInt32LE(12), 128);
     });
 
     it('encodes ImportSyncobj / FreeSyncobj (DRI3 1.4)', () => {
         const fd = fs.openSync('/dev/null', 'r');
         DRI3.ImportSyncobj(0x11, 0x22, fd);
         DRI3.FreeSyncobj(0x11);
-        h.sent[0].fds.should.eql([fd]);
-        h.sent[0].buf.length.should.equal(12); // sz_xDRI3ImportSyncobjReq
-        h.sent[0].buf.readUInt8(1).should.equal(10);
-        h.sent[0].buf.readUInt32LE(4).should.equal(0x11);
-        h.sent[0].buf.readUInt32LE(8).should.equal(0x22);
-        h.sent[1].buf.length.should.equal(8);  // sz_xDRI3FreeSyncobjReq
-        h.sent[1].buf.readUInt8(1).should.equal(11);
-        h.sent[1].buf.readUInt32LE(4).should.equal(0x11);
-        should.not.exist(h.sent[1].fds);
+        assert.deepStrictEqual(h.sent[0].fds, [fd]);
+        assert.strictEqual(h.sent[0].buf.length, 12); // sz_xDRI3ImportSyncobjReq
+        assert.strictEqual(h.sent[0].buf.readUInt8(1), 10);
+        assert.strictEqual(h.sent[0].buf.readUInt32LE(4), 0x11);
+        assert.strictEqual(h.sent[0].buf.readUInt32LE(8), 0x22);
+        assert.strictEqual(h.sent[1].buf.length, 8);  // sz_xDRI3FreeSyncobjReq
+        assert.strictEqual(h.sent[1].buf.readUInt8(1), 11);
+        assert.strictEqual(h.sent[1].buf.readUInt32LE(4), 0x11);
+        assert.ok(h.sent[1].fds == null);
         fs.closeSync(fd);
     });
 
@@ -251,28 +251,28 @@ describe('DRI3 extension (encoding)', () => {
         ];
         let remaining = gated.length;
         gated.forEach(fn => fn(err => {
-            should.exist(err);
-            err.message.should.match(/file descriptor/);
+            assert.ok(err != null);
+            assert.match(err.message, /file descriptor/);
             if (--remaining === 0) {
-                h.sent.length.should.equal(0); // nothing reached the wire
+                assert.strictEqual(h.sent.length, 0); // nothing reached the wire
                 done();
             }
         }));
     });
 
     it('reports that the connection cannot receive descriptors', () => {
-        DRI3.fdReceiveCapable.should.equal(false);
+        assert.strictEqual(DRI3.fdReceiveCapable, false);
     });
 
     it('fails cleanly and consumes the descriptor when the connection cannot pass fds', (t, done) => {
         const plain = fakeClient({}); // stream without sendFds
         requireDri3(plain, ext => {
             const fd = fs.openSync('/dev/null', 'r');
-            ext.fdCapable.should.equal(false);
+            assert.strictEqual(ext.fdCapable, false);
             ext.PixmapFromBuffer(1, 2, { fd, width: 4, height: 4, stride: 16, depth: 24, bpp: 32 }, err => {
-                should.exist(err);
-                err.message.should.match(/fd-capable/);
-                should.throws(() => fs.fstatSync(fd)); // closed: consumed contract
+                assert.ok(err != null);
+                assert.match(err.message, /fd-capable/);
+                assert.throws(() => fs.fstatSync(fd)); // closed: consumed contract
                 done();
             });
         });
@@ -318,42 +318,42 @@ describe('DRI3 extension (replies carrying descriptors)', () => {
     });
 
     it('reports that the connection can receive descriptors', () => {
-        DRI3.fdReceiveCapable.should.equal(true);
+        assert.strictEqual(DRI3.fdReceiveCapable, true);
     });
 
     it('encodes Open and hands back the device descriptor', (t, done) => {
         const fd = openNull();
         DRI3.Open(0x321, 0, (err, deviceFd) => {
-            should.not.exist(err);
-            deviceFd.should.equal(fd);
+            assert.ifError(err);
+            assert.strictEqual(deviceFd, fd);
             fs.closeSync(deviceFd);
             done();
         });
         const { buf } = h.sent[0];
-        buf.length.should.equal(12);           // sz_xDRI3OpenReq
-        buf.readUInt8(0).should.equal(OPCODE);
-        buf.readUInt8(1).should.equal(1);      // minor opcode
-        buf.readUInt16LE(2).should.equal(3);
-        buf.readUInt32LE(4).should.equal(0x321);
-        buf.readUInt32LE(8).should.equal(0);   // provider
+        assert.strictEqual(buf.length, 12);           // sz_xDRI3OpenReq
+        assert.strictEqual(buf.readUInt8(0), OPCODE);
+        assert.strictEqual(buf.readUInt8(1), 1);      // minor opcode
+        assert.strictEqual(buf.readUInt16LE(2), 3);
+        assert.strictEqual(buf.readUInt32LE(4), 0x321);
+        assert.strictEqual(buf.readUInt32LE(8), 0);   // provider
         respondWithFds(Buffer.alloc(24), [fd]);
     });
 
     it('encodes BufferFromPixmap and parses the buffer description', (t, done) => {
         const fd = openNull();
         DRI3.BufferFromPixmap(0x600001, (err, buffer) => {
-            should.not.exist(err);
-            buffer.should.eql({
+            assert.ifError(err);
+            assert.deepStrictEqual(buffer, {
                 fd, size: 65536, width: 64, height: 32, stride: 256, depth: 24, bpp: 32
             });
             fs.closeSync(buffer.fd);
             done();
         });
         const { buf } = h.sent[0];
-        buf.length.should.equal(8);            // sz_xDRI3BufferFromPixmapReq
-        buf.readUInt8(1).should.equal(3);
-        buf.readUInt16LE(2).should.equal(2);
-        buf.readUInt32LE(4).should.equal(0x600001);
+        assert.strictEqual(buf.length, 8);            // sz_xDRI3BufferFromPixmapReq
+        assert.strictEqual(buf.readUInt8(1), 3);
+        assert.strictEqual(buf.readUInt16LE(2), 2);
+        assert.strictEqual(buf.readUInt32LE(4), 0x600001);
         const body = Buffer.alloc(24);
         body.writeUInt32LE(65536, 0);          // size
         body.writeUInt16LE(64, 4);             // width
@@ -367,16 +367,16 @@ describe('DRI3 extension (replies carrying descriptors)', () => {
     it('encodes FDFromFence and hands back the fence descriptor', (t, done) => {
         const fd = openNull();
         DRI3.FDFromFence(0x42, 0x99, (err, fenceFd) => {
-            should.not.exist(err);
-            fenceFd.should.equal(fd);
+            assert.ifError(err);
+            assert.strictEqual(fenceFd, fd);
             fs.closeSync(fenceFd);
             done();
         });
         const { buf } = h.sent[0];
-        buf.length.should.equal(12);           // sz_xDRI3FDFromFenceReq
-        buf.readUInt8(1).should.equal(5);
-        buf.readUInt32LE(4).should.equal(0x42);
-        buf.readUInt32LE(8).should.equal(0x99);
+        assert.strictEqual(buf.length, 12);           // sz_xDRI3FDFromFenceReq
+        assert.strictEqual(buf.readUInt8(1), 5);
+        assert.strictEqual(buf.readUInt32LE(4), 0x42);
+        assert.strictEqual(buf.readUInt32LE(8), 0x99);
         respondWithFds(Buffer.alloc(24), [fd]);
     });
 
@@ -384,13 +384,13 @@ describe('DRI3 extension (replies carrying descriptors)', () => {
         const fd0 = openNull();
         const fd1 = openNull();
         DRI3.BuffersFromPixmap(0xAB, (err, buffers) => {
-            should.not.exist(err);
-            buffers.width.should.equal(128);
-            buffers.height.should.equal(64);
-            buffers.depth.should.equal(24);
-            buffers.bpp.should.equal(32);
-            buffers.modifier.should.equal(0x0100000000000001n); // > 2^53: BigInt
-            buffers.planes.should.eql([
+            assert.ifError(err);
+            assert.strictEqual(buffers.width, 128);
+            assert.strictEqual(buffers.height, 64);
+            assert.strictEqual(buffers.depth, 24);
+            assert.strictEqual(buffers.bpp, 32);
+            assert.strictEqual(buffers.modifier, 0x0100000000000001n); // > 2^53: BigInt
+            assert.deepStrictEqual(buffers.planes, [
                 { fd: fd0, stride: 512, offset: 0 },
                 { fd: fd1, stride: 256, offset: 32768 }
             ]);
@@ -398,10 +398,10 @@ describe('DRI3 extension (replies carrying descriptors)', () => {
             done();
         });
         const { buf } = h.sent[0];
-        buf.length.should.equal(8);            // sz_xDRI3BuffersFromPixmapReq
-        buf.readUInt8(1).should.equal(8);
-        buf.readUInt16LE(2).should.equal(2);
-        buf.readUInt32LE(4).should.equal(0xAB);
+        assert.strictEqual(buf.length, 8);            // sz_xDRI3BuffersFromPixmapReq
+        assert.strictEqual(buf.readUInt8(1), 8);
+        assert.strictEqual(buf.readUInt16LE(2), 2);
+        assert.strictEqual(buf.readUInt32LE(4), 0xAB);
         const body = Buffer.alloc(24 + 4 * 4);
         body.writeUInt16LE(128, 0);            // width
         body.writeUInt16LE(64, 2);             // height
@@ -418,9 +418,9 @@ describe('DRI3 extension (replies carrying descriptors)', () => {
     it('reports a reply whose descriptors did not all arrive, and closes what did', (t, done) => {
         const fd = openNull();
         DRI3.BuffersFromPixmap(1, err => {
-            should.exist(err);
-            err.message.should.match(/declared 2 descriptors but 1 arrived/);
-            should.throws(() => fs.fstatSync(fd)); // closed, not leaked
+            assert.ok(err != null);
+            assert.match(err.message, /declared 2 descriptors but 1 arrived/);
+            assert.throws(() => fs.fstatSync(fd)); // closed, not leaked
             done();
         });
         const body = Buffer.alloc(24 + 4 * 4);
@@ -429,11 +429,11 @@ describe('DRI3 extension (replies carrying descriptors)', () => {
     });
 
     it('requires a callback: there would be nothing to hand the descriptors to', () => {
-        should.throws(() => DRI3.Open(1, 0), /needs a callback/);
-        should.throws(() => DRI3.BufferFromPixmap(1), /needs a callback/);
-        should.throws(() => DRI3.FDFromFence(1, 2), /needs a callback/);
-        should.throws(() => DRI3.BuffersFromPixmap(1), /needs a callback/);
-        h.sent.length.should.equal(0);
+        assert.throws(() => DRI3.Open(1, 0), /needs a callback/);
+        assert.throws(() => DRI3.BufferFromPixmap(1), /needs a callback/);
+        assert.throws(() => DRI3.FDFromFence(1, 2), /needs a callback/);
+        assert.throws(() => DRI3.BuffersFromPixmap(1), /needs a callback/);
+        assert.strictEqual(h.sent.length, 0);
     });
 });
 
@@ -453,10 +453,10 @@ describe('FrameBuffer putWithFds ordering', () => {
         fb.putWithFds(Buffer.from('bb'), [7, 8]);
         fb.put(Buffer.from('cc'));
         fb.submit();
-        out.map(o => o.str).should.eql(['aa', 'bb', 'cc']);
-        out[1].fds.should.eql([7, 8]);
-        should.not.exist(out[0].fds);
-        should.not.exist(out[2].fds);
+        assert.deepStrictEqual(out.map(o => o.str), ['aa', 'bb', 'cc']);
+        assert.deepStrictEqual(out[1].fds, [7, 8]);
+        assert.ok(out[0].fds == null);
+        assert.ok(out[2].fds == null);
     });
 
     it('keeps an fd-carrying packet in wire order (batching)', () => {
@@ -468,7 +468,7 @@ describe('FrameBuffer putWithFds ordering', () => {
         fb.put(Buffer.from('cc'));
         fb.submit();
         fb.flush();
-        out.map(o => o.str).should.eql(['aa', 'bb', 'cc']);
-        out[1].fds.should.eql([9]);
+        assert.deepStrictEqual(out.map(o => o.str), ['aa', 'bb', 'cc']);
+        assert.deepStrictEqual(out[1].fds, [9]);
     });
 });

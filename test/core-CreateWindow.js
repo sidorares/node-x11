@@ -1,7 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 describe('CreateWindow request', () => {
 
@@ -32,8 +31,8 @@ describe('CreateWindow request', () => {
   });
 
   it('should exist as client member', (t, done) => {
-      should.exist(X.CreateWindow);
-      assert.equal(typeof X.CreateWindow, 'function');
+      assert.ok(X.CreateWindow != null);
+      assert.strictEqual(typeof X.CreateWindow, 'function');
       done();
   });
 
@@ -44,7 +43,7 @@ describe('CreateWindow request', () => {
           if (err)
               done(err);
           const pos = list.children.indexOf(wid);
-          assert.notEqual(pos, -1, 'can\'t find created window');
+          assert.notStrictEqual(pos, -1, 'can\'t find created window');
           done();
       });
   });
@@ -53,8 +52,8 @@ describe('CreateWindow request', () => {
       const wid = X.AllocID();
       X.CreateWindow(wid, display.screen[0].root, 0, 0, 1, 1, 0, 0, 0, 0, { overrideRedirect : true }); // 1x1 pixel window
       X.QueryTree(display.screen[0].root, (err, list) => {
-          should.not.exist(err);
-          list.children.should.containEql(wid);
+          assert.ifError(err);
+          assert.ok(list.children.includes(wid));
           done();
       });
   });
@@ -66,33 +65,33 @@ describe('CreateWindow request', () => {
       X.on('event', ev => {
         switch (ev.name) {
           case 'CreateNotify':
-            ev.parent.should.equal(root);
-            ev.wid.should.equal(wid);
-            ev.x.should.equal(0);
-            ev.y.should.equal(0);
-            ev.width.should.equal(1);
-            ev.height.should.equal(1);
-            ev.borderWidth.should.equal(0);
-            ev.overrideRedirect.should.equal(false);
+            assert.strictEqual(ev.parent, root);
+            assert.strictEqual(ev.wid, wid);
+            assert.strictEqual(ev.x, 0);
+            assert.strictEqual(ev.y, 0);
+            assert.strictEqual(ev.width, 1);
+            assert.strictEqual(ev.height, 1);
+            assert.strictEqual(ev.borderWidth, 0);
+            assert.strictEqual(ev.overrideRedirect, false);
           break;
 
           case 'MapNotify':
-            ev.event.should.equal(root);
-            ev.wid.should.equal(wid);
-            ev.overrideRedirect.should.equal(false);
+            assert.strictEqual(ev.event, root);
+            assert.strictEqual(ev.wid, wid);
+            assert.strictEqual(ev.overrideRedirect, false);
             X.UnmapWindow(wid);
           break;
 
           case 'UnmapNotify':
-            ev.event.should.equal(root);
-            ev.wid.should.equal(wid);
-            ev.fromConfigure.should.equal(false);
+            assert.strictEqual(ev.event, root);
+            assert.strictEqual(ev.wid, wid);
+            assert.strictEqual(ev.fromConfigure, false);
             X.DestroyWindow(wid);
           break;
 
           case 'DestroyNotify':
-            ev.event.should.equal(root);
-            ev.wid.should.equal(wid);
+            assert.strictEqual(ev.event, root);
+            assert.strictEqual(ev.wid, wid);
             done();
           break;
         }

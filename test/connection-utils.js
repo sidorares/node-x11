@@ -1,7 +1,6 @@
 const { describe, it, beforeEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 describe('Client', () => {
 
@@ -32,7 +31,7 @@ describe('Client', () => {
       display.client.ping(pong);
       display.client.close(err => {
         if (err) return done(err);
-        assert.equal(count,4);
+        assert.strictEqual(count,4);
         done();
       });
    })

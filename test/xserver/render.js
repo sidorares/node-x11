@@ -1,5 +1,5 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const { boot } = require('./boot');
 
 const W = 16, H = 16;

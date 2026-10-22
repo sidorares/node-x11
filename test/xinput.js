@@ -1,16 +1,16 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('XInputExtension', () => {
     let X, xi, xtest, wid;
 
     before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             X.require('xinput', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 xi = ext;
                 done();
             });
@@ -21,89 +21,89 @@ describe('XInputExtension', () => {
 
     it('GetExtensionVersion should report the extension present', function(t, done) {
         xi.GetExtensionVersion((err, vers) => {
-            should.not.exist(err);
-            vers.present.should.equal(1);
-            vers.serverMajor.should.be.aboveOrEqual(1);
+            assert.ifError(err);
+            assert.strictEqual(vers.present, 1);
+            assert.ok(vers.serverMajor >= 1);
             done();
         });
     });
 
     it('ListInputDevices should list the virtual core pointer and keyboard', function(t, done) {
         xi.ListInputDevices((err, devices) => {
-            should.not.exist(err);
-            devices.length.should.be.aboveOrEqual(2);
+            assert.ifError(err);
+            assert.ok(devices.length >= 2);
 
             const pointer = devices.find(dev => dev.use === xi.DeviceUse.IsXPointer);
             const keyboard = devices.find(dev => dev.use === xi.DeviceUse.IsXKeyboard);
-            should.exist(pointer);
-            should.exist(keyboard);
-            pointer.name.should.equal('Virtual core pointer');
-            keyboard.name.should.equal('Virtual core keyboard');
+            assert.ok(pointer != null);
+            assert.ok(keyboard != null);
+            assert.strictEqual(pointer.name, 'Virtual core pointer');
+            assert.strictEqual(keyboard.name, 'Virtual core keyboard');
 
             const buttonClass = pointer.classes.find(cls => cls.classId === xi.InputClass.Button);
-            should.exist(buttonClass);
-            buttonClass.numButtons.should.be.above(0);
+            assert.ok(buttonClass != null);
+            assert.ok(buttonClass.numButtons > 0);
             const valuatorClass = pointer.classes.find(cls => cls.classId === xi.InputClass.Valuator);
-            should.exist(valuatorClass);
-            valuatorClass.axes.length.should.be.aboveOrEqual(2);
+            assert.ok(valuatorClass != null);
+            assert.ok(valuatorClass.axes.length >= 2);
 
             const keyClass = keyboard.classes.find(cls => cls.classId === xi.InputClass.Key);
-            should.exist(keyClass);
-            keyClass.minKeycode.should.be.above(0);
-            keyClass.maxKeycode.should.be.above(keyClass.minKeycode);
-            keyClass.numKeys.should.equal(keyClass.maxKeycode - keyClass.minKeycode + 1);
+            assert.ok(keyClass != null);
+            assert.ok(keyClass.minKeycode > 0);
+            assert.ok(keyClass.maxKeycode > keyClass.minKeycode);
+            assert.strictEqual(keyClass.numKeys, keyClass.maxKeycode - keyClass.minKeycode + 1);
             done();
         });
     });
 
     it('XIQueryVersion should have negotiated XI 2.x', function() {
-        should.exist(xi.xi2);
-        xi.xi2.majorVersion.should.equal(2);
-        xi.xi2.minorVersion.should.be.aboveOrEqual(0);
+        assert.ok(xi.xi2 != null);
+        assert.strictEqual(xi.xi2.majorVersion, 2);
+        assert.ok(xi.xi2.minorVersion >= 0);
     });
 
     it('XIQueryDevice(AllDevices) should list master pointer/keyboard with classes', function(t, done) {
         xi.XIQueryDevice(xi.AllDevices, (err, devices) => {
-            should.not.exist(err);
-            devices.length.should.be.aboveOrEqual(2);
+            assert.ifError(err);
+            assert.ok(devices.length >= 2);
 
             const master = devices.find(dev => dev.use === xi.DeviceType.MasterPointer);
             const masterKbd = devices.find(dev => dev.use === xi.DeviceType.MasterKeyboard);
-            should.exist(master);
-            should.exist(masterKbd);
-            master.name.should.equal('Virtual core pointer');
-            masterKbd.name.should.equal('Virtual core keyboard');
+            assert.ok(master != null);
+            assert.ok(masterKbd != null);
+            assert.strictEqual(master.name, 'Virtual core pointer');
+            assert.strictEqual(masterKbd.name, 'Virtual core keyboard');
             // master devices are paired with each other
-            master.attachment.should.equal(masterKbd.deviceId);
-            masterKbd.attachment.should.equal(master.deviceId);
-            master.enabled.should.equal(1);
+            assert.strictEqual(master.attachment, masterKbd.deviceId);
+            assert.strictEqual(masterKbd.attachment, master.deviceId);
+            assert.strictEqual(master.enabled, 1);
 
             const buttonClass = master.classes.find(cls => cls.type === xi.ClassType.Button);
-            should.exist(buttonClass);
-            buttonClass.numButtons.should.be.above(0);
-            buttonClass.labels.length.should.equal(buttonClass.numButtons);
+            assert.ok(buttonClass != null);
+            assert.ok(buttonClass.numButtons > 0);
+            assert.strictEqual(buttonClass.labels.length, buttonClass.numButtons);
 
             const valuators = master.classes.filter(cls => cls.type === xi.ClassType.Valuator);
-            valuators.length.should.be.aboveOrEqual(2);
-            valuators[0].number.should.equal(0);
-            valuators[0].mode.should.be.within(0, 1);
+            assert.ok(valuators.length >= 2);
+            assert.strictEqual(valuators[0].number, 0);
+            assert.ok(valuators[0].mode >= 0 && valuators[0].mode <= 1);
 
             const keyClass = masterKbd.classes.find(cls => cls.type === xi.ClassType.Key);
-            should.exist(keyClass);
-            keyClass.keycodes.length.should.be.above(0);
+            assert.ok(keyClass != null);
+            assert.ok(keyClass.keycodes.length > 0);
             done();
         });
     });
 
     it('XIQueryDevice by id should return just that device', function(t, done) {
         xi.XIQueryDevice(xi.AllMasterDevices, (err, masters) => {
-            should.not.exist(err);
+            assert.ifError(err);
             const pointerId = masters.find(dev => dev.use === xi.DeviceType.MasterPointer).deviceId;
             xi.XIQueryDevice(pointerId, (err, devices) => {
-                should.not.exist(err);
-                devices.length.should.equal(1);
-                devices[0].deviceId.should.equal(pointerId);
-                devices[0].name.should.equal('Virtual core pointer');
+                assert.ifError(err);
+                assert.strictEqual(devices.length, 1);
+                assert.strictEqual(devices[0].deviceId, pointerId);
+                assert.strictEqual(devices[0].name, 'Virtual core pointer');
                 done();
             });
         });
@@ -115,7 +115,7 @@ describe('XInputExtension', () => {
     describe('XISelectEvents', () => {
         before(function(t, done) {
             X.require('xtest', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 xtest = ext;
                 // Xvfb outlives the test run and remembers which buttons are
                 // down, so a run that failed mid-drag leaves button 1 pressed
@@ -167,15 +167,15 @@ describe('XInputExtension', () => {
                 xtest.FakeInput(xtest.MotionNotify, 0, 0, root, 37, 53);
             });
 
-            ev.name.should.equal('XIRawMotion');
-            ev.deviceId.should.be.above(0);
-            ev.sourceId.should.be.above(0);
-            ev.time.should.be.above(0);
+            assert.strictEqual(ev.name, 'XIRawMotion');
+            assert.ok(ev.deviceId > 0);
+            assert.ok(ev.sourceId > 0);
+            assert.ok(ev.time > 0);
             // a pointer motion moves x and y, valuators 0 and 1
-            Object.keys(ev.valuators).length.should.be.aboveOrEqual(1);
-            Object.keys(ev.rawValuators).length.should.equal(Object.keys(ev.valuators).length);
+            assert.ok(Object.keys(ev.valuators).length >= 1);
+            assert.strictEqual(Object.keys(ev.rawValuators).length, Object.keys(ev.valuators).length);
             for (const axis of Object.keys(ev.valuators))
-                ev.valuators[axis].should.be.a.Number();
+                assert.strictEqual(typeof ev.valuators[axis], 'number');
         });
 
         it('should deliver XIMotion with window coordinates and modifier state', async function() {
@@ -189,18 +189,20 @@ describe('XInputExtension', () => {
                 xtest.FakeInput(xtest.MotionNotify, 0, 0, root, 61, 71);
             });
 
-            ev.name.should.equal('XIMotion');
-            ev.root.should.equal(root);
-            ev.wid.should.equal(wid, 'the window the selection was made on');
+            assert.strictEqual(ev.name, 'XIMotion');
+            assert.strictEqual(ev.root, root);
+            assert.strictEqual(ev.wid, wid, 'the window the selection was made on');
             // FP1616 decoded back to the coordinates XTEST asked for
-            Math.round(ev.rootx).should.equal(61);
-            Math.round(ev.rooty).should.equal(71);
-            Math.round(ev.x).should.equal(61);
-            Math.round(ev.y).should.equal(71);
-            ev.mods.should.have.properties(['base', 'latched', 'locked', 'effective']);
-            ev.group.should.have.properties(['base', 'latched', 'locked', 'effective']);
-            ev.buttons.should.be.an.Array();
-            ev.valuators.should.be.an.Object();
+            assert.strictEqual(Math.round(ev.rootx), 61);
+            assert.strictEqual(Math.round(ev.rooty), 71);
+            assert.strictEqual(Math.round(ev.x), 61);
+            assert.strictEqual(Math.round(ev.y), 71);
+            for (const field of ['base', 'latched', 'locked', 'effective']) {
+                assert.ok(field in ev.mods, `mods.${field}`);
+                assert.ok(field in ev.group, `group.${field}`);
+            }
+            assert.ok(Array.isArray(ev.buttons));
+            assert.ok(ev.valuators !== null && typeof ev.valuators === 'object');
         });
 
         it('should report the button in detail and in the button mask', async function() {
@@ -215,8 +217,8 @@ describe('XInputExtension', () => {
             const press = await nextXIEvent(X, xi.EventType.ButtonPress, () => {
                 xtest.FakeInput(xtest.ButtonPress, 1, 0, root, 0, 0);
             });
-            press.name.should.equal('XIButtonPress');
-            press.detail.should.equal(1, 'button 1');
+            assert.strictEqual(press.name, 'XIButtonPress');
+            assert.strictEqual(press.detail, 1, 'button 1');
 
             // the mask is what makes the parse worth doing: a motion while
             // the button is held has to report it down. It sits behind a
@@ -225,19 +227,19 @@ describe('XInputExtension', () => {
             const drag = await nextXIEvent(X, xi.EventType.Motion, () => {
                 xtest.FakeInput(xtest.MotionNotify, 0, 0, root, 150, 120);
             });
-            drag.buttons.should.containEql(1, 'button 1 held during the motion');
-            Math.round(drag.valuators[0]).should.equal(150, 'and the axes are still where expected');
-            Math.round(drag.valuators[1]).should.equal(120);
+            assert.ok(drag.buttons.includes(1), 'button 1 held during the motion');
+            assert.strictEqual(Math.round(drag.valuators[0]), 150, 'and the axes are still where expected');
+            assert.strictEqual(Math.round(drag.valuators[1]), 120);
 
             const release = await nextXIEvent(X, xi.EventType.ButtonRelease, () => {
                 xtest.FakeInput(xtest.ButtonRelease, 1, 0, root, 0, 0);
             });
-            release.detail.should.equal(1);
+            assert.strictEqual(release.detail, 1);
             // the mask is the state *before* the event, the same convention
             // core X uses for its `state` field: the press does not yet see
             // its own button, the release still does
-            press.buttons.should.not.containEql(1);
-            release.buttons.should.containEql(1);
+            assert.ok(!press.buttons.includes(1));
+            assert.ok(release.buttons.includes(1));
         });
 
         it('should accept event type names as well as a bitmask', async function() {
@@ -247,13 +249,12 @@ describe('XInputExtension', () => {
             const ev = await nextXIEvent(X, xi.EventType.RawMotion, () => {
                 xtest.FakeInput(xtest.MotionNotify, 0, 0, root, 12, 24);
             });
-            ev.name.should.equal('XIRawMotion');
+            assert.strictEqual(ev.name, 'XIRawMotion');
         });
 
         it('should reject an unknown event type name', function() {
             const root = X.display.screen[0].root;
-            (() => xi.XISelectEvents(root, { deviceId: xi.AllMasterDevices, mask: ['Nonsense'] }))
-                .should.throw(/unknown event type Nonsense/);
+            assert.throws(() => xi.XISelectEvents(root, { deviceId: xi.AllMasterDevices, mask: ['Nonsense'] }), /unknown event type Nonsense/);
         });
 
         it('an empty mask deselects', async function() {
@@ -278,7 +279,7 @@ describe('XInputExtension', () => {
             await new Promise((resolve, reject) =>
                 X.GetInputFocus(err => (err ? reject(err) : resolve())));
             X.removeListener('event', onEvent);
-            heard.should.equal(false);
+            assert.strictEqual(heard, false);
         });
 
         it('should select for several devices in one request', async function() {
@@ -297,15 +298,15 @@ describe('XInputExtension', () => {
             const ev = await nextXIEvent(X, xi.EventType.RawMotion, () => {
                 xtest.FakeInput(xtest.MotionNotify, 0, 0, root, 43, 21);
             });
-            ev.deviceId.should.equal(pointer.deviceId, 'named the device we asked about');
+            assert.strictEqual(ev.deviceId, pointer.deviceId, 'named the device we asked about');
 
             // and the keyboard selection in the same request took effect too
             const key = await nextXIEvent(X, xi.EventType.RawKeyPress, () => {
                 xtest.FakeInput(xtest.KeyPress, 38, 0, root, 0, 0);
                 xtest.FakeInput(xtest.KeyRelease, 38, 0, root, 0, 0);
             });
-            key.name.should.equal('XIRawKeyPress');
-            key.detail.should.equal(38, 'the keycode');
+            assert.strictEqual(key.name, 'XIRawKeyPress');
+            assert.strictEqual(key.detail, 38, 'the keycode');
         });
 
         after(function(t, done) {

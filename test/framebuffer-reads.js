@@ -1,5 +1,5 @@
 const { describe, it } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const FrameBuffer = require('../lib/framebuffer');
 
 // The inbound half of lib/framebuffer.js: exact-length get(n, cb) reads served

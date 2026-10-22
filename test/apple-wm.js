@@ -10,7 +10,7 @@
 //   } xAppleWMFrameHitTestReq;   /* sz = 28 */
 
 const { describe, it } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const appleWM = require('../lib/ext/apple-wm');
 
 const MAJOR = 130;

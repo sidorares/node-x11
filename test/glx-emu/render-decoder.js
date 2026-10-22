@@ -3,7 +3,7 @@
 // RecordingBackend, so encoder and decoder are verified against each other
 // byte-for-byte. No X server, no WebGL.
 const { describe, it } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const createPipeline = require('../../lib/ext/glxrender');
 const { RecordingBackend, RenderDecoder, WebGLBackend, BACKEND_METHODS } =
     require('../../browser/glx');

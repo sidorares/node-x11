@@ -1,6 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('MIT-SCREEN-SAVER extension', () => {
     let display;
@@ -16,7 +16,7 @@ describe('MIT-SCREEN-SAVER extension', () => {
             X = display.client;
             root = display.screen[0].root;
             X.require('screen-saver', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 saver = ext;
                 done();
             });
@@ -35,17 +35,17 @@ describe('MIT-SCREEN-SAVER extension', () => {
     });
 
     it('QueryVersion (auto) should report version 1.x', () => {
-        saver.major.should.equal(1);
-        saver.minor.should.be.aboveOrEqual(1);
+        assert.strictEqual(saver.major, 1);
+        assert.ok(saver.minor >= 1);
     });
 
     it('QueryInfo should return saver info for the root window', (t, done) => {
         saver.QueryInfo(root, (err, info) => {
-            should.not.exist(err);
-            info.state.should.be.within(0, 3);
-            info.idle.should.be.a.Number();
-            info.until.should.be.a.Number();
-            info.kind.should.be.within(0, 2);
+            assert.ifError(err);
+            assert.ok(info.state >= 0 && info.state <= 3);
+            assert.strictEqual(typeof info.idle, 'number');
+            assert.strictEqual(typeof info.until, 'number');
+            assert.ok(info.kind >= 0 && info.kind <= 2);
             done();
         });
     });
@@ -57,8 +57,8 @@ describe('MIT-SCREEN-SAVER extension', () => {
         saver.UnsetAttributes(root);
         // sync: any error in the two requests above would arrive before this reply
         saver.QueryInfo(root, (err, info) => {
-            should.not.exist(err);
-            should.exist(info);
+            assert.ifError(err);
+            assert.ok(info != null);
             done();
         });
     });
@@ -68,11 +68,11 @@ describe('MIT-SCREEN-SAVER extension', () => {
         saver.QueryInfo(root, (err, info) => {
             // always release the suspension, even if the assertion below throws
             saver.Suspend(false);
-            should.not.exist(err);
-            should.exist(info);
+            assert.ifError(err);
+            assert.ok(info != null);
             saver.QueryInfo(root, (err2, info2) => {
-                should.not.exist(err2);
-                info2.state.should.be.within(0, 3);
+                assert.ifError(err2);
+                assert.ok(info2.state >= 0 && info2.state <= 3);
                 done();
             });
         });

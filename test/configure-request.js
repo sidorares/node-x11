@@ -1,13 +1,13 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('ConfigureRequest', () => {
     let X, root, wid;
 
     before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             root = dpy.screen[0].root;
             wid = X.AllocID();
@@ -15,8 +15,8 @@ describe('ConfigureRequest', () => {
             X.ChangeWindowAttributes(root, { eventMask: x11.eventMask.SubstructureRedirect });
             X.CreateWindow(wid, root, 0, 0, 1, 1); // 1x1 pixel window
             X.QueryTree(root, (err, list) => {
-                should.not.exist(err);
-                list.children.indexOf(wid).should.not.equal(-1);
+                assert.ifError(err);
+                assert.notStrictEqual(list.children.indexOf(wid), -1);
                 done();
             });
         });
@@ -28,14 +28,14 @@ describe('ConfigureRequest', () => {
 
     it('should be emitted to the WM if a client configures its window', function(t, done) {
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X.once('event', ev => {
-                ev.name.should.equal('ConfigureRequest');
-                ev.x.should.equal(0);
-                ev.y.should.equal(20);
-                ev.width.should.equal(200);
-                ev.height.should.equal(300);
-                ev.wid.should.equal(wid);
+                assert.strictEqual(ev.name, 'ConfigureRequest');
+                assert.strictEqual(ev.x, 0);
+                assert.strictEqual(ev.y, 20);
+                assert.strictEqual(ev.width, 200);
+                assert.strictEqual(ev.height, 300);
+                assert.strictEqual(ev.wid, wid);
                 done();
             });
 

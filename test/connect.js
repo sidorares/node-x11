@@ -1,7 +1,6 @@
 const { describe, it, beforeEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 describe('Client', () => {
 
@@ -21,21 +20,21 @@ describe('Client', () => {
   });
 
   it('calls first createClient parameter with display object', (t, done) => {
-      should.exist(display);
-      should.exist(display.screen);
-      should.exist(display.screen[0]);
-      should.exist(display.screen[0].root);
-      should.exist(display.major);
+      assert.ok(display != null);
+      assert.ok(display.screen != null);
+      assert.ok(display.screen[0] != null);
+      assert.ok(display.screen[0].root != null);
+      assert.ok(display.major != null);
       done();
   });
 
   it('reports the byte order the connection speaks', (t, done) => {
       // what the client declared in its hello, and therefore how every
       // request, reply, event and property value on it is encoded
-      display.byte_order.should.be.oneOf([0, 1]);
+      assert.ok([0, 1].includes(display.byte_order));
       const hostIsLittleEndian =
           new Uint32Array(new Uint8Array([1, 2, 3, 4]).buffer)[0] === 0x04030201;
-      display.byte_order.should.equal(hostIsLittleEndian ? 0 : 1);
+      assert.strictEqual(display.byte_order, hostIsLittleEndian ? 0 : 1);
       done();
   });
 

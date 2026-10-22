@@ -4,7 +4,7 @@
 // and the VideoNotify/PortNotify parsers are driven end to end; test/xv.js
 // covers what a real (adaptorless) server can answer.
 const { describe, it, beforeEach, afterEach } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const xserver = require('../../lib/xserver');
 const { boot, sync } = require('./boot');
 const createXvAdaptor = require('./xv-adaptor');

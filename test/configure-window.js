@@ -1,7 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const util = require('util');
 
 describe('ConfigureWindow', () => {
@@ -9,16 +8,16 @@ describe('ConfigureWindow', () => {
 
     before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             wid = X.AllocID();
             wid_helper = X.AllocID();
             X.CreateWindow(wid, dpy.screen[0].root, 0, 0, 1, 1); // 1x1 pixel window
             X.CreateWindow(wid_helper, dpy.screen[0].root, 0, 0, 1, 1); // 1x1 pixel window
             X.QueryTree(dpy.screen[0].root, (err, list) => {
-                should.not.exist(err);
-                list.children.indexOf(wid).should.not.equal(-1);
-                list.children.indexOf(wid_helper).should.not.equal(-1);
+                assert.ifError(err);
+                assert.notStrictEqual(list.children.indexOf(wid), -1);
+                assert.notStrictEqual(list.children.indexOf(wid_helper), -1);
                 X.ChangeWindowAttributes(wid, { eventMask: x11.eventMask.StructureNotify });
                 done();
             });
@@ -31,9 +30,9 @@ describe('ConfigureWindow', () => {
 
     it('should ResizeWindow correctly to 200x300 pixels', function(t, done) {
         X.once('event', ev => {
-            ev.type.should.equal(22); /* ConfigureNotify */
-            ev.height.should.equal(300);
-            ev.width.should.equal(200);
+            assert.strictEqual(ev.type, 22); /* ConfigureNotify */
+            assert.strictEqual(ev.height, 300);
+            assert.strictEqual(ev.width, 200);
             done();
         });
         X.ResizeWindow(wid, 200, 300);
@@ -41,9 +40,9 @@ describe('ConfigureWindow', () => {
 
     it('should MoveWindow correctly to x: 100, y: 150 pixels', function(t, done) {
         X.once('event', ev => {
-            ev.type.should.equal(22); /* ConfigureNotify */
-            ev.x.should.equal(100);
-            ev.y.should.equal(150);
+            assert.strictEqual(ev.type, 22); /* ConfigureNotify */
+            assert.strictEqual(ev.x, 100);
+            assert.strictEqual(ev.y, 150);
             done();
         });
         X.MoveWindow(wid, 100, 150);
@@ -51,11 +50,11 @@ describe('ConfigureWindow', () => {
 
     it('should MoveResizeWindow correctly to x: 200, y: 250 and 500x100 pixels', function(t, done) {
         X.once('event', ev => {
-            ev.type.should.equal(22); /* ConfigureNotify */
-            ev.x.should.equal(200);
-            ev.y.should.equal(250);
-            ev.height.should.equal(100);
-            ev.width.should.equal(500);
+            assert.strictEqual(ev.type, 22); /* ConfigureNotify */
+            assert.strictEqual(ev.x, 200);
+            assert.strictEqual(ev.y, 250);
+            assert.strictEqual(ev.height, 100);
+            assert.strictEqual(ev.width, 500);
             done();
         });
         X.MoveResizeWindow(wid, 200, 250, 500, 100);
@@ -63,8 +62,8 @@ describe('ConfigureWindow', () => {
 
     it('should RaiseWindow correctly', function(t, done) {
         X.once('event', ev => {
-            ev.type.should.equal(22); /* ConfigureNotify */
-            ev.aboveSibling.should.equal(wid_helper);
+            assert.strictEqual(ev.type, 22); /* ConfigureNotify */
+            assert.strictEqual(ev.aboveSibling, wid_helper);
             done();
         });
         X.RaiseWindow(wid);
@@ -72,8 +71,8 @@ describe('ConfigureWindow', () => {
 
     it('should LowerWindow correctly', function(t, done) {
         X.once('event', ev => {
-            ev.type.should.equal(22); /* ConfigureNotify */
-            ev.aboveSibling.should.equal(0); /* 0 -> no window below this */
+            assert.strictEqual(ev.type, 22); /* ConfigureNotify */
+            assert.strictEqual(ev.aboveSibling, 0); /* 0 -> no window below this */
             done();
         });
         X.LowerWindow(wid);
@@ -81,7 +80,7 @@ describe('ConfigureWindow', () => {
 
     it('should ignore invalid mask values', function(t, done) {
         X.once('event', ev => {
-            ev.x.should.equal(0);
+            assert.strictEqual(ev.x, 0);
             done();
         });
 

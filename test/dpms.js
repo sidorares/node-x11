@@ -1,7 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const util = require('util');
 
 describe('DPMS extension', () => {
@@ -14,7 +13,7 @@ describe('DPMS extension', () => {
                 display = dpy;
                 X = display.client;
                 X.require('dpms', (err, ext) => {
-                    should.not.exist(err);
+                    assert.ifError(err);
                     dpms = ext;
                     done();
                 });
@@ -39,7 +38,7 @@ describe('DPMS extension', () => {
         it('GetTimeouts should return those values', (t, done) => {
             dpms.SetTimeouts(110, 110, 110);
             dpms.GetTimeouts((err, timeouts) => {
-                if (!err) timeouts.should.eql([110, 110, 110]);
+                if (!err) assert.deepStrictEqual(timeouts, [110, 110, 110]);
                 done(err);
             });
         });
@@ -47,7 +46,7 @@ describe('DPMS extension', () => {
         after((t, done) => {
             dpms.SetTimeouts(prev_timeouts[0], prev_timeouts[1], prev_timeouts[2]);
             dpms.GetTimeouts((err, timeouts) => {
-                if (!err) timeouts.should.eql(prev_timeouts);
+                if (!err) assert.deepStrictEqual(timeouts, prev_timeouts);
                 done(err);
             });
         });
@@ -73,8 +72,8 @@ describe('DPMS extension', () => {
             dpms.ForceLevel(new_level);
             dpms.Info((err, info) => {
                 if (!err) {
-                    info[0].should.equal(new_level);
-                    info[1].should.equal(1);
+                    assert.strictEqual(info[0], new_level);
+                    assert.strictEqual(info[1], 1);
                 }
 
                 done(err);
@@ -87,8 +86,8 @@ describe('DPMS extension', () => {
             else dpms.Disable();
             dpms.Info((err, info) => {
                 if (!err) {
-                    info[0].should.equal(prev_level);
-                    info[1].should.equal(prev_status);
+                    assert.strictEqual(info[0], prev_level);
+                    assert.strictEqual(info[1], prev_status);
                 }
 
                 done(err);

@@ -1,6 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 // Node has no built-in way to create SysV shared memory segments (and the
 // zero-dependency rule forbids native addons), so a real Attach/PutImage
@@ -15,12 +15,12 @@ describe('MIT-SHM extension', () => {
 
     before(function(t, done) {
         x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             root = dpy.screen[0].root;
             depth = dpy.screen[0].root_depth;
             X.require('shm', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 shm = ext;
                 done();
             });
@@ -28,24 +28,24 @@ describe('MIT-SHM extension', () => {
     });
 
     it('QueryVersion (auto-called) should report at least 1.1 and a sane pixmap format', function() {
-        shm.major.should.equal(1);
-        shm.minor.should.be.aboveOrEqual(1);
-        shm.sharedPixmaps.should.be.a.Boolean();
+        assert.strictEqual(shm.major, 1);
+        assert.ok(shm.minor >= 1);
+        assert.strictEqual(typeof shm.sharedPixmaps, 'boolean');
         // pixmapFormat is one of the core image formats; only meaningful
         // when shared pixmaps are supported
         if (shm.sharedPixmaps)
-            shm.pixmapFormat.should.equal(shm.ImageFormat.ZPixmap);
-        shm.uid.should.be.a.Number();
-        shm.gid.should.be.a.Number();
+            assert.strictEqual(shm.pixmapFormat, shm.ImageFormat.ZPixmap);
+        assert.strictEqual(typeof shm.uid, 'number');
+        assert.strictEqual(typeof shm.gid, 'number');
     });
 
     it('QueryVersion round-trip should match the cached values', function(t, done) {
         shm.QueryVersion((err, vers) => {
-            should.not.exist(err);
-            vers.majorVersion.should.equal(shm.major);
-            vers.minorVersion.should.equal(shm.minor);
-            vers.sharedPixmaps.should.equal(shm.sharedPixmaps);
-            vers.pixmapFormat.should.equal(shm.pixmapFormat);
+            assert.ifError(err);
+            assert.strictEqual(vers.majorVersion, shm.major);
+            assert.strictEqual(vers.minorVersion, shm.minor);
+            assert.strictEqual(vers.sharedPixmaps, shm.sharedPixmaps);
+            assert.strictEqual(vers.pixmapFormat, shm.pixmapFormat);
             done();
         });
     });
@@ -59,10 +59,10 @@ describe('MIT-SHM extension', () => {
         shm.Attach(seg, 0x7fffffff, false);
         const seq = X.seq_num;
         X.once('error', err => {
-            err.error.should.equal(10); // BadAccess
-            err.seq.should.equal(seq);
-            err.majorOpcode.should.equal(shm.majorOpcode);
-            err.minorOpcode.should.equal(1);
+            assert.strictEqual(err.error, 10); // BadAccess
+            assert.strictEqual(err.seq, seq);
+            assert.strictEqual(err.majorOpcode, shm.majorOpcode);
+            assert.strictEqual(err.minorOpcode, 1);
             done();
         });
     });
@@ -72,12 +72,12 @@ describe('MIT-SHM extension', () => {
         shm.Detach(seg);
         const seq = X.seq_num;
         X.once('error', err => {
-            err.error.should.equal(shm.firstError + shm.errors.BadSeg);
-            err.seq.should.equal(seq);
-            err.badParam.should.equal(seg);
-            err.majorOpcode.should.equal(shm.majorOpcode);
-            err.minorOpcode.should.equal(2);
-            err.message.should.match(/MIT-SHM/);
+            assert.strictEqual(err.error, shm.firstError + shm.errors.BadSeg);
+            assert.strictEqual(err.seq, seq);
+            assert.strictEqual(err.badParam, seg);
+            assert.strictEqual(err.majorOpcode, shm.majorOpcode);
+            assert.strictEqual(err.minorOpcode, 2);
+            assert.match(err.message, /MIT-SHM/);
             done();
         });
     });
@@ -95,10 +95,10 @@ describe('MIT-SHM extension', () => {
         });
         const seq = X.seq_num;
         X.once('error', err => {
-            err.error.should.equal(shm.firstError + shm.errors.BadSeg);
-            err.seq.should.equal(seq);
-            err.badParam.should.equal(seg);
-            err.minorOpcode.should.equal(3);
+            assert.strictEqual(err.error, shm.firstError + shm.errors.BadSeg);
+            assert.strictEqual(err.seq, seq);
+            assert.strictEqual(err.badParam, seg);
+            assert.strictEqual(err.minorOpcode, 3);
             X.FreeGC(gc);
             done();
         });
@@ -108,10 +108,10 @@ describe('MIT-SHM extension', () => {
         const seg = X.AllocID();
         shm.GetImage(root, 0, 0, 4, 4, 0xffffffff,
             shm.ImageFormat.ZPixmap, seg, 0, err => {
-                should.exist(err);
-                err.error.should.equal(shm.firstError + shm.errors.BadSeg);
-                err.badParam.should.equal(seg);
-                err.minorOpcode.should.equal(4);
+                assert.ok(err != null);
+                assert.strictEqual(err.error, shm.firstError + shm.errors.BadSeg);
+                assert.strictEqual(err.badParam, seg);
+                assert.strictEqual(err.minorOpcode, 4);
                 done();
                 return true; // handled - don't re-emit on the client
             });
@@ -127,10 +127,10 @@ describe('MIT-SHM extension', () => {
         shm.CreatePixmap(pid, root, 4, 4, depth, seg, 0);
         const seq = X.seq_num;
         X.once('error', err => {
-            err.error.should.equal(shm.firstError + shm.errors.BadSeg);
-            err.seq.should.equal(seq);
-            err.badParam.should.equal(seg);
-            err.minorOpcode.should.equal(5);
+            assert.strictEqual(err.error, shm.firstError + shm.errors.BadSeg);
+            assert.strictEqual(err.seq, seq);
+            assert.strictEqual(err.badParam, seg);
+            assert.strictEqual(err.minorOpcode, 5);
             done();
         });
     });
@@ -140,20 +140,20 @@ describe('MIT-SHM extension', () => {
         // feed the registered parser a hand-built event body (bytes 8..31 of
         // the 32-byte event) and check the field mapping
         const parser = X.eventParsers[shm.firstEvent + shm.events.ShmCompletion];
-        should.exist(parser);
+        assert.ok(parser != null);
         const raw = Buffer.alloc(24);
         raw.writeUInt16LE(3, 0);          // minor_event
         raw.writeUInt8(130, 2);           // major_event
         raw.writeUInt32LE(0x00a00001, 4); // shmseg
         raw.writeUInt32LE(4096, 8);       // offset
         const ev = parser(shm.firstEvent, 42, 0x00500001, 0, raw);
-        ev.name.should.equal('ShmCompletion');
-        ev.seq.should.equal(42);
-        ev.drawable.should.equal(0x00500001);
-        ev.minorEvent.should.equal(3);
-        ev.majorEvent.should.equal(130);
-        ev.shmseg.should.equal(0x00a00001);
-        ev.offset.should.equal(4096);
+        assert.strictEqual(ev.name, 'ShmCompletion');
+        assert.strictEqual(ev.seq, 42);
+        assert.strictEqual(ev.drawable, 0x00500001);
+        assert.strictEqual(ev.minorEvent, 3);
+        assert.strictEqual(ev.majorEvent, 130);
+        assert.strictEqual(ev.shmseg, 0x00a00001);
+        assert.strictEqual(ev.offset, 4096);
     });
 
     after(function(t, done) {
@@ -173,16 +173,16 @@ describe('MIT-SHM shared segments (provider-backed)', () => {
 
     before(function(t, done) {
         x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             display = dpy;
             root = dpy.screen[0].root;
             depth = dpy.screen[0].root_depth;
             X.require('shm', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 shm = ext;
                 ext.usable((e, usable) => {
-                    should.not.exist(e);
+                    assert.ifError(e);
                     ok = usable;
                     done();
                 });
@@ -191,19 +191,19 @@ describe('MIT-SHM shared segments (provider-backed)', () => {
     });
 
     it('exposes isLocalSocket on the display', function() {
-        display.isLocalSocket.should.be.a.Boolean();
+        assert.strictEqual(typeof display.isLocalSocket, 'boolean');
     });
 
     it('usable() resolves a boolean, cached, consistent with the provider', function(t, done) {
-        ok.should.be.a.Boolean();
+        assert.strictEqual(typeof ok, 'boolean');
         if (ok) {
-            should.exist(shm.provider);
-            shm.fdCapable.should.equal(true);
+            assert.ok(shm.provider != null);
+            assert.strictEqual(shm.fdCapable, true);
         }
         // second call is cached and must agree
         shm.usable((e, ok2) => {
-            should.not.exist(e);
-            ok2.should.equal(ok);
+            assert.ifError(e);
+            assert.strictEqual(ok2, ok);
             done();
         });
     });
@@ -215,9 +215,9 @@ describe('MIT-SHM shared segments (provider-backed)', () => {
         }
         const W = 64, H = 64, size = W * H * 4;
         shm.createSegment(size, (err, seg) => {
-            should.not.exist(err);
-            seg.shmseg.should.be.a.Number();
-            seg.size.should.equal(size);
+            assert.ifError(err);
+            assert.strictEqual(typeof seg.shmseg, 'number');
+            assert.strictEqual(seg.size, size);
             for (let i = 0; i < size; i++)
                 seg.buffer[i] = (i * 37) & 0xff;
             const pid = X.AllocID();
@@ -226,13 +226,13 @@ describe('MIT-SHM shared segments (provider-backed)', () => {
             X.CreateGC(gc, pid);
             seg.putImage(pid, gc, { width: W, height: H, depth: depth });
             X.GetImage(2, pid, 0, 0, W, H, 0xffffffff, (err, img) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 let bad = 0;
                 for (let i = 0; i < size; i += 4)
                     if (img.data[i] !== seg.buffer[i] ||
                         img.data[i + 1] !== seg.buffer[i + 1] ||
                         img.data[i + 2] !== seg.buffer[i + 2]) bad++;
-                bad.should.equal(0);
+                assert.strictEqual(bad, 0);
                 X.FreeGC(gc);
                 X.FreePixmap(pid);
                 seg.detach(done);
@@ -247,7 +247,7 @@ describe('MIT-SHM shared segments (provider-backed)', () => {
         }
         const W = 48, H = 48, size = W * H * 4;
         shm.createSegment(size, (err, seg) => {
-            should.not.exist(err);
+            assert.ifError(err);
             for (let i = 0; i < size; i++)
                 seg.buffer[i] = (i * 53) & 0xff;
             const pid = X.AllocID();
@@ -258,14 +258,14 @@ describe('MIT-SHM shared segments (provider-backed)', () => {
             const reference = Buffer.from(seg.buffer);
             seg.buffer.fill(0);
             seg.getImage(pid, 0, 0, W, H, 0xffffffff, undefined, 0, (err, rep) => {
-                should.not.exist(err);
-                rep.size.should.equal(size);
+                assert.ifError(err);
+                assert.strictEqual(rep.size, size);
                 let bad = 0;
                 for (let i = 0; i < size; i += 4)
                     if (seg.buffer[i] !== reference[i] ||
                         seg.buffer[i + 1] !== reference[i + 1] ||
                         seg.buffer[i + 2] !== reference[i + 2]) bad++;
-                bad.should.equal(0);
+                assert.strictEqual(bad, 0);
                 X.FreeGC(gc);
                 X.FreePixmap(pid);
                 seg.detach(done);
@@ -280,13 +280,13 @@ describe('MIT-SHM shared segments (provider-backed)', () => {
         }
         const W = 32, H = 32, size = W * H * 4;
         shm.createSegment(size, (err, seg) => {
-            should.not.exist(err);
+            assert.ifError(err);
             const pid = X.AllocID();
             const gc = X.AllocID();
             X.CreatePixmap(pid, root, depth, W, H);
             X.CreateGC(gc, pid);
             seg.once('complete', offset => {
-                offset.should.equal(0);
+                assert.strictEqual(offset, 0);
                 X.FreeGC(gc);
                 X.FreePixmap(pid);
                 seg.detach(done);
@@ -306,18 +306,18 @@ describe('MIT-SHM shared segments (provider-backed)', () => {
 describe('MIT-SHM disabled (shm: false)', () => {
     it('usable() is false and createSegment fails without throwing', function(t, done) {
         x11.createClient({ shm: false }, (err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             const X = dpy.client;
-            dpy.isLocalSocket.should.be.a.Boolean();
+            assert.strictEqual(typeof dpy.isLocalSocket, 'boolean');
             X.require('shm', (err, ext) => {
-                should.not.exist(err);
-                ext.fdCapable.should.equal(false);
-                should.not.exist(ext.provider);
+                assert.ifError(err);
+                assert.strictEqual(ext.fdCapable, false);
+                assert.ok(ext.provider == null);
                 ext.usable((e, ok) => {
-                    should.not.exist(e);
-                    ok.should.equal(false);
+                    assert.ifError(e);
+                    assert.strictEqual(ok, false);
                     ext.createSegment(4096, err => {
-                        should.exist(err);
+                        assert.ok(err != null);
                         X.terminate();
                         X.on('end', done);
                     });
@@ -335,11 +335,11 @@ describe('MIT-SHM disabled (shm: false)', () => {
 describe('MIT-SHM attach racing connection close', () => {
     it('reports an error instead of throwing when the client closes mid-attach', function(t, done) {
         x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             const X = dpy.client;
             X.on('error', () => {}); // teardown noise is not the subject
             X.require('shm', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 if (!ext.provider) {
                     X.terminate();
                     return X.on('end', () => done());
@@ -348,14 +348,14 @@ describe('MIT-SHM attach racing connection close', () => {
                 ext.createSegment(64 * 1024, err => {
                     // may succeed (won the race) or fail, but must not throw
                     settled = true;
-                    if (err) err.should.be.an.Error();
+                    if (err) assert.ok(err instanceof Error);
                 });
                 // close() while the attach is still in flight: it sets the
                 // client's closing flag, which is what made the confirming
                 // round trip throw out of the fd-send callback
                 X.close();
                 setTimeout(() => {
-                    settled.should.equal(true, 'the attach callback was answered');
+                    assert.strictEqual(settled, true, 'the attach callback was answered');
                     done();
                 }, 300);
             });

@@ -1,7 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const sinon = require('sinon');
+const assert = require('node:assert/strict');
 
 // No server has this, so QueryExtension always answers present = 0.
 const ABSENT = 'NoSuchExtension-node-x11';
@@ -11,7 +10,7 @@ describe('requiring an X11 extension on same connection', () => {
 
     before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             done();
         });
@@ -23,10 +22,10 @@ describe('requiring an X11 extension on same connection', () => {
 
     it('should be cached', function(t, done) {
         X.require('xtest', (err, randr) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X.require('xtest', (err, randr1) => {
-                should.not.exist(err);
-                randr.should.equal(randr1);
+                assert.ifError(err);
+                assert.strictEqual(randr, randr1);
                 done();
             });
         });
@@ -34,13 +33,12 @@ describe('requiring an X11 extension on same connection', () => {
 
     it('should not re-ask the server for an extension it already queried', function(t, done) {
         X.QueryExtension('XTEST', (err, first) => {
-            should.not.exist(err);
-            const spy = sinon.spy(X.pack_stream, 'put');
+            assert.ifError(err);
+            const put = t.mock.method(X.pack_stream, 'put');
             X.QueryExtension('XTEST', (err, second) => {
-                should.not.exist(err);
-                second.majorOpcode.should.equal(first.majorOpcode);
-                sinon.assert.notCalled(spy);
-                spy.restore();
+                assert.ifError(err);
+                assert.strictEqual(second.majorOpcode, first.majorOpcode);
+                assert.strictEqual(put.mock.callCount(), 0);
                 done();
             });
         });
@@ -51,14 +49,13 @@ describe('requiring an X11 extension on same connection', () => {
     // QueryExtension on the wire every single time.
     it('should not re-ask for an extension the server does not have', function(t, done) {
         X.QueryExtension(ABSENT, (err, first) => {
-            should.not.exist(err);
-            first.present.should.equal(0);
-            const spy = sinon.spy(X.pack_stream, 'put');
+            assert.ifError(err);
+            assert.strictEqual(first.present, 0);
+            const put = t.mock.method(X.pack_stream, 'put');
             X.QueryExtension(ABSENT, (err, second) => {
-                should.not.exist(err);
-                second.present.should.equal(0);
-                sinon.assert.notCalled(spy);
-                spy.restore();
+                assert.ifError(err);
+                assert.strictEqual(second.present, 0);
+                assert.strictEqual(put.mock.callCount(), 0);
                 done();
             });
         });
@@ -67,10 +64,9 @@ describe('requiring an X11 extension on same connection', () => {
     it('should keep a failing require() off the wire after the first try', function(t, done) {
         X.require('dri3', () => {
             // Whether this server has DRI3 or not, asking again is free.
-            const spy = sinon.spy(X.pack_stream, 'put');
+            const put = t.mock.method(X.pack_stream, 'put');
             X.require('dri3', () => {
-                sinon.assert.notCalled(spy);
-                spy.restore();
+                assert.strictEqual(put.mock.callCount(), 0);
                 done();
             });
         });
@@ -81,12 +77,12 @@ describe('requiring an X11 extension on same connection', () => {
     // and then reused in that state.
     it('should hand out a fresh reply object each time', function(t, done) {
         X.QueryExtension('XTEST', (err, first) => {
-            should.not.exist(err);
+            assert.ifError(err);
             first.scribble = 'mutated';
             X.QueryExtension('XTEST', (err, second) => {
-                should.not.exist(err);
-                second.should.not.equal(first);
-                should.not.exist(second.scribble);
+                assert.ifError(err);
+                assert.notStrictEqual(second, first);
+                assert.ok(second.scribble == null);
                 done();
             });
         });

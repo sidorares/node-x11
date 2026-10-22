@@ -6,7 +6,7 @@
 // the command does not match (glLightfv(GL_SPOT_CUTOFF) carries one float,
 // not four). That made spot lights and light attenuation unusable.
 const { describe, it } = require('node:test');
-const should = require('should');
+const assert = require('node:assert/strict');
 const renderPipeline = require('../lib/ext/glxrender');
 
 function pipeline() {
@@ -34,28 +34,22 @@ function encode(draw) {
 describe('GLX render command encoding', function() {
     it('sizes glLightfv by its pname', function() {
         const { gl } = pipeline();
-        encode(g => g.Lightfv(gl.LIGHT0, gl.POSITION, [1, 2, 3, 1]))
-            .should.eql([[28, 87]]);
-        encode(g => g.Lightfv(gl.LIGHT0, gl.DIFFUSE, [1, 1, 1, 1]))
-            .should.eql([[28, 87]]);
-        encode(g => g.Lightfv(gl.LIGHT0, gl.SPOT_DIRECTION, 0, -1, 0, 0))
-            .should.eql([[24, 87]]);
+        assert.deepStrictEqual(encode(g => g.Lightfv(gl.LIGHT0, gl.POSITION, [1, 2, 3, 1])), [[28, 87]]);
+        assert.deepStrictEqual(encode(g => g.Lightfv(gl.LIGHT0, gl.DIFFUSE, [1, 1, 1, 1])), [[28, 87]]);
+        assert.deepStrictEqual(encode(g => g.Lightfv(gl.LIGHT0, gl.SPOT_DIRECTION, 0, -1, 0, 0)), [[24, 87]]);
         for (const pname of ['SPOT_CUTOFF', 'SPOT_EXPONENT',
             'CONSTANT_ATTENUATION', 'LINEAR_ATTENUATION',
             'QUADRATIC_ATTENUATION'])
-            encode(g => g.Lightfv(gl.LIGHT0, gl[pname], 25, 0, 0, 0))
-                .should.eql([[16, 87]], pname);
+            assert.deepStrictEqual(encode(g => g.Lightfv(gl.LIGHT0, gl[pname], 25, 0, 0, 0)), [[16, 87]], pname);
     });
 
     it('sizes glMaterialfv by its pname', function() {
         const { gl } = pipeline();
-        encode(g => g.Materialfv(gl.FRONT_AND_BACK, gl.AMBIENT_AND_DIFFUSE,
-            [0.1, 0.2, 0.3, 1])).should.eql([[28, 97]]);
-        encode(g => g.Materialfv(gl.FRONT_AND_BACK, gl.SHININESS, 40))
-            .should.eql([[16, 97]]);
+        assert.deepStrictEqual(encode(g => g.Materialfv(gl.FRONT_AND_BACK, gl.AMBIENT_AND_DIFFUSE,
+            [0.1, 0.2, 0.3, 1])), [[28, 97]]);
+        assert.deepStrictEqual(encode(g => g.Materialfv(gl.FRONT_AND_BACK, gl.SHININESS, 40)), [[16, 97]]);
         // the scalar entry point keeps its own opcode
-        encode(g => g.Materialf(gl.FRONT_AND_BACK, gl.SHININESS, 40))
-            .should.eql([[16, 96]]);
+        assert.deepStrictEqual(encode(g => g.Materialf(gl.FRONT_AND_BACK, gl.SHININESS, 40)), [[16, 96]]);
     });
 
     it('writes the values it was given, array or varargs', function() {
@@ -65,15 +59,14 @@ describe('GLX render command encoding', function() {
         gl.Render();
 
         const position = commands[0];
-        position.readUInt32LE(4).should.equal(gl.LIGHT0);
-        position.readUInt32LE(8).should.equal(gl.POSITION);
-        [12, 16, 20, 24].map(o => position.readFloatLE(o))
-            .should.eql([4, 5, 6, 1]);
+        assert.strictEqual(position.readUInt32LE(4), gl.LIGHT0);
+        assert.strictEqual(position.readUInt32LE(8), gl.POSITION);
+        assert.deepStrictEqual([12, 16, 20, 24].map(o => position.readFloatLE(o)), [4, 5, 6, 1]);
 
         const cutoff = commands[1];
-        cutoff.readUInt32LE(8).should.equal(gl.SPOT_CUTOFF);
-        cutoff.readFloatLE(12).should.equal(25);
-        cutoff.length.should.equal(16);
+        assert.strictEqual(cutoff.readUInt32LE(8), gl.SPOT_CUTOFF);
+        assert.strictEqual(cutoff.readFloatLE(12), 25);
+        assert.strictEqual(cutoff.length, 16);
     });
 
     it('keeps every command a whole number of 4-byte words', function() {
@@ -82,6 +75,6 @@ describe('GLX render command encoding', function() {
         gl.Materialfv(gl.FRONT_AND_BACK, gl.SHININESS, 40);
         gl.Render();
         for (const command of commands)
-            (command.length % 4).should.equal(0);
+            assert.strictEqual(command.length % 4, 0);
     });
 });

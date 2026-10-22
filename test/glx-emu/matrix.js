@@ -1,7 +1,7 @@
 // Matrix math used by the GLX emulator's fixed-function pipeline: verify
 // the GL-spec formulas against known matrices and transforms.
 const { describe, it } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const mat = require('../../browser/glx/matrix');
 
 function approxEqual(actual, expected, eps = 1e-5) {

@@ -1,6 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('X-Resource extension', () => {
     let display, X, root, depth, bytesPP, res, pixmap;
@@ -10,14 +10,14 @@ describe('X-Resource extension', () => {
 
     before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             display = dpy;
             X = dpy.client;
             root = dpy.screen[0].root;
             depth = dpy.screen[0].root_depth;
             bytesPP = depth <= 8 ? 1 : (depth <= 16 ? 2 : 4);
             X.require('res', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 res = ext;
                 done();
             });
@@ -27,17 +27,17 @@ describe('X-Resource extension', () => {
     });
 
     it('QueryVersion should report at least 1.0', function() {
-        res.major.should.be.aboveOrEqual(1);
-        res.minor.should.be.aboveOrEqual(0);
+        assert.ok(res.major >= 1);
+        assert.ok(res.minor >= 0);
     });
 
     it('QueryClients should include our own client XID range', function(t, done) {
         res.QueryClients((err, clients) => {
-            should.not.exist(err);
-            clients.length.should.be.above(0);
+            assert.ifError(err);
+            assert.ok(clients.length > 0);
             const mine = clients.filter(c => c.resourceBase === display.resource_base);
-            mine.length.should.equal(1);
-            mine[0].resourceMask.should.equal(display.resource_mask);
+            assert.strictEqual(mine.length, 1);
+            assert.strictEqual(mine[0].resourceMask, display.resource_mask);
             done();
         });
     });
@@ -49,13 +49,13 @@ describe('X-Resource extension', () => {
             return entry ? entry.count : 0;
         };
         res.QueryClientResources(display.resource_base, (err, typesBefore) => {
-            should.not.exist(err);
+            assert.ifError(err);
             const before = countPixmaps(typesBefore);
             pixmap = X.AllocID();
             X.CreatePixmap(pixmap, root, depth, W, H);
             res.QueryClientResources(display.resource_base, (err, typesAfter) => {
-                should.not.exist(err);
-                countPixmaps(typesAfter).should.equal(before + 1);
+                assert.ifError(err);
+                assert.strictEqual(countPixmaps(typesAfter), before + 1);
                 done();
             });
         });
@@ -63,13 +63,13 @@ describe('X-Resource extension', () => {
 
     it('QueryClientPixmapBytes should grow by at least the size of a new pixmap', function(t, done) {
         res.QueryClientPixmapBytes(display.resource_base, (err, bytesBefore) => {
-            should.not.exist(err);
+            assert.ifError(err);
             const pixmap = X.AllocID();
             X.CreatePixmap(pixmap, root, depth, W, H);
             res.QueryClientPixmapBytes(display.resource_base, (err, bytesAfter) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 // scanlines may be padded, so at least the unpadded size
-                (bytesAfter - bytesBefore).should.be.aboveOrEqual(W * H * bytesPP);
+                assert.ok((bytesAfter - bytesBefore) >= (W * H * bytesPP));
                 X.FreePixmap(pixmap);
                 done();
             });
@@ -85,10 +85,10 @@ describe('X-Resource extension', () => {
             client: display.resource_base,
             mask: res.ClientIdMask.LocalClientPID
         }], (err, ids) => {
-            should.not.exist(err);
-            ids.length.should.equal(1);
-            ids[0].mask.should.equal(2);
-            ids[0].value.should.eql([process.pid]);
+            assert.ifError(err);
+            assert.strictEqual(ids.length, 1);
+            assert.strictEqual(ids[0].mask, 2);
+            assert.deepStrictEqual(ids[0].value, [process.pid]);
             done();
         });
     });
@@ -99,14 +99,14 @@ describe('X-Resource extension', () => {
             return done();
         }
         res.QueryResourceBytes(0, [{ resource: pixmap, type: 0 }], (err, sizes) => {
-            should.not.exist(err);
-            sizes.length.should.be.aboveOrEqual(1);
+            assert.ifError(err);
+            assert.ok(sizes.length >= 1);
             const mine = sizes.filter(s => s.resource === pixmap)[0];
-            should.exist(mine);
-            mine.type.should.equal(20); // PIXMAP atom
-            mine.bytes.should.be.aboveOrEqual(W * H * bytesPP);
-            mine.refCount.should.be.aboveOrEqual(1);
-            mine.crossReferences.should.be.an.Array();
+            assert.ok(mine != null);
+            assert.strictEqual(mine.type, 20); // PIXMAP atom
+            assert.ok(mine.bytes >= (W * H * bytesPP));
+            assert.ok(mine.refCount >= 1);
+            assert.ok(Array.isArray(mine.crossReferences));
             done();
         });
     });

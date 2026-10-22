@@ -1,16 +1,16 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('Generic Event extension', () => {
     let X, ge;
 
     before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             X.require('ge', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 ge = ext;
                 done();
             });
@@ -20,15 +20,15 @@ describe('Generic Event extension', () => {
     });
 
     it('QueryVersion should report at least 1.0', function() {
-        ge.major.should.be.aboveOrEqual(1);
-        ge.minor.should.be.aboveOrEqual(0);
+        assert.ok(ge.major >= 1);
+        assert.ok(ge.minor >= 0);
     });
 
     it('explicit QueryVersion round-trip should agree with negotiated version', function(t, done) {
         ge.QueryVersion(1, 0, (err, vers) => {
-            should.not.exist(err);
-            vers[0].should.equal(ge.major);
-            vers[1].should.equal(ge.minor);
+            assert.ifError(err);
+            assert.strictEqual(vers[0], ge.major);
+            assert.strictEqual(vers[1], ge.minor);
             done();
         });
     });

@@ -8,7 +8,7 @@
 // rule, an operator or an edge case wrong fails here rather than showing up
 // as a subtly wrong colour somewhere downstream.
 const { describe, it, beforeEach, afterEach } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const { boot } = require('./boot');
 const renderExt = require('../../lib/xserver/extensions/render');
 

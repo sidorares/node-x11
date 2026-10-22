@@ -1,7 +1,6 @@
 const { describe, it, before } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const { execFile } = require('child_process');
 const path = require('path');
 
@@ -10,7 +9,7 @@ describe('Client', () => {
   let display;
   before((t, done) => {
       const client = x11.createClient({ debug: false }, (err, dpy) => {
-          should.not.exist(err);
+          assert.ifError(err);
           display = dpy;
           done();
       });
@@ -28,8 +27,8 @@ describe('Client', () => {
           done();
         break;
         default:
-          assert.equal(err.constructor, Error);
-          assert.equal(seq, err.seq);
+          assert.strictEqual(err.constructor, Error);
+          assert.strictEqual(seq, err.seq);
           display.client.CreateWindow(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {}); // should emit error
           seq = display.client.seq_num;
        }

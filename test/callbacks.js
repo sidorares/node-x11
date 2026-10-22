@@ -1,6 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 // The request dispatcher decides whether the trailing argument is a callback.
 // It used to test `callback.constructor.name != 'Function'`, which rejected

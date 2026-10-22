@@ -1,6 +1,6 @@
 const { describe, it, before, after, beforeEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('XFIXES extension', () => {
 
@@ -20,7 +20,7 @@ describe('XFIXES extension', () => {
             xErrors = [];
             X.on('error', e => xErrors.push(e));
             X.require('fixes', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 F = ext;
                 done();
             });
@@ -39,14 +39,14 @@ describe('XFIXES extension', () => {
     // caused by earlier no-reply requests have already been delivered.
     const sync = cb => {
         F.QueryVersion(5, 0, err => {
-            should.not.exist(err);
+            assert.ifError(err);
             cb();
         });
     };
 
     const assertNoErrors = cb => {
         sync(() => {
-            xErrors.should.be.empty();
+            assert.strictEqual(xErrors.length, 0);
             cb();
         });
     };
@@ -74,16 +74,16 @@ describe('XFIXES extension', () => {
     });
 
     it('negotiates at least version 5', () => {
-        F.major.should.be.aboveOrEqual(5);
+        assert.ok(F.major >= 5);
     });
 
     it('SetRegion replaces the contents of a region', (t, done) => {
         const region = createRegion([{ x: 0, y: 0, width: 100, height: 100 }]);
         F.SetRegion(region, [{ x: 1, y: 2, width: 3, height: 4 }]);
         F.FetchRegion(region, (err, reg) => {
-            should.not.exist(err);
-            reg.extents.should.eql({ x: 1, y: 2, width: 3, height: 4 });
-            reg.rectangles.should.eql([{ x: 1, y: 2, width: 3, height: 4 }]);
+            assert.ifError(err);
+            assert.deepStrictEqual(reg.extents, { x: 1, y: 2, width: 3, height: 4 });
+            assert.deepStrictEqual(reg.rectangles, [{ x: 1, y: 2, width: 3, height: 4 }]);
             F.DestroyRegion(region);
             done();
         });
@@ -94,8 +94,8 @@ describe('XFIXES extension', () => {
         const dst = createRegion([]);
         F.CopyRegion(src, dst);
         F.FetchRegion(dst, (err, reg) => {
-            should.not.exist(err);
-            reg.rectangles.should.eql([{ x: 7, y: 8, width: 9, height: 10 }]);
+            assert.ifError(err);
+            assert.deepStrictEqual(reg.rectangles, [{ x: 7, y: 8, width: 9, height: 10 }]);
             F.DestroyRegion(src);
             F.DestroyRegion(dst);
             done();
@@ -108,8 +108,8 @@ describe('XFIXES extension', () => {
         const dst = createRegion([]);
         F.IntersectRegion(r1, r2, dst);
         F.FetchRegion(dst, (err, reg) => {
-            should.not.exist(err);
-            reg.rectangles.should.eql([{ x: 5, y: 5, width: 5, height: 5 }]);
+            assert.ifError(err);
+            assert.deepStrictEqual(reg.rectangles, [{ x: 5, y: 5, width: 5, height: 5 }]);
             [r1, r2, dst].forEach(r => F.DestroyRegion(r));
             done();
         });
@@ -121,8 +121,8 @@ describe('XFIXES extension', () => {
         const dst = createRegion([]);
         F.SubtractRegion(r1, r2, dst);
         F.FetchRegion(dst, (err, reg) => {
-            should.not.exist(err);
-            reg.rectangles.should.eql([{ x: 0, y: 0, width: 10, height: 5 }]);
+            assert.ifError(err);
+            assert.deepStrictEqual(reg.rectangles, [{ x: 0, y: 0, width: 10, height: 5 }]);
             [r1, r2, dst].forEach(r => F.DestroyRegion(r));
             done();
         });
@@ -133,8 +133,8 @@ describe('XFIXES extension', () => {
         const dst = createRegion([]);
         F.InvertRegion(src, { x: 0, y: 0, width: 20, height: 20 }, dst);
         F.FetchRegion(dst, (err, reg) => {
-            should.not.exist(err);
-            reg.rectangles.should.eql([{ x: 10, y: 0, width: 10, height: 20 }]);
+            assert.ifError(err);
+            assert.deepStrictEqual(reg.rectangles, [{ x: 10, y: 0, width: 10, height: 20 }]);
             F.DestroyRegion(src);
             F.DestroyRegion(dst);
             done();
@@ -145,8 +145,8 @@ describe('XFIXES extension', () => {
         const region = createRegion([{ x: 10, y: 10, width: 5, height: 5 }]);
         F.ExpandRegion(region, region, 1, 2, 3, 4);
         F.FetchRegion(region, (err, reg) => {
-            should.not.exist(err);
-            reg.extents.should.eql({ x: 9, y: 7, width: 8, height: 12 });
+            assert.ifError(err);
+            assert.deepStrictEqual(reg.extents, { x: 9, y: 7, width: 8, height: 12 });
             F.DestroyRegion(region);
             done();
         });
@@ -160,8 +160,8 @@ describe('XFIXES extension', () => {
         const dst = createRegion([]);
         F.RegionExtents(src, dst);
         F.FetchRegion(dst, (err, reg) => {
-            should.not.exist(err);
-            reg.rectangles.should.eql([{ x: 0, y: 0, width: 25, height: 25 }]);
+            assert.ifError(err);
+            assert.deepStrictEqual(reg.rectangles, [{ x: 0, y: 0, width: 25, height: 25 }]);
             F.DestroyRegion(src);
             F.DestroyRegion(dst);
             done();
@@ -179,8 +179,8 @@ describe('XFIXES extension', () => {
         const region = X.AllocID();
         F.CreateRegionFromBitmap(region, pix);
         F.FetchRegion(region, (err, reg) => {
-            should.not.exist(err);
-            reg.rectangles.should.eql([{ x: 2, y: 3, width: 4, height: 5 }]);
+            assert.ifError(err);
+            assert.deepStrictEqual(reg.rectangles, [{ x: 2, y: 3, width: 4, height: 5 }]);
             F.DestroyRegion(region);
             X.FreeGC(gc);
             X.FreePixmap(pix);
@@ -196,8 +196,8 @@ describe('XFIXES extension', () => {
         const region = X.AllocID();
         F.CreateRegionFromGC(region, gc);
         F.FetchRegion(region, (err, reg) => {
-            should.not.exist(err);
-            reg.rectangles.should.eql([{ x: 2, y: 3, width: 4, height: 5 }]);
+            assert.ifError(err);
+            assert.deepStrictEqual(reg.rectangles, [{ x: 2, y: 3, width: 4, height: 5 }]);
             F.SetGCClipRegion(gc, 0, 0, 0); // None: remove the clip again
             F.DestroyRegion(region);
             F.DestroyRegion(clip);
@@ -214,8 +214,8 @@ describe('XFIXES extension', () => {
         const region = X.AllocID();
         F.CreateRegionFromWindow(region, wid, F.WindowRegionKind.Bounding);
         F.FetchRegion(region, (err, reg) => {
-            should.not.exist(err);
-            reg.rectangles.should.eql([{ x: 0, y: 0, width: 8, height: 8 }]);
+            assert.ifError(err);
+            assert.deepStrictEqual(reg.rectangles, [{ x: 0, y: 0, width: 8, height: 8 }]);
             F.SetWindowShapeRegion(wid, F.WindowRegionKind.Bounding, 0, 0, 0); // None
             F.DestroyRegion(region);
             F.DestroyRegion(shape);
@@ -226,7 +226,7 @@ describe('XFIXES extension', () => {
 
     it('SetPictureClipRegion / CreateRegionFromPicture round-trip', (t, done) => {
         X.require('render', (err, Render) => {
-            should.not.exist(err);
+            assert.ifError(err);
             const wid = X.AllocID();
             X.CreateWindow(wid, root, 0, 0, 32, 32);
             const pict = X.AllocID();
@@ -236,8 +236,8 @@ describe('XFIXES extension', () => {
             const region = X.AllocID();
             F.CreateRegionFromPicture(region, pict);
             F.FetchRegion(region, (err, reg) => {
-                should.not.exist(err);
-                reg.rectangles.should.eql([{ x: 1, y: 1, width: 6, height: 7 }]);
+                assert.ifError(err);
+                assert.deepStrictEqual(reg.rectangles, [{ x: 1, y: 1, width: 6, height: 7 }]);
                 F.DestroyRegion(region);
                 F.DestroyRegion(clip);
                 Render.FreePicture(pict);
@@ -251,9 +251,9 @@ describe('XFIXES extension', () => {
         const cid = createGlyphCursor(68);
         F.SetCursorName(cid, 'node-x11-test-cursor');
         F.GetCursorName(cid, (err, res) => {
-            should.not.exist(err);
-            res.name.should.equal('node-x11-test-cursor');
-            res.atom.should.be.above(0);
+            assert.ifError(err);
+            assert.strictEqual(res.name, 'node-x11-test-cursor');
+            assert.ok(res.atom > 0);
             X.FreeCursor(cid);
             done();
         });
@@ -261,10 +261,10 @@ describe('XFIXES extension', () => {
 
     it('GetCursorImage returns the current cursor image', (t, done) => {
         F.GetCursorImage((err, img) => {
-            should.not.exist(err);
-            img.width.should.be.above(0);
-            img.height.should.be.above(0);
-            img.cursorImage.length.should.equal(img.width * img.height * 4);
+            assert.ifError(err);
+            assert.ok(img.width > 0);
+            assert.ok(img.height > 0);
+            assert.strictEqual(img.cursorImage.length, img.width * img.height * 4);
             done();
         });
     });
@@ -275,7 +275,7 @@ describe('XFIXES extension', () => {
         let sawCursorNotify = false;
         const listener = ev => {
             if (ev.name === 'CursorNotify') {
-                ev.subtype.should.equal(F.CursorNotify.DisplayCursor);
+                assert.strictEqual(ev.subtype, F.CursorNotify.DisplayCursor);
                 sawCursorNotify = true;
             }
         };
@@ -283,11 +283,11 @@ describe('XFIXES extension', () => {
         F.SelectCursorInput(root, F.CursorNotifyMask.DisplayCursor);
         X.ChangeWindowAttributes(root, { cursor: cid });
         F.GetCursorImageAndName((err, img) => {
-            should.not.exist(err);
-            img.cursorName.should.equal('node-x11-displayed-cursor');
-            img.cursorAtom.should.be.above(0);
-            img.cursorImage.length.should.equal(img.width * img.height * 4);
-            sawCursorNotify.should.be.true();
+            assert.ifError(err);
+            assert.strictEqual(img.cursorName, 'node-x11-displayed-cursor');
+            assert.ok(img.cursorAtom > 0);
+            assert.strictEqual(img.cursorImage.length, img.width * img.height * 4);
+            assert.strictEqual(sawCursorNotify, true);
             // restore global state: default cursor, no cursor input events
             F.SelectCursorInput(root, 0);
             X.ChangeWindowAttributes(root, { cursor: 0 });
@@ -325,15 +325,15 @@ describe('XFIXES extension', () => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, 1, 1);
         X.InternAtom(false, 'NODE_X11_FIXES_TEST_SELECTION', (err, selAtom) => {
-            should.not.exist(err);
+            assert.ifError(err);
             const listener = ev => {
                 if (ev.name !== 'SelectionNotify')
                     return;
-                ev.subtype.should.equal(F.SelectionEvent.SetSelectionOwner);
-                ev.window.should.equal(wid);
-                ev.owner.should.equal(wid);
-                ev.selection.should.equal(selAtom);
-                ev.timestamp.should.be.above(0);
+                assert.strictEqual(ev.subtype, F.SelectionEvent.SetSelectionOwner);
+                assert.strictEqual(ev.window, wid);
+                assert.strictEqual(ev.owner, wid);
+                assert.strictEqual(ev.selection, selAtom);
+                assert.ok(ev.timestamp > 0);
                 X.removeListener('event', listener);
                 F.SelectSelectionInput(wid, selAtom, 0);
                 X.SetSelectionOwner(0, selAtom); // release the selection
@@ -348,12 +348,12 @@ describe('XFIXES extension', () => {
 
     it('ChangeSaveSet accepts a window of another client', (t, done) => {
         const client2 = x11.createClient((err, dpy2) => {
-            should.not.exist(err);
+            assert.ifError(err);
             const X2 = dpy2.client;
             const wid2 = X2.AllocID();
             X2.CreateWindow(wid2, dpy2.screen[0].root, 0, 0, 1, 1);
             X2.GetGeometry(wid2, err => {   // sync client2 so wid2 exists server-side
-                should.not.exist(err);
+                assert.ifError(err);
                 F.ChangeSaveSet(wid2, F.SaveSetMode.Insert, F.SaveSetTarget.Root, F.SaveSetMap.Unmap);
                 F.ChangeSaveSet(wid2, F.SaveSetMode.Delete, F.SaveSetTarget.Root, F.SaveSetMap.Unmap);
                 assertNoErrors(() => {
