@@ -98,6 +98,70 @@ describe('Client', () => {
     client.on('error', done);
   });
 
+  // Xwayland's listen queue is one connection deep, so a second client
+  // connecting while the first waits to be accepted finds it full. Here a
+  // proxy in front of the test server listens one deep and does not accept
+  // for a while; two plain connections fill its queue, and the client has to
+  // wait its turn the way a blocking connect (Xlib, XCB) does. Linux only: a
+  // display names no unix socket but /tmp/.X11-unix/X<n> there, and the
+  // proxy needs the server's own socket to forward to.
+  const realDisplay = process.env.DISPLAY && x11.parseDisplay?.(process.env.DISPLAY);
+  const onLinuxUnix = process.platform === 'linux' && realDisplay && !realDisplay.host;
+  (onLinuxUnix ? it : it.skip)('waits out a listen queue that is full, as a blocking connect would', function (done) {
+    this.timeout(10000);
+    const fs = require('fs');
+    const os = require('os');
+    const net = require('net');
+    const { spawn } = require('child_process');
+    let num = 4000 + (process.pid % 1000);
+    while (fs.existsSync(`/tmp/.X11-unix/X${num}`)) num++;
+    const sock = `/tmp/.X11-unix/X${num}`;
+    const target = `/tmp/.X11-unix/X${realDisplay.displayNum}`;
+    const proxy = spawn(process.execPath, ['-e', `
+        const net = require('net');
+        const [sock, target] = process.argv.slice(1);
+        net.createServer(c => {
+            const up = net.createConnection(target);
+            c.on('error', () => {});
+            up.on('error', () => {});
+            c.pipe(up).pipe(c);
+        }).listen({ path: sock, backlog: 1 }, () => {
+            process.stdout.write('listening\\n');
+            // not accepting yet: what connects now waits in the queue
+            const until = Date.now() + 500;
+            while (Date.now() < until);
+        });
+    `, sock, target], { stdio: ['ignore', 'pipe', 'inherit'] });
+    const fillers = [];
+    const finish = err => {
+        for (const f of fillers) f.destroy();
+        proxy.kill();
+        fs.rmSync(sock, { force: true });
+        done(err);
+    };
+    proxy.stdout.once('data', () => {
+        // Linux holds backlog + 1 connections before it turns the next away
+        for (let i = 0; i < 2; i++) {
+            const f = net.createConnection(sock);
+            f.on('error', () => {});
+            fillers.push(f);
+        }
+        // the server's own cookie: the proxy's display number has none
+        require('../lib/auth')(String(realDisplay.displayNum), os.hostname(), 'local', (err, cookie) => {
+            if (err) return finish(err);
+            const client = x11.createClient({
+                display: `:${num}`,
+                auth: { name: cookie.authName, data: cookie.authData },
+            }, (err, dpy) => {
+                if (err) return finish(err);
+                dpy.client.terminate();
+                finish();
+            });
+            client.on('error', () => {}); // reported through the callback
+        });
+    });
+  });
+
   it('returns error when connecting to non existent display', done => {
     let errorCbCalled = false;
     const client = x11.createClient({ display : ':44' }, (err, display) => {
