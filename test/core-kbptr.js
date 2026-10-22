@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -8,7 +9,7 @@ describe('Keyboard and pointer control requests', () => {
   let X;
   let root;
 
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (err)
               return done(err);
@@ -20,14 +21,14 @@ describe('Keyboard and pointer control requests', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.terminate();
       X.on('end', done);
       X = null;
       display = null;
   });
 
-  it('GetKeyboardControl should return current settings', done => {
+  it('GetKeyboardControl should return current settings', (t, done) => {
       X.GetKeyboardControl((err, control) => {
           should.not.exist(err);
           control.bellPercent.should.be.within(0, 100);
@@ -38,7 +39,7 @@ describe('Keyboard and pointer control requests', () => {
       });
   });
 
-  it('ChangeKeyboardControl should roundtrip bell settings', done => {
+  it('ChangeKeyboardControl should roundtrip bell settings', (t, done) => {
       X.GetKeyboardControl((err, before) => {
           should.not.exist(err);
           X.ChangeKeyboardControl({ bellPercent: 55, bellPitch: 456 });
@@ -55,7 +56,7 @@ describe('Keyboard and pointer control requests', () => {
       });
   });
 
-  it('ChangePointerControl/GetPointerControl should roundtrip', done => {
+  it('ChangePointerControl/GetPointerControl should roundtrip', (t, done) => {
       X.GetPointerControl((err, before) => {
           should.not.exist(err);
           X.ChangePointerControl(3, 1, 42, true, true);
@@ -76,7 +77,7 @@ describe('Keyboard and pointer control requests', () => {
       });
   });
 
-  it('GetScreenSaver should roundtrip with SetScreenSaver', done => {
+  it('GetScreenSaver should roundtrip with SetScreenSaver', (t, done) => {
       X.GetScreenSaver((err, before) => {
           should.not.exist(err);
           X.SetScreenSaver(543, 21, 1, 1);
@@ -97,7 +98,7 @@ describe('Keyboard and pointer control requests', () => {
       });
   });
 
-  it('ChangeKeyboardMapping/GetKeyboardMapping should roundtrip', done => {
+  it('ChangeKeyboardMapping/GetKeyboardMapping should roundtrip', (t, done) => {
       const keycode = display.max_keycode; // remap the last valid keycode
       X.GetKeyboardMapping(keycode, 1, (err, before) => {
           should.not.exist(err);
@@ -113,7 +114,7 @@ describe('Keyboard and pointer control requests', () => {
       });
   });
 
-  it('GetPointerMapping/SetPointerMapping should roundtrip', done => {
+  it('GetPointerMapping/SetPointerMapping should roundtrip', (t, done) => {
       X.GetPointerMapping((err, map) => {
           should.not.exist(err);
           map.length.should.be.above(0);
@@ -125,7 +126,7 @@ describe('Keyboard and pointer control requests', () => {
       });
   });
 
-  it('GetModifierMapping/SetModifierMapping should roundtrip', done => {
+  it('GetModifierMapping/SetModifierMapping should roundtrip', (t, done) => {
       X.GetModifierMapping((err, rows) => {
           should.not.exist(err);
           rows.length.should.equal(8);
@@ -141,7 +142,7 @@ describe('Keyboard and pointer control requests', () => {
       });
   });
 
-  it('Bell should be accepted by server', done => {
+  it('Bell should be accepted by server', (t, done) => {
       X.Bell(50);
       X.Bell(-50);
       // broken opcode/length would corrupt the stream and error before this reply
@@ -151,7 +152,7 @@ describe('Keyboard and pointer control requests', () => {
       });
   });
 
-  it('GetMotionEvents should return an array', done => {
+  it('GetMotionEvents should return an array', (t, done) => {
       X.GetMotionEvents(root, 0, 0, (err, events) => {
           should.not.exist(err);
           events.should.be.an.Array();

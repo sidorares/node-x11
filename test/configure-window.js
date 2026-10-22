@@ -1,23 +1,25 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
 const util = require('util');
 
 describe('ConfigureWindow', () => {
-    before(function(done) {
-        const self = this;
+    let X, wid, wid_helper;
+
+    before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X = dpy.client;
-            self.wid = self.X.AllocID();
-            self.wid_helper = self.X.AllocID();
-            self.X.CreateWindow(self.wid, dpy.screen[0].root, 0, 0, 1, 1); // 1x1 pixel window
-            self.X.CreateWindow(self.wid_helper, dpy.screen[0].root, 0, 0, 1, 1); // 1x1 pixel window
-            self.X.QueryTree(dpy.screen[0].root, (err, list) => {
+            X = dpy.client;
+            wid = X.AllocID();
+            wid_helper = X.AllocID();
+            X.CreateWindow(wid, dpy.screen[0].root, 0, 0, 1, 1); // 1x1 pixel window
+            X.CreateWindow(wid_helper, dpy.screen[0].root, 0, 0, 1, 1); // 1x1 pixel window
+            X.QueryTree(dpy.screen[0].root, (err, list) => {
                 should.not.exist(err);
-                list.children.indexOf(self.wid).should.not.equal(-1);
-                list.children.indexOf(self.wid_helper).should.not.equal(-1);
-                self.X.ChangeWindowAttributes(self.wid, { eventMask: x11.eventMask.StructureNotify });
+                list.children.indexOf(wid).should.not.equal(-1);
+                list.children.indexOf(wid_helper).should.not.equal(-1);
+                X.ChangeWindowAttributes(wid, { eventMask: x11.eventMask.StructureNotify });
                 done();
             });
         });
@@ -27,31 +29,28 @@ describe('ConfigureWindow', () => {
         });
     });
 
-    it('should ResizeWindow correctly to 200x300 pixels', function(done) {
-        const self = this;
-        this.X.once('event', ev => {
+    it('should ResizeWindow correctly to 200x300 pixels', function(t, done) {
+        X.once('event', ev => {
             ev.type.should.equal(22); /* ConfigureNotify */
             ev.height.should.equal(300);
             ev.width.should.equal(200);
             done();
         });
-        this.X.ResizeWindow(this.wid, 200, 300);
+        X.ResizeWindow(wid, 200, 300);
     });
 
-    it('should MoveWindow correctly to x: 100, y: 150 pixels', function(done) {
-        const self = this;
-        this.X.once('event', ev => {
+    it('should MoveWindow correctly to x: 100, y: 150 pixels', function(t, done) {
+        X.once('event', ev => {
             ev.type.should.equal(22); /* ConfigureNotify */
             ev.x.should.equal(100);
             ev.y.should.equal(150);
             done();
         });
-        this.X.MoveWindow(this.wid, 100, 150);
+        X.MoveWindow(wid, 100, 150);
     });
 
-    it('should MoveResizeWindow correctly to x: 200, y: 250 and 500x100 pixels', function(done) {
-        const self = this;
-        this.X.once('event', ev => {
+    it('should MoveResizeWindow correctly to x: 200, y: 250 and 500x100 pixels', function(t, done) {
+        X.once('event', ev => {
             ev.type.should.equal(22); /* ConfigureNotify */
             ev.x.should.equal(200);
             ev.y.should.equal(250);
@@ -59,45 +58,43 @@ describe('ConfigureWindow', () => {
             ev.width.should.equal(500);
             done();
         });
-        this.X.MoveResizeWindow(this.wid, 200, 250, 500, 100);
+        X.MoveResizeWindow(wid, 200, 250, 500, 100);
     });
 
-    it('should RaiseWindow correctly', function(done) {
-        const self = this;
-        this.X.once('event', ev => {
+    it('should RaiseWindow correctly', function(t, done) {
+        X.once('event', ev => {
             ev.type.should.equal(22); /* ConfigureNotify */
-            ev.aboveSibling.should.equal(self.wid_helper);
+            ev.aboveSibling.should.equal(wid_helper);
             done();
         });
-        this.X.RaiseWindow(this.wid);
+        X.RaiseWindow(wid);
     });
 
-    it('should LowerWindow correctly', function(done) {
-        const self = this;
-        this.X.once('event', ev => {
+    it('should LowerWindow correctly', function(t, done) {
+        X.once('event', ev => {
             ev.type.should.equal(22); /* ConfigureNotify */
             ev.aboveSibling.should.equal(0); /* 0 -> no window below this */
             done();
         });
-        this.X.LowerWindow(this.wid);
+        X.LowerWindow(wid);
     });
 
-    it('should ignore invalid mask values', function(done) {
-        this.X.once('event', ev => {
+    it('should ignore invalid mask values', function(t, done) {
+        X.once('event', ev => {
             ev.x.should.equal(0);
             done();
         });
 
-        this.X.ConfigureWindow(this.wid, { foo : 3, x : 0 }, err => {
+        X.ConfigureWindow(wid, { foo : 3, x : 0 }, err => {
             console.log(err);
         });
     });
 
-    after(function(done) {
-        this.X.removeAllListeners('event');
-        this.X.DestroyWindow(this.wid);
-        this.X.DestroyWindow(this.wid_helper);
-        this.X.on('end', done);
-        this.X.terminate();
+    after(function(t, done) {
+        X.removeAllListeners('event');
+        X.DestroyWindow(wid);
+        X.DestroyWindow(wid_helper);
+        X.on('end', done);
+        X.terminate();
     });
 });

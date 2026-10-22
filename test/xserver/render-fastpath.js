@@ -7,6 +7,7 @@
 // destination images are identical. A specialisation that gets a rounding
 // rule, an operator or an edge case wrong fails here rather than showing up
 // as a subtly wrong colour somewhere downstream.
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const { boot } = require('./boot');
 const renderExt = require('../../lib/xserver/extensions/render');
@@ -23,7 +24,7 @@ describe('xserver: RENDER fast paths', () => {
 
     let server, display, X, root, render;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             ({ server, display, X } = ctx);
@@ -132,7 +133,7 @@ describe('xserver: RENDER fast paths', () => {
     describe('FillRectangles matches the general loop', () => {
         for (const depth of [24, 32, 8]) {
             for (let op = 0; op < OPS.length; op++) {
-                it(`${OPS[op]} on depth ${depth}`, done => {
+                it(`${OPS[op]} on depth ${depth}`, (t, done) => {
                     bothAgree(depth, pic => {
                         render.FillRectangles(op, pic, [0.3, 0.15, 0.45, 0.6],
                             [2, 1, 9, 7, 12, 5, 8, 9]);
@@ -141,14 +142,14 @@ describe('xserver: RENDER fast paths', () => {
             }
         }
 
-        it('opaque fill covers exactly the rect and nothing else', done => {
+        it('opaque fill covers exactly the rect and nothing else', (t, done) => {
             bothAgree(24, pic => {
                 render.FillRectangles(render.PictOp.Src, pic, [1, 0, 0, 1],
                     [3, 2, 5, 4]);
             }, 'partial opaque fill', done);
         });
 
-        it('a clip list still matches', done => {
+        it('a clip list still matches', (t, done) => {
             bothAgree(24, pic => {
                 render.SetPictureClipRectangles(pic, 0, 0, [1, 1, 8, 6, 10, 4, 6, 8]);
                 render.FillRectangles(render.PictOp.Src, pic, [0, 1, 0, 1],
@@ -159,7 +160,7 @@ describe('xserver: RENDER fast paths', () => {
         // The fast path turns the clip into per-row spans, and overlapping
         // rectangles have to merge: drawing the overlap twice is invisible
         // for Src but wrong for every operator that is not idempotent.
-        it('overlapping clip rectangles composite each pixel once', done => {
+        it('overlapping clip rectangles composite each pixel once', (t, done) => {
             bothAgree(24, pic => {
                 render.SetPictureClipRectangles(pic, 0, 0, [2, 2, 10, 10, 6, 4, 10, 6]);
                 render.FillRectangles(render.PictOp.Over, pic, [0.5, 0, 0.25, 0.5],
@@ -167,7 +168,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'overlapping clip, Over', done);
         });
 
-        it('clip rectangles given out of x order still match', done => {
+        it('clip rectangles given out of x order still match', (t, done) => {
             bothAgree(24, pic => {
                 render.SetPictureClipRectangles(pic, 0, 0, [14, 1, 6, 12, 2, 3, 5, 9]);
                 render.FillRectangles(render.PictOp.Over, pic, [0, 0.5, 0.2, 0.625],
@@ -175,7 +176,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'unsorted clip', done);
         });
 
-        it('a clip origin offset still matches', done => {
+        it('a clip origin offset still matches', (t, done) => {
             bothAgree(24, pic => {
                 render.SetPictureClipRectangles(pic, 3, 2, [0, 0, 8, 8]);
                 render.FillRectangles(render.PictOp.Src, pic, [1, 1, 0, 1],
@@ -188,7 +189,7 @@ describe('xserver: RENDER fast paths', () => {
         for (const srcDepth of [24, 32]) {
             for (const dstDepth of [24, 32]) {
                 for (const op of [0, 1, 3, 5, 9, 11, 12, 13]) {
-                    it(`${OPS[op]}: depth ${srcDepth} source onto depth ${dstDepth}`, done => {
+                    it(`${OPS[op]}: depth ${srcDepth} source onto depth ${dstDepth}`, (t, done) => {
                         bothAgree(dstDepth, pic => {
                             const src = mkSourcePixmap(srcDepth, 3);
                             render.Composite(op, src.pic, 0, pic, 0, 0, 0, 0, 0, 0, W, H);
@@ -198,14 +199,14 @@ describe('xserver: RENDER fast paths', () => {
             }
         }
 
-        it('a sub-rectangle blit at an offset matches', done => {
+        it('a sub-rectangle blit at an offset matches', (t, done) => {
             bothAgree(24, pic => {
                 const src = mkSourcePixmap(24, 5);
                 render.Composite(render.PictOp.Src, src.pic, 0, pic, 2, 3, 0, 0, 5, 4, 10, 6);
             }, 'offset blit', done);
         });
 
-        it('a solid source with no mask matches', done => {
+        it('a solid source with no mask matches', (t, done) => {
             bothAgree(24, pic => {
                 const solid = X.AllocID();
                 render.CreateSolidFill(solid, 0.25, 0.5, 0.125, 0.75);
@@ -216,7 +217,7 @@ describe('xserver: RENDER fast paths', () => {
         // A 1x1 repeating pixmap is how toolkits express flat paint, and it
         // has to reach the constant-source path rather than the blit path.
         for (const repeat of [1, 2, 3]) {
-            it(`a 1x1 source with repeat ${repeat} matches`, done => {
+            it(`a 1x1 source with repeat ${repeat} matches`, (t, done) => {
                 bothAgree(24, pic => {
                     const dot = X.AllocID();
                     X.CreatePixmap(dot, root, 32, 1, 1);
@@ -231,7 +232,7 @@ describe('xserver: RENDER fast paths', () => {
             });
         }
 
-        it('a 1x1 source with repeat None still matches (it is not constant)', done => {
+        it('a 1x1 source with repeat None still matches (it is not constant)', (t, done) => {
             bothAgree(24, pic => {
                 const dot = X.AllocID();
                 X.CreatePixmap(dot, root, 32, 1, 1);
@@ -244,7 +245,7 @@ describe('xserver: RENDER fast paths', () => {
             }, '1x1 repeat None', done);
         });
 
-        it('a transformed 1x1 repeating source matches', done => {
+        it('a transformed 1x1 repeating source matches', (t, done) => {
             bothAgree(24, pic => {
                 const dot = X.AllocID();
                 X.CreatePixmap(dot, root, 24, 1, 1);
@@ -259,7 +260,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'transformed 1x1 repeat', done);
         });
 
-        it('a source smaller than the region falls back and still matches', done => {
+        it('a source smaller than the region falls back and still matches', (t, done) => {
             bothAgree(24, pic => {
                 const small = X.AllocID();
                 X.CreatePixmap(small, root, 24, 4, 4);
@@ -272,7 +273,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'repeating small source', done);
         });
 
-        it('a transformed source falls back and still matches', done => {
+        it('a transformed source falls back and still matches', (t, done) => {
             bothAgree(24, pic => {
                 const src = mkSourcePixmap(24, 7);
                 // the client encoder takes plain numbers and converts to 16.16
@@ -281,7 +282,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'transformed source', done);
         });
 
-        it('a clipped blit matches', done => {
+        it('a clipped blit matches', (t, done) => {
             bothAgree(24, pic => {
                 const src = mkSourcePixmap(24, 5);
                 render.SetPictureClipRectangles(pic, 0, 0, [2, 2, 9, 9, 13, 5, 7, 7]);
@@ -289,7 +290,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'clipped blit', done);
         });
 
-        it('a clipped alpha blit onto depth 32 matches', done => {
+        it('a clipped alpha blit onto depth 32 matches', (t, done) => {
             bothAgree(32, pic => {
                 const src = mkSourcePixmap(32, 3);
                 render.SetPictureClipRectangles(pic, 0, 0, [1, 1, 12, 12, 8, 6, 12, 8]);
@@ -297,7 +298,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'clipped alpha blit', done);
         });
 
-        it('a clipped solid source matches', done => {
+        it('a clipped solid source matches', (t, done) => {
             bothAgree(24, pic => {
                 const solid = X.AllocID();
                 render.CreateSolidFill(solid, 0.25, 0.5, 0.125, 0.5625);
@@ -306,7 +307,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'clipped solid source', done);
         });
 
-        it('an empty clip list draws nothing, both ways', done => {
+        it('an empty clip list draws nothing, both ways', (t, done) => {
             bothAgree(24, pic => {
                 const src = mkSourcePixmap(24, 3);
                 render.SetPictureClipRectangles(pic, 0, 0, []);
@@ -314,7 +315,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'empty clip', done);
         });
 
-        it('a flat mask matches', done => {
+        it('a flat mask matches', (t, done) => {
             bothAgree(24, pic => {
                 const src = mkSourcePixmap(24, 3);
                 const maskPixmap = X.AllocID();
@@ -333,7 +334,7 @@ describe('xserver: RENDER fast paths', () => {
         for (const srcDepth of [24, 32]) {
             for (const dstDepth of [24, 32]) {
                 for (const op of [1, 3, 9, 12]) {
-                    it(`${OPS[op]}: depth ${srcDepth} through a mask onto depth ${dstDepth}`, done => {
+                    it(`${OPS[op]}: depth ${srcDepth} through a mask onto depth ${dstDepth}`, (t, done) => {
                         bothAgree(dstDepth, pic => {
                             const src = mkSourcePixmap(srcDepth, 3);
                             const mask = mkAlphaPixmap(5);
@@ -345,7 +346,7 @@ describe('xserver: RENDER fast paths', () => {
             }
         }
 
-        it('a 1x1 repeating source through a mask matches', done => {
+        it('a 1x1 repeating source through a mask matches', (t, done) => {
             bothAgree(24, pic => {
                 const dot = X.AllocID();
                 X.CreatePixmap(dot, root, 32, 1, 1);
@@ -364,7 +365,7 @@ describe('xserver: RENDER fast paths', () => {
         // left alone under Over, and 1 must not be taken for it — onto a
         // dark pixel it still lights a channel.
         for (const depth of [24, 32]) {
-            it(`a faint mask, 0 to 23 of 255, matches onto depth ${depth}`, done => {
+            it(`a faint mask, 0 to 23 of 255, matches onto depth ${depth}`, (t, done) => {
                 bothAgree(depth, pic => {
                     const solid = X.AllocID();
                     render.CreateSolidFill(solid, 1, 1, 1, 1);
@@ -381,7 +382,7 @@ describe('xserver: RENDER fast paths', () => {
             });
         }
 
-        it('a solid source through a mask matches', done => {
+        it('a solid source through a mask matches', (t, done) => {
             bothAgree(24, pic => {
                 const solid = X.AllocID();
                 render.CreateSolidFill(solid, 0.75, 0.125, 0.375, 1);
@@ -391,7 +392,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'solid through mask', done);
         });
 
-        it('a mask offset by maskX/maskY matches', done => {
+        it('a mask offset by maskX/maskY matches', (t, done) => {
             bothAgree(24, pic => {
                 const src = mkSourcePixmap(24, 3);
                 const mask = mkAlphaPixmap(7);
@@ -400,7 +401,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'offset mask', done);
         });
 
-        it('a clipped masked composite matches', done => {
+        it('a clipped masked composite matches', (t, done) => {
             bothAgree(24, pic => {
                 const src = mkSourcePixmap(32, 3);
                 const mask = mkAlphaPixmap(5);
@@ -410,7 +411,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'clipped masked composite', done);
         });
 
-        it('a mask smaller than the region falls back and still matches', done => {
+        it('a mask smaller than the region falls back and still matches', (t, done) => {
             bothAgree(24, pic => {
                 const src = mkSourcePixmap(24, 3);
                 const small = X.AllocID();
@@ -424,7 +425,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'repeating small mask', done);
         });
 
-        it('a transformed mask falls back and still matches', done => {
+        it('a transformed mask falls back and still matches', (t, done) => {
             bothAgree(24, pic => {
                 const src = mkSourcePixmap(24, 3);
                 const mask = mkAlphaPixmap(5);
@@ -434,7 +435,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'transformed mask', done);
         });
 
-        it('a depth-32 mask falls back and still matches', done => {
+        it('a depth-32 mask falls back and still matches', (t, done) => {
             bothAgree(24, pic => {
                 const src = mkSourcePixmap(24, 3);
                 const mask = mkSourcePixmap(32, 5);
@@ -446,7 +447,7 @@ describe('xserver: RENDER fast paths', () => {
 
     describe('a8 pictures match the general loop', () => {
         for (const op of [0, 1, 3, 5, 9, 11, 12, 13]) {
-            it(`${OPS[op]}: a8 source onto an a8 destination`, done => {
+            it(`${OPS[op]}: a8 source onto an a8 destination`, (t, done) => {
                 bothAgree(8, pic => {
                     const src = mkAlphaPixmap(3);
                     render.Composite(op, src.pic, 0, pic, 0, 0, 0, 0, 0, 0, W, H);
@@ -454,7 +455,7 @@ describe('xserver: RENDER fast paths', () => {
             });
         }
 
-        it('a solid source onto an a8 destination matches', done => {
+        it('a solid source onto an a8 destination matches', (t, done) => {
             bothAgree(8, pic => {
                 const solid = X.AllocID();
                 render.CreateSolidFill(solid, 0, 0, 0, 0.5625);
@@ -462,7 +463,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'solid onto a8', done);
         });
 
-        it('a clipped a8 blit matches', done => {
+        it('a clipped a8 blit matches', (t, done) => {
             bothAgree(8, pic => {
                 const src = mkAlphaPixmap(5);
                 render.SetPictureClipRectangles(pic, 0, 0, [2, 1, 8, 10, 12, 4, 8, 8]);
@@ -470,7 +471,7 @@ describe('xserver: RENDER fast paths', () => {
             }, 'clipped a8 blit', done);
         });
 
-        it('an a8 source onto a colour destination falls back and still matches', done => {
+        it('an a8 source onto a colour destination falls back and still matches', (t, done) => {
             bothAgree(24, pic => {
                 const src = mkAlphaPixmap(3);
                 render.Composite(render.PictOp.Over, src.pic, 0, pic, 0, 0, 0, 0, 0, 0, W, H);
@@ -483,7 +484,7 @@ describe('xserver: RENDER fast paths', () => {
     // The fast path reads the answer from a table per operator.
     describe('a8 onto a8 matches the general loop', () => {
         for (let op = 0; op < OPS.length; op++) {
-            it(`${OPS[op]}`, done => {
+            it(`${OPS[op]}`, (t, done) => {
                 bothAgree(8, pic => {
                     const src = mkAlphaPixmap(5);
                     render.Composite(op, src.pic, 0, pic, 0, 0, 0, 0, 0, 0, W, H);
@@ -491,7 +492,7 @@ describe('xserver: RENDER fast paths', () => {
             });
         }
 
-        it('clipped, and offset in the source', done => {
+        it('clipped, and offset in the source', (t, done) => {
             bothAgree(8, pic => {
                 const src = mkAlphaPixmap(7);
                 render.SetPictureClipRectangles(pic, 0, 0, [2, 1, 8, 10, 12, 4, 8, 8]);
@@ -536,13 +537,13 @@ describe('xserver: RENDER fast paths', () => {
         for (const depth of [24, 32, 8]) {
             for (const [name, src] of [['solid', solid], ['1x1 repeating', dot]]) {
                 for (const op of [3, 1, 12]) {
-                    it(`${OPS[op]}: a ${name} source onto depth ${depth}`, done => {
+                    it(`${OPS[op]}: a ${name} source onto depth ${depth}`, (t, done) => {
                         bothAgree(depth, paintShapes(op, src),
                             `shapes ${OPS[op]} ${name} depth ${depth}`, done);
                     });
                 }
             }
-            it(`Add into a cleared picture, as a clip mask is made, depth ${depth}`, done => {
+            it(`Add into a cleared picture, as a clip mask is made, depth ${depth}`, (t, done) => {
                 bothAgree(depth, pic => {
                     render.FillRectangles(render.PictOp.Src, pic, [0, 0, 0, 0], [0, 0, W, H]);
                     paintShapes(render.PictOp.Add, solid)(pic);
@@ -556,14 +557,14 @@ describe('xserver: RENDER fast paths', () => {
                 X.CreateGC(gc, pixmap, { foreground: 0xffffffff });
                 X.PolyFillRectangle(pixmap, gc, [0, 0, W, H / 2]);
             };
-            it(`shapes onto a destination with bits above its depth, depth ${depth}`, done => {
+            it(`shapes onto a destination with bits above its depth, depth ${depth}`, (t, done) => {
                 bothAgree(depth, (pic, pixmap) => {
                     highBits(pixmap);
                     paintShapes(render.PictOp.Over, solid)(pic);
                 }, `shapes, high bits, depth ${depth}`, done);
             });
             if (depth !== 8) {
-                it(`a mask onto a destination with bits above its depth, depth ${depth}`, done => {
+                it(`a mask onto a destination with bits above its depth, depth ${depth}`, (t, done) => {
                     bothAgree(depth, (pic, pixmap) => {
                         highBits(pixmap);
                         render.Composite(render.PictOp.Over, solid(), mkAlphaPixmap(5).pic, pic,
@@ -571,7 +572,7 @@ describe('xserver: RENDER fast paths', () => {
                     }, `mask, high bits, depth ${depth}`, done);
                 });
             }
-            it(`clipped, onto depth ${depth}`, done => {
+            it(`clipped, onto depth ${depth}`, (t, done) => {
                 bothAgree(depth, pic => {
                     render.SetPictureClipRectangles(pic, 0, 0, [2, 1, 8, 10, 12, 4, 8, 8]);
                     paintShapes(render.PictOp.Over, solid)(pic);

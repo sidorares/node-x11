@@ -1,3 +1,4 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -13,7 +14,7 @@ describe('RENDER extension', () => {
     let render;
     let bytesPP;
 
-    before(done => {
+    before((t, done) => {
         const client = x11.createClient((err, dpy) => {
             if (err)
                 return done(err);
@@ -32,7 +33,7 @@ describe('RENDER extension', () => {
         client.on('error', done);
     });
 
-    after(done => {
+    after((t, done) => {
         X.terminate();
         X.on('end', done);
         X = null;
@@ -77,7 +78,7 @@ describe('RENDER extension', () => {
         });
     }
 
-    it('QueryPictFormats should list picture formats and init discovers standard ones', done => {
+    it('QueryPictFormats should list picture formats and init discovers standard ones', (t, done) => {
         should.exist(render.rgb24);
         should.exist(render.rgba32);
         should.exist(render.a8);
@@ -90,7 +91,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('QueryPictFormats should name the fields of every format entry', done => {
+    it('QueryPictFormats should name the fields of every format entry', (t, done) => {
         render.QueryPictFormats((err, res) => {
             should.not.exist(err);
             const rgb24 = res.formats.find(f => f.id === render.rgb24);
@@ -114,7 +115,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('QueryPictFormats should decode the screens and subpixel sections', done => {
+    it('QueryPictFormats should decode the screens and subpixel sections', (t, done) => {
         render.QueryPictFormats((err, res) => {
             should.not.exist(err);
             res.screens.should.be.an.Array();
@@ -163,7 +164,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('QueryPictIndexValues should return Match error for a direct (non-indexed) format', done => {
+    it('QueryPictIndexValues should return Match error for a direct (non-indexed) format', (t, done) => {
         // Xvfb only has TrueColor/direct formats, so the server must answer
         // with a Match error - proves the request is correctly formed
         render.QueryPictIndexValues(render.rgb24, err => {
@@ -174,7 +175,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('CreateLinearGradient should composite a left-to-right color ramp', done => {
+    it('CreateLinearGradient should composite a left-to-right color ramp', (t, done) => {
         const c = mkCanvas();
         const grad = X.AllocID();
         render.CreateLinearGradient(grad, [0, 0], [W, 0],
@@ -193,7 +194,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('CreateRadialGradient should be white at center, dark at corners', done => {
+    it('CreateRadialGradient should be white at center, dark at corners', (t, done) => {
         const c = mkCanvas();
         const grad = X.AllocID();
         render.CreateRadialGradient(grad, [W / 2, H / 2], [W / 2, H / 2], 0, W / 2,
@@ -210,7 +211,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('CreateConicalGradient with equal stops should fill uniformly', done => {
+    it('CreateConicalGradient with equal stops should fill uniformly', (t, done) => {
         const c = mkCanvas();
         const grad = X.AllocID();
         // both stops red - result is red everywhere, independent of angle math
@@ -227,7 +228,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('ChangePicture should update the repeat attribute of a picture', done => {
+    it('ChangePicture should update the repeat attribute of a picture', (t, done) => {
         const c = mkCanvas();
         const spx = X.AllocID();
         X.CreatePixmap(spx, root, depth, 1, 1);
@@ -252,7 +253,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('SetPictureClipRectangles should restrict rendering to the clip list', done => {
+    it('SetPictureClipRectangles should restrict rendering to the clip list', (t, done) => {
         const c = mkCanvas();
         render.SetPictureClipRectangles(c.pic, 0, 0, [4, 4, 8, 8]);
         render.FillRectangles(render.PictOp.Src, c.pic, [1, 1, 1, 1], [0, 0, W, H]);
@@ -271,7 +272,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('FillRectangles should fill every rectangle in the list', done => {
+    it('FillRectangles should fill every rectangle in the list', (t, done) => {
         const c = mkCanvas();
         render.FillRectangles(render.PictOp.Src, c.pic, [1, 1, 1, 1],
             [0, 0, 4, 4, 12, 12, 4, 4]); // two separate rects
@@ -284,7 +285,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('Trapezoids should render a trapezoid (regression: buffer overflow)', done => {
+    it('Trapezoids should render a trapezoid (regression: buffer overflow)', (t, done) => {
         const c = mkCanvas();
         const solid = X.AllocID();
         render.CreateSolidFill(solid, 1, 1, 1, 1);
@@ -301,7 +302,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('TriFan should render a triangle fan', done => {
+    it('TriFan should render a triangle fan', (t, done) => {
         const c = mkCanvas();
         const solid = X.AllocID();
         render.CreateSolidFill(solid, 1, 1, 1, 1);
@@ -316,7 +317,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('TriStrip should render a triangle strip', done => {
+    it('TriStrip should render a triangle strip', (t, done) => {
         const c = mkCanvas();
         const solid = X.AllocID();
         render.CreateSolidFill(solid, 1, 1, 1, 1);
@@ -350,7 +351,7 @@ describe('RENDER extension', () => {
         return cid;
     }
 
-    it('CreateCursor should create a usable cursor from an ARGB32 picture', done => {
+    it('CreateCursor should create a usable cursor from an ARGB32 picture', (t, done) => {
         const cid = mkArgbCursor(4, 4);
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, 10, 10, 0, 0, 0, 0, { cursor: cid });
@@ -363,7 +364,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('CreateAnimCursor should create a usable animated cursor', done => {
+    it('CreateAnimCursor should create a usable animated cursor', (t, done) => {
         const cid1 = mkArgbCursor(0, 0);
         const cid2 = mkArgbCursor(4, 4);
         const anim = X.AllocID();
@@ -380,7 +381,7 @@ describe('RENDER extension', () => {
         });
     });
 
-    it('FreeGlyphs should remove glyphs from a glyph set', done => {
+    it('FreeGlyphs should remove glyphs from a glyph set', (t, done) => {
         const c = mkCanvas();
         const solid = X.AllocID();
         render.CreateSolidFill(solid, 1, 1, 1, 1);

@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const x11 = require('../../lib');
 const { boot, sync } = require('./boot');
@@ -23,7 +24,7 @@ describe('xserver: crossing events', () => {
     //     E  at (310,20), 50x50
     let server, display, X, root, names, wins, heard;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             ({ server, display, X } = ctx);
@@ -89,7 +90,7 @@ describe('xserver: crossing events', () => {
         step(0);
     }
 
-    it('a pointer leaving from over a child that selects no input is heard by every window above it', done => {
+    it('a pointer leaving from over a child that selects no input is heard by every window above it', (t, done) => {
         moves([
             [45, 45, [
                 'Leave root Inferior',
@@ -104,7 +105,7 @@ describe('xserver: crossing events', () => {
         ], done);
     });
 
-    it('down into a descendant and back up, the windows between the two say Virtual', done => {
+    it('down into a descendant and back up, the windows between the two say Virtual', (t, done) => {
         moves([
             [90, 80, [
                 'Leave root Inferior',
@@ -119,7 +120,7 @@ describe('xserver: crossing events', () => {
         ], done);
     });
 
-    it('between two toplevels, the leaves go up to the common ancestor and the enters come down from it', done => {
+    it('between two toplevels, the leaves go up to the common ancestor and the enters come down from it', (t, done) => {
         moves([
             [45, 45, [
                 'Leave root Inferior',
@@ -153,7 +154,7 @@ describe('xserver: crossing events', () => {
         ], done);
     });
 
-    it('between two children, the window holding both hears nothing', done => {
+    it('between two children, the window holding both hears nothing', (t, done) => {
         moves([
             [45, 45, [
                 'Leave root Inferior',
@@ -170,7 +171,7 @@ describe('xserver: crossing events', () => {
         ], done);
     });
 
-    it('a move inside one window crosses nothing', done => {
+    it('a move inside one window crosses nothing', (t, done) => {
         moves([
             [15, 15, ['Leave root Inferior', 'Enter A Ancestor']],
             [25, 20, []],
@@ -179,7 +180,7 @@ describe('xserver: crossing events', () => {
         ], done);
     });
 
-    it('every event of one move is in its own window\'s coordinates, at one time', done => {
+    it('every event of one move is in its own window\'s coordinates, at one time', (t, done) => {
         server.injectPointerMove(45, 45);
         sync(X, () => {
             const fields = heard.map(ev => ({
@@ -197,7 +198,7 @@ describe('xserver: crossing events', () => {
 
     // The flags byte: bit 1 same screen, bit 0 the keyboard focus reaching the
     // window, by being PointerRoot, the window itself or an ancestor of it.
-    it('each event says whether the keyboard focus reaches its window', done => {
+    it('each event says whether the keyboard focus reaches its window', (t, done) => {
         const step = (focus, x, y, cb) => {
             X.SetInputFocus(focus, 1 /* revert to PointerRoot */);
             sync(X, () => {

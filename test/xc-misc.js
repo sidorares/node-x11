@@ -1,3 +1,4 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -6,7 +7,7 @@ describe('XC-MISC extension', () => {
     let X;
     let xcmisc;
 
-    before(done => {
+    before((t, done) => {
         const client = x11.createClient((err, dpy) => {
             if (err)
                 return done(err);
@@ -21,12 +22,12 @@ describe('XC-MISC extension', () => {
         client.on('error', done);
     });
 
-    after(done => {
+    after((t, done) => {
         X.terminate();
         X.on('end', done);
     });
 
-    it('GetVersion should return major 1, minor >= 1', done => {
+    it('GetVersion should return major 1, minor >= 1', (t, done) => {
         xcmisc.GetVersion(1, 1, (err, version) => {
             should.not.exist(err);
             version[0].should.equal(1);
@@ -40,7 +41,7 @@ describe('XC-MISC extension', () => {
         xcmisc.minor.should.be.aboveOrEqual(1);
     });
 
-    it('GetXIDRange should return a non-empty id range', done => {
+    it('GetXIDRange should return a non-empty id range', (t, done) => {
         xcmisc.GetXIDRange((err, range) => {
             should.not.exist(err);
             range.startId.should.be.above(0);
@@ -49,7 +50,7 @@ describe('XC-MISC extension', () => {
         });
     });
 
-    it('GetXIDList should return the requested number of ids', done => {
+    it('GetXIDList should return the requested number of ids', (t, done) => {
         xcmisc.GetXIDList(5, (err, ids) => {
             should.not.exist(err);
             ids.should.be.an.Array();

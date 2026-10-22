@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const { boot } = require('./boot');
 
@@ -5,7 +6,7 @@ describe('xserver: colormaps and colors', () => {
 
     let server, display, X, root, cmap;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             ({ server, display, X } = ctx);
@@ -20,7 +21,7 @@ describe('xserver: colormaps and colors', () => {
         server = display = X = null;
     });
 
-    it('AllocColor computes the TrueColor pixel from 16-bit rgb', done => {
+    it('AllocColor computes the TrueColor pixel from 16-bit rgb', (t, done) => {
         X.AllocColor(cmap, 0x1234, 0x5678, 0x9abc, (err, color) => {
             if (err) return done(err);
             assert.strictEqual(color.pixel, 0x12569a);
@@ -31,7 +32,7 @@ describe('xserver: colormaps and colors', () => {
         });
     });
 
-    it('QueryColors is the inverse of the pixel computation', done => {
+    it('QueryColors is the inverse of the pixel computation', (t, done) => {
         X.QueryColors(cmap, [0xff8000, 0x000000, 0xffffff], (err, colors) => {
             if (err) return done(err);
             assert.deepStrictEqual(colors, [
@@ -43,7 +44,7 @@ describe('xserver: colormaps and colors', () => {
         });
     });
 
-    it('LookupColor knows the built-in named-color table', done => {
+    it('LookupColor knows the built-in named-color table', (t, done) => {
         X.LookupColor(cmap, 'steelblue', (err, c) => {
             if (err) return done(err);
             assert.strictEqual(c.exactRed, 70 * 257);
@@ -59,7 +60,7 @@ describe('xserver: colormaps and colors', () => {
         });
     });
 
-    it('AllocNamedColor returns the pixel for rgb.txt names', done => {
+    it('AllocNamedColor returns the pixel for rgb.txt names', (t, done) => {
         X.AllocNamedColor(cmap, 'red', (err, c) => {
             if (err) return done(err);
             assert.strictEqual(c.pixel, 0xff0000);
@@ -73,7 +74,7 @@ describe('xserver: colormaps and colors', () => {
         });
     });
 
-    it('unknown color names produce BadName', done => {
+    it('unknown color names produce BadName', (t, done) => {
         X.AllocNamedColor(cmap, 'nosuchcolorxyz', err => {
             assert.ok(err);
             assert.strictEqual(err.error, 15); // BadName
@@ -82,7 +83,7 @@ describe('xserver: colormaps and colors', () => {
         });
     });
 
-    it('AllocColorCells/AllocColorPlanes fail with BadAlloc on TrueColor', done => {
+    it('AllocColorCells/AllocColorPlanes fail with BadAlloc on TrueColor', (t, done) => {
         X.AllocColorCells(false, cmap, 1, 0, err => {
             assert.strictEqual(err.error, 11); // BadAlloc
             X.AllocColorPlanes(false, cmap, 1, 0, 0, 0, err2 => {
@@ -94,7 +95,7 @@ describe('xserver: colormaps and colors', () => {
         });
     });
 
-    it('StoreColors/StoreNamedColor fail with BadAccess (read-only visual)', done => {
+    it('StoreColors/StoreNamedColor fail with BadAccess (read-only visual)', (t, done) => {
         let first = false;
         X.on('error', err => {
             assert.strictEqual(err.error, 10); // BadAccess
@@ -108,7 +109,7 @@ describe('xserver: colormaps and colors', () => {
         X.StoreNamedColor(cmap, 5, 'red', 7);
     });
 
-    it('colormap lifecycle requests are accepted', done => {
+    it('colormap lifecycle requests are accepted', (t, done) => {
         const mid = X.AllocID();
         X.CreateColormap(mid, root, display.screen[0].root_visual, 0);
         X.InstallColormap(mid);

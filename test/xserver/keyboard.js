@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const x11 = require('../../lib');
 const { boot } = require('./boot');
@@ -8,7 +9,7 @@ describe('xserver: keyboard and pointer state', () => {
 
     let server, display, X;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             ({ server, display, X } = ctx);
@@ -21,7 +22,7 @@ describe('xserver: keyboard and pointer state', () => {
         server = display = X = null;
     });
 
-    it('GetKeyboardMapping matches the server keymap module', done => {
+    it('GetKeyboardMapping matches the server keymap module', (t, done) => {
         X.GetKeyboardMapping(38, 3, (err, rows) => {
             if (err) return done(err);
             assert.strictEqual(rows.length, 3);
@@ -33,7 +34,7 @@ describe('xserver: keyboard and pointer state', () => {
         });
     });
 
-    it('GetKeyboardMapping honours first/count over the whole range', done => {
+    it('GetKeyboardMapping honours first/count over the whole range', (t, done) => {
         X.GetKeyboardMapping(8, 248, (err, rows) => {
             if (err) return done(err);
             assert.strictEqual(rows.length, 248);
@@ -51,7 +52,7 @@ describe('xserver: keyboard and pointer state', () => {
         assert.strictEqual(server.keymap.keycodeForKeysym(0xffffff), 0);
     });
 
-    it('ChangeKeyboardMapping stores syms and sends MappingNotify', done => {
+    it('ChangeKeyboardMapping stores syms and sends MappingNotify', (t, done) => {
         X.on('event', ev => {
             if (ev.name !== 'MappingNotify')
                 return;
@@ -67,7 +68,7 @@ describe('xserver: keyboard and pointer state', () => {
         X.ChangeKeyboardMapping(200, 2, [XK.XK_F1.code, XK.XK_F2.code]);
     });
 
-    it('GetModifierMapping serves the default modifier rows', done => {
+    it('GetModifierMapping serves the default modifier rows', (t, done) => {
         X.GetModifierMapping((err, rows) => {
             if (err) return done(err);
             assert.strictEqual(rows.length, 8);
@@ -79,7 +80,7 @@ describe('xserver: keyboard and pointer state', () => {
         });
     });
 
-    it('SetModifierMapping round-trips', done => {
+    it('SetModifierMapping round-trips', (t, done) => {
         X.SetModifierMapping([[50], [66], [37], [64], [0], [0], [0], [0]], (err, status) => {
             if (err) return done(err);
             assert.strictEqual(status, 0); // Success
@@ -92,7 +93,7 @@ describe('xserver: keyboard and pointer state', () => {
         });
     });
 
-    it('Bell emits a server-side bell event', done => {
+    it('Bell emits a server-side bell event', (t, done) => {
         server.once('bell', percent => {
             assert.strictEqual(percent, 42);
             done();
@@ -100,7 +101,7 @@ describe('xserver: keyboard and pointer state', () => {
         X.Bell(42);
     });
 
-    it('Change/GetKeyboardControl round-trips', done => {
+    it('Change/GetKeyboardControl round-trips', (t, done) => {
         X.GetKeyboardControl((err, kc) => {
             if (err) return done(err);
             assert.strictEqual(kc.bellPitch, 400);
@@ -117,7 +118,7 @@ describe('xserver: keyboard and pointer state', () => {
         });
     });
 
-    it('Get/ChangePointerControl round-trips', done => {
+    it('Get/ChangePointerControl round-trips', (t, done) => {
         X.GetPointerControl((err, pc) => {
             if (err) return done(err);
             assert.strictEqual(pc.accelNumerator, 2);
@@ -134,7 +135,7 @@ describe('xserver: keyboard and pointer state', () => {
         });
     });
 
-    it('Get/SetPointerMapping round-trips', done => {
+    it('Get/SetPointerMapping round-trips', (t, done) => {
         X.GetPointerMapping((err, map) => {
             if (err) return done(err);
             assert.deepStrictEqual(map, [1, 2, 3, 4, 5]);

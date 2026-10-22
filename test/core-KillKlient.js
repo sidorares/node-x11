@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -6,7 +7,7 @@ describe('KillKlient request', () => {
 
   let display;
   let X;
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           should.not.exist(err);
           display = dpy;
@@ -20,7 +21,7 @@ describe('KillKlient request', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.on('end', done);
       X.terminate();
   });
@@ -30,7 +31,7 @@ describe('KillKlient request', () => {
       assert.equal(typeof X.KillKlient, 'function');
   });
 
-  it('should terminate other client connection', done => {
+  it('should terminate other client connection', (t, done) => {
       x11.createClient((err, dpy) => {
           should.not.exist(err);
           const otherclient = dpy.client;

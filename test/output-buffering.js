@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
 const x11 = require('../lib');
@@ -98,7 +99,7 @@ describe('output buffering (#244)', () => {
         assert.deepStrictEqual(socket.written(), Buffer.concat(expected));
     });
 
-    it('writes without an explicit flush before the event loop polls', done => {
+    it('writes without an explicit flush before the event loop polls', (t, done) => {
         const fb = new FrameBuffer(true);
         const socket = new FakeSocket();
         fb.attach(socket);
@@ -170,7 +171,7 @@ describe('output buffering (#244)', () => {
         assert.strictEqual(socket.writes, 0);
     });
 
-    it('flush(cb) writes now and reports when the data reached the socket', done => {
+    it('flush(cb) writes now and reports when the data reached the socket', (t, done) => {
         const fb = new FrameBuffer(true);
         const socket = new FakeSocket();
         fb.attach(socket);
@@ -223,7 +224,7 @@ describe('output buffering (#244)', () => {
         assert.strictEqual(socket.writes, 2);
     });
 
-    it('cannot hold data past the point where the loop would poll', done => {
+    it('cannot hold data past the point where the loop would poll', (t, done) => {
         const fb = new FrameBuffer({ shouldFlush: () => false });
         const socket = new FakeSocket();
         fb.attach(socket);
@@ -303,7 +304,7 @@ describe('output buffering (#244)', () => {
         assert.deepStrictEqual(socket.written(), Buffer.concat(expected.slice(0, queued)));
     });
 
-    it('emits drain once the queue is empty again', done => {
+    it('emits drain once the queue is empty again', (t, done) => {
         const fb = new FrameBuffer(true);
         const socket = new FakeSocket(16);
         fb.attach(socket);
@@ -339,7 +340,7 @@ describe('output buffering (#244)', () => {
         client.on('error', cb);
     }
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         connect({ bufferRequests: true }, (err, dpy) => {
             if (err) return done(err);
             display = dpy;
@@ -349,14 +350,14 @@ describe('output buffering (#244)', () => {
         });
     });
 
-    afterEach(done => {
+    afterEach((t, done) => {
         if (X.stream.writableEnded)  // the test closed the connection itself
             return done();
         X.on('end', done);
         X.terminate();
     });
 
-    it('draws the same picture as an unbuffered client', done => {
+    it('draws the same picture as an unbuffered client', (t, done) => {
         const W = 16, H = 16;
         const depth = display.screen[0].root_depth;
         const white = display.screen[0].white_pixel;
@@ -395,7 +396,7 @@ describe('output buffering (#244)', () => {
         });
     });
 
-    it('batches a run of requests into one write', done => {
+    it('batches a run of requests into one write', (t, done) => {
         X.sync(err => {
             assert.ifError(err);
             const before = X.pack_stream.stats.writes;
@@ -412,7 +413,7 @@ describe('output buffering (#244)', () => {
         });
     });
 
-    it('a request expecting a reply is not held back', done => {
+    it('a request expecting a reply is not held back', (t, done) => {
         X.GetInputFocus(err => {
             assert.ifError(err);
             done();
@@ -420,7 +421,7 @@ describe('output buffering (#244)', () => {
         assert.ok(X.pack_stream.stats.writes > 0, 'written within the tick');
     });
 
-    it('still confirms a checked void request', done => {
+    it('still confirms a checked void request', (t, done) => {
         // the sync the client issues on its behalf expects a reply, so it
         // takes the buffered request out with it
         X.ChangeWindowAttributes(root, { eventMask: 0 }, err => {
@@ -429,7 +430,7 @@ describe('output buffering (#244)', () => {
         });
     });
 
-    it('flushes what is buffered before the connection is closed', done => {
+    it('flushes what is buffered before the connection is closed', (t, done) => {
         // terminate() is the last thing a program does; a buffered request
         // issued just before it must still reach the server
         const name = `x11-buffering-test-${process.pid}`;
@@ -451,10 +452,9 @@ describe('output buffering (#244)', () => {
         });
     });
 
-    it('flushes what is buffered when the process exits', function(done) {
+    it('flushes what is buffered when the process exits', { timeout: 20000 }, function(t, done) {
         // process.exit() runs no timers and no immediates: without an exit
         // hook a buffered request would be lost with no trace
-        this.timeout(20000);
         const name = `x11-buffering-exit-${process.pid}`;
         const child = `
             const x11 = require(${JSON.stringify(require.resolve('../lib'))});
@@ -482,8 +482,7 @@ describe('output buffering (#244)', () => {
         });
     });
 
-    it('still reports backpressure to the caller', function(done) {
-        this.timeout(30000);
+    it('still reports backpressure to the caller', { timeout: 30000 }, function(t, done) {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, 1, 1);
         const chunk = Buffer.alloc(0xfff0, 0xab);

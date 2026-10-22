@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const assert = require('assert');
 
@@ -12,7 +13,7 @@ describe('request callbacks', () => {
   let X;
   let root;
 
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (err) return done(err);
           display = dpy;
@@ -24,14 +25,14 @@ describe('request callbacks', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.on('end', done);
       X.terminate();
   });
 
   describe('any callable is accepted', () => {
 
-    it('an async callback receives a reply', done => {
+    it('an async callback receives a reply', (t, done) => {
         X.GetGeometry(root, async (err, geom) => {
             assert.ifError(err);
             assert.ok(geom.width > 0);
@@ -39,14 +40,14 @@ describe('request callbacks', () => {
         });
     });
 
-    it('an async callback receives a void request\'s confirmation (#85)', done => {
+    it('an async callback receives a void request\'s confirmation (#85)', (t, done) => {
         X.ChangeWindowAttributes(root, { eventMask: 0 }, async err => {
             assert.strictEqual(err, null);
             done();
         });
     });
 
-    it('an async callback receives an X error', done => {
+    it('an async callback receives an X error', (t, done) => {
         X.GetGeometry(0, async err => {
             assert.ok(err instanceof Error);
             assert.strictEqual(err.error, 9); // BadDrawable
@@ -54,7 +55,7 @@ describe('request callbacks', () => {
         });
     });
 
-    it('a bound function receives a reply', done => {
+    it('a bound function receives a reply', (t, done) => {
         function handler(err, geom) {
             assert.ifError(err);
             assert.strictEqual(this.tag, 'bound');
@@ -64,7 +65,7 @@ describe('request callbacks', () => {
         X.GetGeometry(root, handler.bind({ tag: 'bound' }));
     });
 
-    it('a proxied function receives a reply', done => {
+    it('a proxied function receives a reply', (t, done) => {
         const calls = [];
         const spy = new Proxy((err, geom) => {
             calls.push(geom.width);
@@ -79,7 +80,7 @@ describe('request callbacks', () => {
 
   describe('non-callables are still just arguments', () => {
 
-    it('does not treat a trailing string as a callback', done => {
+    it('does not treat a trailing string as a callback', (t, done) => {
         // ChangeProperty's last argument is the property value
         X.ChangeProperty(0, root, X.atoms.WM_NAME, X.atoms.STRING, 8, 'callback-test');
         X.GetProperty(0, root, X.atoms.WM_NAME, X.atoms.STRING, 0, 100, (err, prop) => {
@@ -89,7 +90,7 @@ describe('request callbacks', () => {
         });
     });
 
-    it('does not treat a trailing object as a callback', done => {
+    it('does not treat a trailing object as a callback', (t, done) => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, 10, 10, 0, 0, 0, 0, { eventMask: 0 });
         X.GetGeometry(wid, (err, geom) => {
@@ -100,7 +101,7 @@ describe('request callbacks', () => {
         });
     });
 
-    it('does not throw on a trailing object with no prototype', done => {
+    it('does not throw on a trailing object with no prototype', (t, done) => {
         // `Object.create(null)` has no `.constructor`; reading its name threw
         assert.doesNotThrow(() => X.GetGeometry(root, Object.create(null)));
         X.sync(err => {
@@ -112,7 +113,7 @@ describe('request callbacks', () => {
 
   describe('sequence numbers stay in step', () => {
 
-    it('a request whose callback slot holds a non-callable still gets its reply', done => {
+    it('a request whose callback slot holds a non-callable still gets its reply', (t, done) => {
         // the dropped-callback path must not disturb the request stream
         X.GetGeometry(root, 42);
         X.GetGeometry(root, (err, geom) => {

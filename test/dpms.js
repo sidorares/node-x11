@@ -1,3 +1,4 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -7,7 +8,7 @@ describe('DPMS extension', () => {
     let display;
     let X;
     let dpms;
-    before(done => {
+    before((t, done) => {
         const client = x11.createClient((err, dpy) => {
             if (!err) {
                 display = dpy;
@@ -28,14 +29,14 @@ describe('DPMS extension', () => {
     describe('Setting the DPMS timeouts to specific values', () => {
 
         let prev_timeouts;
-        before(done => {
+        before((t, done) => {
             dpms.GetTimeouts((err, timeouts) => {
                 prev_timeouts = timeouts;
                 done(err);
             });
         });
 
-        it('GetTimeouts should return those values', done => {
+        it('GetTimeouts should return those values', (t, done) => {
             dpms.SetTimeouts(110, 110, 110);
             dpms.GetTimeouts((err, timeouts) => {
                 if (!err) timeouts.should.eql([110, 110, 110]);
@@ -43,7 +44,7 @@ describe('DPMS extension', () => {
             });
         });
 
-        after(done => {
+        after((t, done) => {
             dpms.SetTimeouts(prev_timeouts[0], prev_timeouts[1], prev_timeouts[2]);
             dpms.GetTimeouts((err, timeouts) => {
                 if (!err) timeouts.should.eql(prev_timeouts);
@@ -55,7 +56,7 @@ describe('DPMS extension', () => {
     describe('Changing status and level of DPMS', () => {
         let prev_status;
         let prev_level;
-        before(done => {
+        before((t, done) => {
             dpms.Info((err, info) => {
                 if (!err) {
                     prev_level = info[0];
@@ -66,7 +67,7 @@ describe('DPMS extension', () => {
             });
         });
 
-        it('Info should return the correct values', done => {
+        it('Info should return the correct values', (t, done) => {
             if (prev_status === 0) dpms.Enable(); // for force level to work dpms must be enabled
             const new_level = prev_level === 0 ? 1 : 0;
             dpms.ForceLevel(new_level);
@@ -80,7 +81,7 @@ describe('DPMS extension', () => {
             });
         });
 
-        after(done => {
+        after((t, done) => {
             dpms.ForceLevel(prev_level);
             if (prev_status) dpms.Enable();
             else dpms.Disable();
@@ -95,7 +96,7 @@ describe('DPMS extension', () => {
         });
     });
 
-    after(done => {
+    after((t, done) => {
         X.terminate();
         X.on('end', done);
     });

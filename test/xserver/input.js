@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const x11 = require('../../lib');
 const { boot, sync } = require('./boot');
@@ -8,7 +9,7 @@ describe('xserver: input injection', () => {
 
     let server, display, X, root, wid;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             ({ server, display, X } = ctx);
@@ -39,7 +40,7 @@ describe('xserver: input injection', () => {
         X.on('event', listener);
     }
 
-    it('injectPointerMove delivers MotionNotify with correct coordinates', done => {
+    it('injectPointerMove delivers MotionNotify with correct coordinates', (t, done) => {
         onEvent('MotionNotify', ev => {
             assert.strictEqual(ev.wid, wid);
             assert.strictEqual(ev.root, root);
@@ -55,7 +56,7 @@ describe('xserver: input injection', () => {
         server.injectPointerMove(30, 40);
     });
 
-    it('injectButton delivers press/release with button state bits', done => {
+    it('injectButton delivers press/release with button state bits', (t, done) => {
         server.injectPointerMove(30, 40);
         onEvent('ButtonPress', press => {
             assert.strictEqual(press.keycode, 1);       // detail = button
@@ -71,7 +72,7 @@ describe('xserver: input injection', () => {
         server.injectButton(1, true);
     });
 
-    it('injectKey delivers KeyPress to the pointer window (PointerRoot focus)', done => {
+    it('injectKey delivers KeyPress to the pointer window (PointerRoot focus)', (t, done) => {
         server.injectPointerMove(30, 40);
         const keycode = server.keymap.keycodeForKeysym(x11.keySyms.XK_a.code);
         assert.strictEqual(keycode, 38);
@@ -87,7 +88,7 @@ describe('xserver: input injection', () => {
         server.injectKey(38, true);
     });
 
-    it('modifier keys contribute to the event state', done => {
+    it('modifier keys contribute to the event state', (t, done) => {
         server.injectPointerMove(30, 40);
         server.injectKey(50, true); // Shift_L
         onEvent('ButtonPress', ev => {
@@ -99,7 +100,7 @@ describe('xserver: input injection', () => {
         server.injectButton(1, true);
     });
 
-    it('Enter/LeaveNotify fire when crossing window boundaries', done => {
+    it('Enter/LeaveNotify fire when crossing window boundaries', (t, done) => {
         const other = X.AllocID();
         X.CreateWindow(other, root, 200, 10, 50, 50, 0, 0, 0, 0,
             { eventMask: em.EnterWindow | em.LeaveWindow });
@@ -122,7 +123,7 @@ describe('xserver: input injection', () => {
         });
     });
 
-    it('QueryPointer reports position, state and same-screen', done => {
+    it('QueryPointer reports position, state and same-screen', (t, done) => {
         server.injectPointerMove(55, 66);
         X.QueryPointer(root, (err, res) => {
             if (err) return done(err);
@@ -140,7 +141,7 @@ describe('xserver: input injection', () => {
         });
     });
 
-    it('WarpPointer moves the pointer and generates motion', done => {
+    it('WarpPointer moves the pointer and generates motion', (t, done) => {
         onEvent('MotionNotify', ev => {
             assert.strictEqual(ev.rootx, 15);
             assert.strictEqual(ev.rooty, 17);
@@ -149,7 +150,7 @@ describe('xserver: input injection', () => {
         X.WarpPointer(0, wid, 0, 0, 0, 0, 5, 7); // wid abs (10,10) + (5,7)
     });
 
-    it('TranslateCoordinates maps between window spaces', done => {
+    it('TranslateCoordinates maps between window spaces', (t, done) => {
         X.TranslateCoordinates(root, wid, 30, 40, (err, res) => {
             if (err) return done(err);
             assert.strictEqual(res.destX, 20);
@@ -163,7 +164,7 @@ describe('xserver: input injection', () => {
         });
     });
 
-    it('SetInputFocus sends FocusIn and routes key events to the focus window', done => {
+    it('SetInputFocus sends FocusIn and routes key events to the focus window', (t, done) => {
         // pointer over root, but focus forced to wid
         server.injectPointerMove(500, 500);
         onEvent('FocusIn', fev => {
@@ -184,7 +185,7 @@ describe('xserver: input injection', () => {
         X.SetInputFocus(wid, 2);
     });
 
-    it('GetMotionEvents returns an empty list', done => {
+    it('GetMotionEvents returns an empty list', (t, done) => {
         X.GetMotionEvents(root, 0, 0, (err, events) => {
             if (err) return done(err);
             assert.deepStrictEqual(events, []);
@@ -192,7 +193,7 @@ describe('xserver: input injection', () => {
         });
     });
 
-    it('QueryKeymap reflects injected key state', done => {
+    it('QueryKeymap reflects injected key state', (t, done) => {
         server.injectKey(38, true);
         X.QueryKeymap((err, keys) => {
             if (err) return done(err);

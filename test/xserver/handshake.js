@@ -1,10 +1,11 @@
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const { createServer, createStreamPair } = require('../../lib/xserver');
 const { boot } = require('./boot');
 
 describe('xserver: connection setup', () => {
 
-    it('serves a parseable setup block with the advertised screen', done => {
+    it('serves a parseable setup block with the advertised screen', (t, done) => {
         boot({ serverOptions: { width: 640, height: 480 } }, (err, ctx) => {
             if (err) return done(err);
             const d = ctx.display;
@@ -34,7 +35,7 @@ describe('xserver: connection setup', () => {
         });
     });
 
-    it('enables BIG-REQUESTS during createClient and reports 4MB max length', done => {
+    it('enables BIG-REQUESTS during createClient and reports 4MB max length', (t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             assert.strictEqual(ctx.display.max_request_length, 0x100000);
@@ -43,7 +44,7 @@ describe('xserver: connection setup', () => {
         });
     });
 
-    it('gives every client a distinct resource base', done => {
+    it('gives every client a distinct resource base', (t, done) => {
         const server = createServer();
         boot({ server }, (err, a) => {
             if (err) return done(err);
@@ -61,7 +62,7 @@ describe('xserver: connection setup', () => {
         });
     });
 
-    it('listen() accepts real TCP connections on 6000+displayNum', done => {
+    it('listen() accepts real TCP connections on 6000+displayNum', (t, done) => {
         const x11 = require('../../lib');
         const server = createServer();
         const displayNum = 199;
@@ -83,7 +84,7 @@ describe('xserver: connection setup', () => {
         });
     });
 
-    it('rejects big-endian handshakes with a setup-failed block', done => {
+    it('rejects big-endian handshakes with a setup-failed block', (t, done) => {
         const server = createServer();
         const [clientSide, serverSide] = createStreamPair();
         server.addClientStream(serverSide);

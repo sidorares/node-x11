@@ -1,15 +1,17 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
 describe('XInputExtension', () => {
-    before(function(done) {
-        const self = this;
+    let X, xi, xtest, wid;
+
+    before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X = dpy.client;
-            self.X.require('xinput', (err, ext) => {
+            X = dpy.client;
+            X.require('xinput', (err, ext) => {
                 should.not.exist(err);
-                self.xi = ext;
+                xi = ext;
                 done();
             });
         });
@@ -17,8 +19,8 @@ describe('XInputExtension', () => {
         client.on('error', done);
     });
 
-    it('GetExtensionVersion should report the extension present', function(done) {
-        this.xi.GetExtensionVersion((err, vers) => {
+    it('GetExtensionVersion should report the extension present', function(t, done) {
+        xi.GetExtensionVersion((err, vers) => {
             should.not.exist(err);
             vers.present.should.equal(1);
             vers.serverMajor.should.be.aboveOrEqual(1);
@@ -26,8 +28,7 @@ describe('XInputExtension', () => {
         });
     });
 
-    it('ListInputDevices should list the virtual core pointer and keyboard', function(done) {
-        const xi = this.xi;
+    it('ListInputDevices should list the virtual core pointer and keyboard', function(t, done) {
         xi.ListInputDevices((err, devices) => {
             should.not.exist(err);
             devices.length.should.be.aboveOrEqual(2);
@@ -56,13 +57,12 @@ describe('XInputExtension', () => {
     });
 
     it('XIQueryVersion should have negotiated XI 2.x', function() {
-        should.exist(this.xi.xi2);
-        this.xi.xi2.majorVersion.should.equal(2);
-        this.xi.xi2.minorVersion.should.be.aboveOrEqual(0);
+        should.exist(xi.xi2);
+        xi.xi2.majorVersion.should.equal(2);
+        xi.xi2.minorVersion.should.be.aboveOrEqual(0);
     });
 
-    it('XIQueryDevice(AllDevices) should list master pointer/keyboard with classes', function(done) {
-        const xi = this.xi;
+    it('XIQueryDevice(AllDevices) should list master pointer/keyboard with classes', function(t, done) {
         xi.XIQueryDevice(xi.AllDevices, (err, devices) => {
             should.not.exist(err);
             devices.length.should.be.aboveOrEqual(2);
@@ -95,8 +95,7 @@ describe('XInputExtension', () => {
         });
     });
 
-    it('XIQueryDevice by id should return just that device', function(done) {
-        const xi = this.xi;
+    it('XIQueryDevice by id should return just that device', function(t, done) {
         xi.XIQueryDevice(xi.AllMasterDevices, (err, masters) => {
             should.not.exist(err);
             const pointerId = masters.find(dev => dev.use === xi.DeviceType.MasterPointer).deviceId;
@@ -114,17 +113,15 @@ describe('XInputExtension', () => {
     // wire layouts against what the server actually sends rather than against
     // a hand-built buffer.
     describe('XISelectEvents', () => {
-        before(function(done) {
-            const self = this;
-            this.root = this.display ? this.display.screen[0].root : null;
-            this.X.require('xtest', (err, xtest) => {
+        before(function(t, done) {
+            X.require('xtest', (err, ext) => {
                 should.not.exist(err);
-                self.xtest = xtest;
+                xtest = ext;
                 // Xvfb outlives the test run and remembers which buttons are
                 // down, so a run that failed mid-drag leaves button 1 pressed
                 // and the next run's FakeInput press is a no-op the server
                 // never reports. Start from a known state.
-                const root = self.X.display.screen[0].root;
+                const root = X.display.screen[0].root;
                 for (let button = 1; button <= 3; ++button)
                     xtest.FakeInput(xtest.ButtonRelease, button, 0, root, 0, 0);
                 // Non-raw device events go to the window under the pointer and
@@ -134,11 +131,11 @@ describe('XInputExtension', () => {
                 // and hoping. Raw events ignore all of this - they only ever
                 // go to a root selection - which is why they kept arriving
                 // while these did not.
-                self.wid = self.X.AllocID();
-                self.X.CreateWindow(self.wid, root, 0, 0, 200, 200, 0, 0, 0, 0,
+                wid = X.AllocID();
+                X.CreateWindow(wid, root, 0, 0, 200, 200, 0, 0, 0, 0,
                     { overrideRedirect: true });
-                self.X.MapWindow(self.wid);
-                self.X.GetInputFocus(() => done());
+                X.MapWindow(wid);
+                X.GetInputFocus(() => done());
             });
         });
 
@@ -160,8 +157,6 @@ describe('XInputExtension', () => {
             });
 
         it('should deliver XIRawMotion with the device axis values', async function() {
-            const X = this.X;
-            const xi = this.xi;
             const root = X.display.screen[0].root;
             xi.XISelectEvents(root, {
                 deviceId: xi.AllMasterDevices,
@@ -169,7 +164,7 @@ describe('XInputExtension', () => {
             });
 
             const ev = await nextXIEvent(X, xi.EventType.RawMotion, () => {
-                this.xtest.FakeInput(this.xtest.MotionNotify, 0, 0, root, 37, 53);
+                xtest.FakeInput(xtest.MotionNotify, 0, 0, root, 37, 53);
             });
 
             ev.name.should.equal('XIRawMotion');
@@ -184,21 +179,19 @@ describe('XInputExtension', () => {
         });
 
         it('should deliver XIMotion with window coordinates and modifier state', async function() {
-            const X = this.X;
-            const xi = this.xi;
             const root = X.display.screen[0].root;
-            xi.XISelectEvents(this.wid, {
+            xi.XISelectEvents(wid, {
                 deviceId: xi.AllMasterDevices,
                 mask: xi.EventMask.Motion
             });
 
             const ev = await nextXIEvent(X, xi.EventType.Motion, () => {
-                this.xtest.FakeInput(this.xtest.MotionNotify, 0, 0, root, 61, 71);
+                xtest.FakeInput(xtest.MotionNotify, 0, 0, root, 61, 71);
             });
 
             ev.name.should.equal('XIMotion');
             ev.root.should.equal(root);
-            ev.wid.should.equal(this.wid, 'the window the selection was made on');
+            ev.wid.should.equal(wid, 'the window the selection was made on');
             // FP1616 decoded back to the coordinates XTEST asked for
             Math.round(ev.rootx).should.equal(61);
             Math.round(ev.rooty).should.equal(71);
@@ -211,18 +204,16 @@ describe('XInputExtension', () => {
         });
 
         it('should report the button in detail and in the button mask', async function() {
-            const X = this.X;
-            const xi = this.xi;
             const root = X.display.screen[0].root;
-            xi.XISelectEvents(this.wid, {
+            xi.XISelectEvents(wid, {
                 deviceId: xi.AllMasterDevices,
                 mask: xi.EventMask.ButtonPress | xi.EventMask.ButtonRelease | xi.EventMask.Motion
             });
             // inside the window, so the press has somewhere to be delivered
-            this.xtest.FakeInput(this.xtest.MotionNotify, 0, 0, root, 100, 100);
+            xtest.FakeInput(xtest.MotionNotify, 0, 0, root, 100, 100);
 
             const press = await nextXIEvent(X, xi.EventType.ButtonPress, () => {
-                this.xtest.FakeInput(this.xtest.ButtonPress, 1, 0, root, 0, 0);
+                xtest.FakeInput(xtest.ButtonPress, 1, 0, root, 0, 0);
             });
             press.name.should.equal('XIButtonPress');
             press.detail.should.equal(1, 'button 1');
@@ -232,14 +223,14 @@ describe('XInputExtension', () => {
             // variable-length mask that the valuator offsets depend on, so
             // getting its length wrong silently misplaces the axis values too
             const drag = await nextXIEvent(X, xi.EventType.Motion, () => {
-                this.xtest.FakeInput(this.xtest.MotionNotify, 0, 0, root, 150, 120);
+                xtest.FakeInput(xtest.MotionNotify, 0, 0, root, 150, 120);
             });
             drag.buttons.should.containEql(1, 'button 1 held during the motion');
             Math.round(drag.valuators[0]).should.equal(150, 'and the axes are still where expected');
             Math.round(drag.valuators[1]).should.equal(120);
 
             const release = await nextXIEvent(X, xi.EventType.ButtonRelease, () => {
-                this.xtest.FakeInput(this.xtest.ButtonRelease, 1, 0, root, 0, 0);
+                xtest.FakeInput(xtest.ButtonRelease, 1, 0, root, 0, 0);
             });
             release.detail.should.equal(1);
             // the mask is the state *before* the event, the same convention
@@ -250,33 +241,28 @@ describe('XInputExtension', () => {
         });
 
         it('should accept event type names as well as a bitmask', async function() {
-            const X = this.X;
-            const xi = this.xi;
             const root = X.display.screen[0].root;
             xi.XISelectEvents(root, { deviceId: xi.AllMasterDevices, mask: ['RawMotion'] });
 
             const ev = await nextXIEvent(X, xi.EventType.RawMotion, () => {
-                this.xtest.FakeInput(this.xtest.MotionNotify, 0, 0, root, 12, 24);
+                xtest.FakeInput(xtest.MotionNotify, 0, 0, root, 12, 24);
             });
             ev.name.should.equal('XIRawMotion');
         });
 
         it('should reject an unknown event type name', function() {
-            const xi = this.xi;
-            const root = this.X.display.screen[0].root;
+            const root = X.display.screen[0].root;
             (() => xi.XISelectEvents(root, { deviceId: xi.AllMasterDevices, mask: ['Nonsense'] }))
                 .should.throw(/unknown event type Nonsense/);
         });
 
         it('an empty mask deselects', async function() {
-            const X = this.X;
-            const xi = this.xi;
             const root = X.display.screen[0].root;
             xi.XISelectEvents(root, { deviceId: xi.AllMasterDevices, mask: xi.EventMask.RawMotion });
             // prove the selection is live before turning it off, so a broken
             // deselect cannot pass by the events never having arrived
             await nextXIEvent(X, xi.EventType.RawMotion, () => {
-                this.xtest.FakeInput(this.xtest.MotionNotify, 0, 0, root, 5, 5);
+                xtest.FakeInput(xtest.MotionNotify, 0, 0, root, 5, 5);
             });
 
             xi.XISelectEvents(root, { deviceId: xi.AllMasterDevices, mask: 0 });
@@ -288,7 +274,7 @@ describe('XInputExtension', () => {
                 if (ev.type === 35 && ev.evtype === xi.EventType.RawMotion) heard = true;
             };
             X.on('event', onEvent);
-            this.xtest.FakeInput(this.xtest.MotionNotify, 0, 0, root, 99, 99);
+            xtest.FakeInput(xtest.MotionNotify, 0, 0, root, 99, 99);
             await new Promise((resolve, reject) =>
                 X.GetInputFocus(err => (err ? reject(err) : resolve())));
             X.removeListener('event', onEvent);
@@ -296,8 +282,6 @@ describe('XInputExtension', () => {
         });
 
         it('should select for several devices in one request', async function() {
-            const X = this.X;
-            const xi = this.xi;
             const root = X.display.screen[0].root;
             const masters = await new Promise((resolve, reject) =>
                 xi.XIQueryDevice(xi.AllMasterDevices, (err, devices) =>
@@ -311,34 +295,33 @@ describe('XInputExtension', () => {
             ]);
 
             const ev = await nextXIEvent(X, xi.EventType.RawMotion, () => {
-                this.xtest.FakeInput(this.xtest.MotionNotify, 0, 0, root, 43, 21);
+                xtest.FakeInput(xtest.MotionNotify, 0, 0, root, 43, 21);
             });
             ev.deviceId.should.equal(pointer.deviceId, 'named the device we asked about');
 
             // and the keyboard selection in the same request took effect too
             const key = await nextXIEvent(X, xi.EventType.RawKeyPress, () => {
-                this.xtest.FakeInput(this.xtest.KeyPress, 38, 0, root, 0, 0);
-                this.xtest.FakeInput(this.xtest.KeyRelease, 38, 0, root, 0, 0);
+                xtest.FakeInput(xtest.KeyPress, 38, 0, root, 0, 0);
+                xtest.FakeInput(xtest.KeyRelease, 38, 0, root, 0, 0);
             });
             key.name.should.equal('XIRawKeyPress');
             key.detail.should.equal(38, 'the keycode');
         });
 
-        after(function(done) {
-            const xi = this.xi;
-            const root = this.X.display.screen[0].root;
+        after(function(t, done) {
+            const root = X.display.screen[0].root;
             // leave no button held: the server is shared and outlives us
             for (let button = 1; button <= 3; ++button)
-                this.xtest.FakeInput(this.xtest.ButtonRelease, button, 0, root, 0, 0);
+                xtest.FakeInput(xtest.ButtonRelease, button, 0, root, 0, 0);
             xi.XISelectEvents(root, { deviceId: xi.AllMasterDevices, mask: 0 });
-            if (this.wid)
-                this.X.DestroyWindow(this.wid);
-            this.X.GetInputFocus(() => done());
+            if (wid)
+                X.DestroyWindow(wid);
+            X.GetInputFocus(() => done());
         });
     });
 
-    after(function(done) {
-        this.X.terminate();
-        this.X.on('end', done);
+    after(function(t, done) {
+        X.terminate();
+        X.on('end', done);
     });
 });

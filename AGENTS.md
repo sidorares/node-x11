@@ -57,7 +57,7 @@ npm run lint         # eslint: no-var / prefer-const / no-redeclare
 npm run test:bun     # = bun test test/bun (only if bun is installed)
 ```
 
-Full suite takes ~2 s. It starts (or reuses) a private Xvfb on display `:99`
+Full suite takes ~7 s. It starts (or reuses) a private Xvfb on display `:99`
 and runs `npm test`. Requirements: `Xvfb` (Linux: `xvfb` package; macOS:
 XQuartz provides `/opt/X11/bin/Xvfb`).
 
@@ -70,9 +70,19 @@ Details the script handles for you:
   `/tmp/.X11-unix/X99` to `/tmp/.X11-unix/X99:99` and sets `DISPLAY` to that
   path. Don't run the suite over TCP on macOS: connection teardown produces
   spurious `ECONNRESET`s and 80 s hook timeouts.
-- `test-runner.js` (not plain mocha) is the entry point: it probes the server
-  and skips `dpms.js` / `xtest.js` / `randr.js` when the extension is missing.
-  To run a single file directly: `DISPLAY=… npx mocha test/<file>.js`.
+- `test-runner.js` (not plain `node --test`) is the entry point: it probes the
+  server and skips `dpms.js` / `xtest.js` / `randr.js` when the extension is
+  missing, then runs the files through `node:test`'s `run()` one at a time,
+  each in its own process. It keeps a connection open for the whole run: an X
+  server resets when its last client leaves, which would otherwise happen
+  between files. To run a single file directly:
+  `DISPLAY=… node --test test/<file>.js`.
+- Tests use `node:test` (no mocha): `describe`/`it`/hooks come from
+  `require('node:test')`, a callback-style test or hook is `(t, done)` — `done`
+  is the *second* argument — and shared state lives in `let`s in the
+  `describe`, not on `this`. `t.skip()` only marks a test: in a callback-style
+  test follow it with `return done()` (a bare `return t.skip()` waits out the
+  timeout), and in a `beforeEach` it does not stop the body from running.
 - `test/bun/` is the one suite Node cannot run: the descriptor transport built
   on `bun:ffi` (`lib/fdpass-bun.js`). It needs `bun` on PATH; its X-server
   tests skip themselves when `DISPLAY` is unset. Subdirectories of `test/` are

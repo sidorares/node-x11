@@ -4,6 +4,7 @@
 // each shape on a 16x12 a8 pixmap — the same set ntk's
 // test/raster-precise.test.js checks its own rasterizer against.
 // test/render-precise.js compares against a real server on random geometry.
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const { boot } = require('./boot');
 const raster = require('../../lib/render-raster');
@@ -312,7 +313,7 @@ describe('xserver: RENDER rasterizes Precise, as pixman does', () => {
 
     let display, X, root, render, solid;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             ({ display, X } = ctx);
@@ -347,7 +348,7 @@ describe('xserver: RENDER rasterizes Precise, as pixman does', () => {
     }
 
     for (const name of Object.keys(TRIANGLES)) {
-        it(`Triangles: ${name} comes out as a pixman server drew it`, done => {
+        it(`Triangles: ${name} comes out as a pixman server drew it`, (t, done) => {
             drawA8(W, H, pic => render.Triangles(render.PictOp.Add, solid, 0, 0, pic, render.a8,
                 TRIANGLES[name]), data => {
                 assert.strictEqual(data.toString('hex'), golden(name));
@@ -357,7 +358,7 @@ describe('xserver: RENDER rasterizes Precise, as pixman does', () => {
     }
 
     for (const name of Object.keys(TRAPS)) {
-        it(`AddTraps: ${name} comes out as a pixman server drew it`, done => {
+        it(`AddTraps: ${name} comes out as a pixman server drew it`, (t, done) => {
             drawA8(W, H, pic => render.AddTraps(pic, 0, 0, TRAPS[name].map(v => v / 65536)), data => {
                 assert.strictEqual(data.toString('hex'), golden(name));
                 done();
@@ -365,7 +366,7 @@ describe('xserver: RENDER rasterizes Precise, as pixman does', () => {
         });
     }
 
-    it('AddTraps offsets are whole pixels', done => {
+    it('AddTraps offsets are whole pixels', (t, done) => {
         const moved = TRAPS['a heptagon'].map((v, i) => (v - ((i % 3 === 2) ? 7 : 3) * 65536) / 65536);
         drawA8(W, H, pic => render.AddTraps(pic, 3, 7, moved), data => {
             assert.strictEqual(data.toString('hex'), golden('a heptagon'));
@@ -373,7 +374,7 @@ describe('xserver: RENDER rasterizes Precise, as pixman does', () => {
         });
     });
 
-    it('TriStrip and TriFan are their triangles', done => {
+    it('TriStrip and TriFan are their triangles', (t, done) => {
         const pts = [1.3, 0.7, 14.6, 3.2, 5.1, 11.4, 13.25, 10.5];
         const want = new Uint8Array(W * H);
         raster.addTriangles({ data: want, width: W, height: H }, 0, 0,
@@ -390,7 +391,7 @@ describe('xserver: RENDER rasterizes Precise, as pixman does', () => {
         });
     });
 
-    it('a shape that starts above the pixmap keeps its own top', done => {
+    it('a shape that starts above the pixmap keeps its own top', (t, done) => {
         // the triangle from the quirk test above, drawn 35 rows up: the
         // server's mask spans the triangle's extents, so the pixmap gets the
         // whole's rows, not a mask cut at its top edge

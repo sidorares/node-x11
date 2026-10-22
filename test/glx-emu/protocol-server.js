@@ -2,6 +2,7 @@
 // pair, driven by the real client: X.require('glx') + QueryVersion /
 // GetVisualConfigs / CreateContext / MakeCurrent / Render round trips with
 // a RecordingBackend. Self-skips if the server core is not available.
+const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { createGlxExtension, RecordingBackend } = require('../../browser/glx');
 
@@ -19,11 +20,9 @@ try {
 }
 
 (serverAvailable ? describe : describe.skip)('glx-emu against the JS X server', function() {
-    this.timeout(10000);
-
     let server, X, display, GLX, backend, swaps, surfaces;
 
-    before(function(done) {
+    before(function(t, done) {
         const x11 = require('../../lib');
         server = xserver.createServer({ width: 640, height: 480 });
         backend = new RecordingBackend();
@@ -53,7 +52,7 @@ try {
             X.terminate();
     });
 
-    it('QueryVersion replies 1.4', function(done) {
+    it('QueryVersion replies 1.4', function(t, done) {
         GLX.QueryVersion(1, 4, (err, version) => {
             assert.ifError(err);
             assert.deepStrictEqual(version, [1, 4]);
@@ -61,7 +60,7 @@ try {
         });
     });
 
-    it('advertises the server root visual as a GL visual', function(done) {
+    it('advertises the server root visual as a GL visual', function(t, done) {
         GLX.GetVisualConfigs(0, (err, configs) => {
             assert.ifError(err);
             const cfg = configs.find(c => c.rgbMode && c.doubleBufferMode &&
@@ -72,7 +71,7 @@ try {
         });
     });
 
-    it('CreateContext + MakeCurrent + Render + SwapBuffers round trip', function(done) {
+    it('CreateContext + MakeCurrent + Render + SwapBuffers round trip', function(t, done) {
         GLX.GetVisualConfigs(0, (err, configs) => {
             assert.ifError(err);
             const visual = configs[0].visualID;
@@ -116,7 +115,7 @@ try {
         });
     });
 
-    it('display lists work through the real server framing', function(done) {
+    it('display lists work through the real server framing', function(t, done) {
         GLX.GetVisualConfigs(0, (err, configs) => {
             assert.ifError(err);
             const ctx = X.AllocID();
@@ -149,7 +148,7 @@ try {
         });
     });
 
-    it('reports GLX errors with the assigned error codes', function(done) {
+    it('reports GLX errors with the assigned error codes', function(t, done) {
         GLX.MakeCurrent(display.screen[0].root, 0xdeadbeef, 0, err => {
             assert.ok(err);
             assert.strictEqual(err.message, 'GLXBadContext');

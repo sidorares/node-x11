@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const x11 = require('../../lib');
 const { createServer } = require('../../lib/xserver');
@@ -13,7 +14,7 @@ describe('xserver: substructure redirect', () => {
     let server, WM, C, root;
 
     // WM is the redirecting client, C an ordinary application client.
-    beforeEach(done => {
+    beforeEach((t, done) => {
         server = createServer();
         boot({ server }, (err, wmCtx) => {
             if (err) return done(err);
@@ -48,7 +49,7 @@ describe('xserver: substructure redirect', () => {
         sync(WM, cb);
     };
 
-    it('MapWindow becomes a MapRequest and the window stays unmapped', done => {
+    it('MapWindow becomes a MapRequest and the window stays unmapped', (t, done) => {
         claimRoot(() => {
             const wid = C.AllocID();
             C.CreateWindow(wid, root, 0, 0, 40, 30);
@@ -65,7 +66,7 @@ describe('xserver: substructure redirect', () => {
         });
     });
 
-    it('the window manager mapping it itself is not redirected', done => {
+    it('the window manager mapping it itself is not redirected', (t, done) => {
         claimRoot(() => {
             const wid = C.AllocID();
             C.CreateWindow(wid, root, 0, 0, 40, 30);
@@ -85,7 +86,7 @@ describe('xserver: substructure redirect', () => {
         });
     });
 
-    it('an override-redirect window maps straight through', done => {
+    it('an override-redirect window maps straight through', (t, done) => {
         claimRoot(() => {
             const wid = C.AllocID();
             C.CreateWindow(wid, root, 0, 0, 40, 30, 0, 0, 0, 0, { overrideRedirect: 1 });
@@ -103,7 +104,7 @@ describe('xserver: substructure redirect', () => {
         });
     });
 
-    it('re-mapping an already mapped window is not redirected', done => {
+    it('re-mapping an already mapped window is not redirected', (t, done) => {
         const wid = C.AllocID();
         C.CreateWindow(wid, root, 0, 0, 40, 30);
         C.MapWindow(wid);
@@ -116,7 +117,7 @@ describe('xserver: substructure redirect', () => {
         }));
     });
 
-    it('ConfigureWindow becomes a ConfigureRequest carrying the value mask', done => {
+    it('ConfigureWindow becomes a ConfigureRequest carrying the value mask', (t, done) => {
         claimRoot(() => {
             const wid = C.AllocID();
             C.CreateWindow(wid, root, 5, 6, 40, 30);
@@ -140,7 +141,7 @@ describe('xserver: substructure redirect', () => {
         });
     });
 
-    it('a redirected ConfigureWindow sends no ConfigureNotify', done => {
+    it('a redirected ConfigureWindow sends no ConfigureNotify', (t, done) => {
         claimRoot(() => {
             const wid = C.AllocID();
             C.CreateWindow(wid, root, 0, 0, 40, 30, 0, 0, 0, 0,
@@ -153,7 +154,7 @@ describe('xserver: substructure redirect', () => {
         });
     });
 
-    it('CirculateWindow becomes a CirculateRequest', done => {
+    it('CirculateWindow becomes a CirculateRequest', (t, done) => {
         const a = C.AllocID(), b = C.AllocID();
         C.CreateWindow(a, root, 0, 0, 40, 30);
         C.CreateWindow(b, root, 0, 0, 40, 30);
@@ -171,7 +172,7 @@ describe('xserver: substructure redirect', () => {
         }));
     });
 
-    it('only one client at a time may redirect a window', done => {
+    it('only one client at a time may redirect a window', (t, done) => {
         claimRoot(() => {
             C.ChangeWindowAttributes(root, { eventMask: em.SubstructureRedirect });
             C.once('error', err => {
@@ -182,7 +183,7 @@ describe('xserver: substructure redirect', () => {
         });
     });
 
-    it('the same client may re-select its own redirect', done => {
+    it('the same client may re-select its own redirect', (t, done) => {
         claimRoot(() => {
             WM.on('error', err => done(err));
             WM.ChangeWindowAttributes(root, {
@@ -192,7 +193,7 @@ describe('xserver: substructure redirect', () => {
         });
     });
 
-    it('the redirect is released when the window manager disconnects', done => {
+    it('the redirect is released when the window manager disconnects', (t, done) => {
         claimRoot(() => {
             WM.terminate();
             WM = null;

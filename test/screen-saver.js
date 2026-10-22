@@ -1,3 +1,4 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -7,7 +8,7 @@ describe('MIT-SCREEN-SAVER extension', () => {
     let saver;
     let root;
 
-    before(done => {
+    before((t, done) => {
         const client = x11.createClient((err, dpy) => {
             if (err)
                 return done(err);
@@ -23,7 +24,7 @@ describe('MIT-SCREEN-SAVER extension', () => {
         client.on('error', done);
     });
 
-    after(done => {
+    after((t, done) => {
         // safety: never leave the shared server suspended or with saver attributes set
         saver.Suspend(false);
         saver.UnsetAttributes(root);
@@ -38,7 +39,7 @@ describe('MIT-SCREEN-SAVER extension', () => {
         saver.minor.should.be.aboveOrEqual(1);
     });
 
-    it('QueryInfo should return saver info for the root window', done => {
+    it('QueryInfo should return saver info for the root window', (t, done) => {
         saver.QueryInfo(root, (err, info) => {
             should.not.exist(err);
             info.state.should.be.within(0, 3);
@@ -49,7 +50,7 @@ describe('MIT-SCREEN-SAVER extension', () => {
         });
     });
 
-    it('SetAttributes then UnsetAttributes should be accepted', done => {
+    it('SetAttributes then UnsetAttributes should be accepted', (t, done) => {
         // class/depth/visual 0 = CopyFromParent
         saver.SetAttributes(root, 0, 0, 100, 100, 0, 0, 0, 0,
             { backgroundPixel: display.screen[0].black_pixel });
@@ -62,7 +63,7 @@ describe('MIT-SCREEN-SAVER extension', () => {
         });
     });
 
-    it('Suspend on/off should be accepted and leave the saver queryable', done => {
+    it('Suspend on/off should be accepted and leave the saver queryable', (t, done) => {
         saver.Suspend(true);
         saver.QueryInfo(root, (err, info) => {
             // always release the suspension, even if the assertion below throws

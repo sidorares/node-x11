@@ -1,16 +1,18 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
 describe('XINERAMA extension', () => {
-    before(function(done) {
-        const self = this;
+    let X, root, xinerama;
+
+    before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X = dpy.client;
-            self.root = dpy.screen[0].root;
-            self.X.require('xinerama', (err, ext) => {
+            X = dpy.client;
+            root = dpy.screen[0].root;
+            X.require('xinerama', (err, ext) => {
                 should.not.exist(err);
-                self.xinerama = ext;
+                xinerama = ext;
                 done();
             });
         });
@@ -19,20 +21,20 @@ describe('XINERAMA extension', () => {
     });
 
     it('QueryVersion should report at least 1.1', function() {
-        this.xinerama.major.should.be.aboveOrEqual(1);
-        this.xinerama.minor.should.be.aboveOrEqual(1);
+        xinerama.major.should.be.aboveOrEqual(1);
+        xinerama.minor.should.be.aboveOrEqual(1);
     });
 
-    it('GetState should return a 0/1 flag for the root window', function(done) {
-        this.xinerama.GetState(this.root, (err, state) => {
+    it('GetState should return a 0/1 flag for the root window', function(t, done) {
+        xinerama.GetState(root, (err, state) => {
             should.not.exist(err);
             state.should.be.within(0, 1);
             done();
         });
     });
 
-    it('GetScreenCount should return a number for the root window', function(done) {
-        this.xinerama.GetScreenCount(this.root, (err, count) => {
+    it('GetScreenCount should return a number for the root window', function(t, done) {
+        xinerama.GetScreenCount(root, (err, count) => {
             should.not.exist(err);
             count.should.be.a.Number();
             count.should.be.aboveOrEqual(0);
@@ -40,11 +42,10 @@ describe('XINERAMA extension', () => {
         });
     });
 
-    it('IsActive and QueryScreens should agree with each other', function(done) {
-        const self = this;
-        this.xinerama.IsActive((err, state) => {
+    it('IsActive and QueryScreens should agree with each other', function(t, done) {
+        xinerama.IsActive((err, state) => {
             should.not.exist(err);
-            self.xinerama.QueryScreens((err, screens) => {
+            xinerama.QueryScreens((err, screens) => {
                 should.not.exist(err);
                 screens.should.be.an.Array();
                 if (state === 0) {
@@ -59,8 +60,8 @@ describe('XINERAMA extension', () => {
         });
     });
 
-    after(function(done) {
-        this.X.terminate();
-        this.X.on('end', done);
+    after(function(t, done) {
+        X.terminate();
+        X.on('end', done);
     });
 });

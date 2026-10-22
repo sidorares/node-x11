@@ -1,3 +1,4 @@
+const { describe, it } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -49,27 +50,27 @@ function putGetRoundTrip(X, dpy, w, h, finish) {
 }
 
 describe('PutImage request encoding', () => {
-    it('round-trips a small image on a normal connection', function(done) {
+    it('round-trips a small image on a normal connection', function(t, done) {
         withClient({}, (X, dpy, close) => {
             putGetRoundTrip(X, dpy, 64, 64, close);
         }, done);
     });
 
-    it('round-trips a small image with BIG-REQUESTS disabled', function(done) {
+    it('round-trips a small image with BIG-REQUESTS disabled', function(t, done) {
         // the regression: this used to fail with "Bad length"
         withClient({ disableBigRequests: true }, (X, dpy, close) => {
             putGetRoundTrip(X, dpy, 64, 64, close);
         }, done);
     });
 
-    it('round-trips a ~196 KB image (still under the 16-bit length) without BIG-REQUESTS', function(done) {
+    it('round-trips a ~196 KB image (still under the 16-bit length) without BIG-REQUESTS', function(t, done) {
         // 224*224*4 = ~196 KB, request length ~49155 words < 65535
         withClient({ disableBigRequests: true }, (X, dpy, close) => {
             putGetRoundTrip(X, dpy, 224, 224, close);
         }, done);
     });
 
-    it('round-trips a >256 KB image (needs the BIG-REQUESTS encoding) on a normal connection', function(done) {
+    it('round-trips a >256 KB image (needs the BIG-REQUESTS encoding) on a normal connection', function(t, done) {
         // 512*512*4 = 1 MB, request length > 65535 words -> BigReq encoding
         withClient({}, (X, dpy, close) => {
             putGetRoundTrip(X, dpy, 512, 512, close);
@@ -82,7 +83,7 @@ describe('PutImage request encoding', () => {
 // and round-trip: a malformed request would come back as a "Bad length" error
 // against the AddGlyphs sequence number.
 describe('RENDER AddGlyphs request encoding', () => {
-    it('uploads a small glyph with BIG-REQUESTS disabled', function(done) {
+    it('uploads a small glyph with BIG-REQUESTS disabled', function(t, done) {
         withClient({ disableBigRequests: true }, (X, dpy, close) => {
             let xerr = null;
             X.on('error', err => { xerr = err; });

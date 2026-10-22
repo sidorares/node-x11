@@ -3,6 +3,7 @@
 // and neither Xvfb nor the bundled JS server answers with more than one
 // screen or more than one depth, so the nesting is exercised here against a
 // hand-built reply instead.
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const { unpackPictFormats } = require('../lib/ext/render');
 

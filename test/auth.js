@@ -1,6 +1,7 @@
 // Xauthority cookie selection. No X server involved: everything here happens
 // before the connection is made, which is exactly why getting it wrong is so
 // hard to diagnose from the outside.
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const fs = require('fs');
 const os = require('os');

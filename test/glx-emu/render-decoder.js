@@ -2,6 +2,7 @@
 // client serializer (lib/ext/glxrender.js) and decoded into a
 // RecordingBackend, so encoder and decoder are verified against each other
 // byte-for-byte. No X server, no WebGL.
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const createPipeline = require('../../lib/ext/glxrender');
 const { RecordingBackend, RenderDecoder, WebGLBackend, BACKEND_METHODS } =

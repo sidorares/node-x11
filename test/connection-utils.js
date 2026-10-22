@@ -1,3 +1,4 @@
+const { describe, it, beforeEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -5,7 +6,7 @@ const assert = require('assert');
 describe('Client', () => {
 
   let display;
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (!err) {
               display = dpy;
@@ -18,11 +19,11 @@ describe('Client', () => {
       client.on('error', done);
   });
 
-  it('should respond to ping()', done => {
+  it('should respond to ping()', (t, done) => {
     display.client.ping(done);
   });
 
-  it('should allow to enqueue requests and gracefully execute them before close()', done => {
+  it('should allow to enqueue requests and gracefully execute them before close()', (t, done) => {
     let count = 0;
     const pong = err => { if (err) return done(err); count++; };
     display.client.ping(pong);

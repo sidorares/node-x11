@@ -1,3 +1,4 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -9,7 +10,7 @@ describe('SHAPE extension', () => {
     let wid1;
     let wid2;
 
-    before(done => {
+    before((t, done) => {
         const client = x11.createClient((err, dpy) => {
             if (err)
                 return done(err);
@@ -29,7 +30,7 @@ describe('SHAPE extension', () => {
         client.on('error', done);
     });
 
-    after(done => {
+    after((t, done) => {
         X.DestroyWindow(wid1);
         X.DestroyWindow(wid2);
         X.terminate();
@@ -42,7 +43,7 @@ describe('SHAPE extension', () => {
 
     const shapeRects = [[0, 0, 10, 10], [20, 20, 10, 10]];
 
-    it('Rectangles + GetRectangles should round-trip a bounding shape', done => {
+    it('Rectangles + GetRectangles should round-trip a bounding shape', (t, done) => {
         shape.Rectangles(shape.Op.Set, shape.Kind.Bounding, wid1, 0, 0, shapeRects);
         shape.GetRectangles(wid1, shape.Kind.Bounding, (err, res) => {
             should.not.exist(err);
@@ -52,7 +53,7 @@ describe('SHAPE extension', () => {
         });
     });
 
-    it('QueryExtents should report the bounding shape extents', done => {
+    it('QueryExtents should report the bounding shape extents', (t, done) => {
         shape.QueryExtents(wid1, (err, extents) => {
             should.not.exist(err);
             extents.boundingShaped.should.equal(true);
@@ -64,7 +65,7 @@ describe('SHAPE extension', () => {
         });
     });
 
-    it('Combine should copy the shape from one window to another', done => {
+    it('Combine should copy the shape from one window to another', (t, done) => {
         shape.Combine(shape.Op.Set, shape.Kind.Bounding, shape.Kind.Bounding,
             wid2, 0, 0, wid1);
         shape.GetRectangles(wid2, shape.Kind.Bounding, (err, res) => {
@@ -74,7 +75,7 @@ describe('SHAPE extension', () => {
         });
     });
 
-    it('Offset should translate the shape', done => {
+    it('Offset should translate the shape', (t, done) => {
         shape.Offset(shape.Kind.Bounding, wid1, 5, 7);
         shape.QueryExtents(wid1, (err, extents) => {
             should.not.exist(err);

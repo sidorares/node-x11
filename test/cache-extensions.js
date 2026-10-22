@@ -1,3 +1,4 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const sinon = require('sinon');
@@ -6,11 +7,12 @@ const sinon = require('sinon');
 const ABSENT = 'NoSuchExtension-node-x11';
 
 describe('requiring an X11 extension on same connection', () => {
-    before(function(done) {
-        const self = this;
+    let X;
+
+    before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X = dpy.client;
+            X = dpy.client;
             done();
         });
 
@@ -19,11 +21,10 @@ describe('requiring an X11 extension on same connection', () => {
         });
     });
 
-    it('should be cached', function(done) {
-        const self = this;
-        this.X.require('xtest', (err, randr) => {
+    it('should be cached', function(t, done) {
+        X.require('xtest', (err, randr) => {
             should.not.exist(err);
-            self.X.require('xtest', (err, randr1) => {
+            X.require('xtest', (err, randr1) => {
                 should.not.exist(err);
                 randr.should.equal(randr1);
                 done();
@@ -31,12 +32,11 @@ describe('requiring an X11 extension on same connection', () => {
         });
     });
 
-    it('should not re-ask the server for an extension it already queried', function(done) {
-        const self = this;
-        this.X.QueryExtension('XTEST', (err, first) => {
+    it('should not re-ask the server for an extension it already queried', function(t, done) {
+        X.QueryExtension('XTEST', (err, first) => {
             should.not.exist(err);
-            const spy = sinon.spy(self.X.pack_stream, 'put');
-            self.X.QueryExtension('XTEST', (err, second) => {
+            const spy = sinon.spy(X.pack_stream, 'put');
+            X.QueryExtension('XTEST', (err, second) => {
                 should.not.exist(err);
                 second.majorOpcode.should.equal(first.majorOpcode);
                 sinon.assert.notCalled(spy);
@@ -49,13 +49,12 @@ describe('requiring an X11 extension on same connection', () => {
     // The reason this cache exists: require() remembers only the extensions it
     // resolved, so a client that keeps probing for a missing one used to put a
     // QueryExtension on the wire every single time.
-    it('should not re-ask for an extension the server does not have', function(done) {
-        const self = this;
-        this.X.QueryExtension(ABSENT, (err, first) => {
+    it('should not re-ask for an extension the server does not have', function(t, done) {
+        X.QueryExtension(ABSENT, (err, first) => {
             should.not.exist(err);
             first.present.should.equal(0);
-            const spy = sinon.spy(self.X.pack_stream, 'put');
-            self.X.QueryExtension(ABSENT, (err, second) => {
+            const spy = sinon.spy(X.pack_stream, 'put');
+            X.QueryExtension(ABSENT, (err, second) => {
                 should.not.exist(err);
                 second.present.should.equal(0);
                 sinon.assert.notCalled(spy);
@@ -65,12 +64,11 @@ describe('requiring an X11 extension on same connection', () => {
         });
     });
 
-    it('should keep a failing require() off the wire after the first try', function(done) {
-        const self = this;
-        this.X.require('dri3', () => {
+    it('should keep a failing require() off the wire after the first try', function(t, done) {
+        X.require('dri3', () => {
             // Whether this server has DRI3 or not, asking again is free.
-            const spy = sinon.spy(self.X.pack_stream, 'put');
-            self.X.require('dri3', () => {
+            const spy = sinon.spy(X.pack_stream, 'put');
+            X.require('dri3', () => {
                 sinon.assert.notCalled(spy);
                 spy.restore();
                 done();
@@ -81,12 +79,11 @@ describe('requiring an X11 extension on same connection', () => {
     // requireExt() hangs the extension's own methods off the reply object it
     // is handed, so handing out the cached one would let it be decorated once
     // and then reused in that state.
-    it('should hand out a fresh reply object each time', function(done) {
-        const self = this;
-        this.X.QueryExtension('XTEST', (err, first) => {
+    it('should hand out a fresh reply object each time', function(t, done) {
+        X.QueryExtension('XTEST', (err, first) => {
             should.not.exist(err);
             first.scribble = 'mutated';
-            self.X.QueryExtension('XTEST', (err, second) => {
+            X.QueryExtension('XTEST', (err, second) => {
                 should.not.exist(err);
                 second.should.not.equal(first);
                 should.not.exist(second.scribble);
@@ -95,8 +92,8 @@ describe('requiring an X11 extension on same connection', () => {
         });
     });
 
-    after(function(done) {
-        this.X.terminate();
-        this.X.on('end', done);
+    after(function(t, done) {
+        X.terminate();
+        X.on('end', done);
     });
 });

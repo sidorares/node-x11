@@ -1,3 +1,4 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -21,7 +22,7 @@ describe('XVideo extension', () => {
     let imageFormat = null;
     let errorHandler = null;
 
-    before(done => {
+    before((t, done) => {
         const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
             display = dpy;
@@ -56,7 +57,7 @@ describe('XVideo extension', () => {
         });
     });
 
-    after(done => {
+    after((t, done) => {
         X.FreeGC(gc);
         X.terminate();
         X.on('end', done);
@@ -83,7 +84,7 @@ describe('XVideo extension', () => {
         });
     });
 
-    it('QueryEncodings should list encodings or raise XvBadPort', done => {
+    it('QueryEncodings should list encodings or raise XvBadPort', (t, done) => {
         if (port !== null) {
             xv.QueryEncodings(port, (err, encodings) => {
                 should.not.exist(err);
@@ -103,7 +104,7 @@ describe('XVideo extension', () => {
         }
     });
 
-    it('GrabPort/UngrabPort should succeed or raise XvBadPort', done => {
+    it('GrabPort/UngrabPort should succeed or raise XvBadPort', (t, done) => {
         if (port !== null) {
             xv.GrabPort(port, 0, (err, status) => {
                 should.not.exist(err);
@@ -120,7 +121,7 @@ describe('XVideo extension', () => {
         }
     });
 
-    it('QueryBestSize should return a size or raise XvBadPort', done => {
+    it('QueryBestSize should return a size or raise XvBadPort', (t, done) => {
         if (port !== null) {
             xv.QueryBestSize(port, 320, 240, 640, 480, false, (err, size) => {
                 should.not.exist(err);
@@ -137,7 +138,7 @@ describe('XVideo extension', () => {
         }
     });
 
-    it('QueryPortAttributes should list attributes or raise XvBadPort', done => {
+    it('QueryPortAttributes should list attributes or raise XvBadPort', (t, done) => {
         if (port !== null) {
             xv.QueryPortAttributes(port, (err, attributes) => {
                 should.not.exist(err);
@@ -157,7 +158,7 @@ describe('XVideo extension', () => {
         }
     });
 
-    it('GetPortAttribute should raise XvBadPort for a bogus port', done => {
+    it('GetPortAttribute should raise XvBadPort for a bogus port', (t, done) => {
         // even with a real port an attribute atom would be needed, so always
         // exercise the error path here
         xv.GetPortAttribute(BOGUS_PORT, 1 /* any atom */, err => {
@@ -167,7 +168,7 @@ describe('XVideo extension', () => {
         });
     });
 
-    it('SetPortAttribute (no reply) should raise XvBadPort via the error event', done => {
+    it('SetPortAttribute (no reply) should raise XvBadPort via the error event', (t, done) => {
         xv.SetPortAttribute(BOGUS_PORT, 1 /* any atom */, 0);
         const seq = X.seq_num;
         errorHandler = err => {
@@ -178,7 +179,7 @@ describe('XVideo extension', () => {
         };
     });
 
-    it('ListImageFormats should list formats or raise XvBadPort', done => {
+    it('ListImageFormats should list formats or raise XvBadPort', (t, done) => {
         if (port !== null) {
             xv.ListImageFormats(port, (err, formats) => {
                 should.not.exist(err);
@@ -217,7 +218,7 @@ describe('XVideo extension', () => {
         });
     };
 
-    it('StopVideo should raise XvBadPort for a bogus port', done => {
+    it('StopVideo should raise XvBadPort for a bogus port', (t, done) => {
         // always the error path: with a real port this would stop whatever
         // another client is putting into the root window
         xv.StopVideo(BOGUS_PORT, root, err => {
@@ -227,7 +228,7 @@ describe('XVideo extension', () => {
         });
     });
 
-    it('SelectVideoNotify should be accepted for any drawable', done => {
+    it('SelectVideoNotify should be accepted for any drawable', (t, done) => {
         // takes a drawable, not a port: it works on an adaptorless server
         xv.SelectVideoNotify(root, true, err => {
             should.not.exist(err);
@@ -240,7 +241,7 @@ describe('XVideo extension', () => {
         });
     });
 
-    it('SelectPortNotify should subscribe or raise XvBadPort', done => {
+    it('SelectPortNotify should subscribe or raise XvBadPort', (t, done) => {
         if (port !== null) {
             xv.SelectPortNotify(port, true, err => {
                 should.not.exist(err);
@@ -257,7 +258,7 @@ describe('XVideo extension', () => {
         }
     });
 
-    it('QueryImageAttributes should report a plane layout or raise XvBadPort', done => {
+    it('QueryImageAttributes should report a plane layout or raise XvBadPort', (t, done) => {
         if (port !== null && imageFormat !== null) {
             xv.QueryImageAttributes(port, imageFormat.id, 320, 240, (err, attrs) => {
                 should.not.exist(err);
@@ -279,7 +280,7 @@ describe('XVideo extension', () => {
         }
     });
 
-    it('PutImage should reach the server and keep the connection in sync', done => {
+    it('PutImage should reach the server and keep the connection in sync', (t, done) => {
         const img = {
             srcX: 0, srcY: 0, srcWidth: 16, srcHeight: 16,
             drwX: 0, drwY: 0, drwWidth: 16, drwHeight: 16,
@@ -293,7 +294,7 @@ describe('XVideo extension', () => {
         });
     });
 
-    it('PutImage should use the BIG-REQUESTS encoding past 256 KiB', done => {
+    it('PutImage should use the BIG-REQUESTS encoding past 256 KiB', (t, done) => {
         // 512x512 at 3 bytes/pixel is 786432 bytes: 196618 words, well past
         // the 65535 a plain request length field can hold
         const img = {
@@ -309,7 +310,7 @@ describe('XVideo extension', () => {
         });
     });
 
-    it('PutImage should refuse a frame the connection cannot carry', done => {
+    it('PutImage should refuse a frame the connection cannot carry', (t, done) => {
         const words = (display.max_request_length || 0xffff) + 1;
         const img = {
             srcX: 0, srcY: 0, srcWidth: 16, srcHeight: 16,
@@ -327,7 +328,7 @@ describe('XVideo extension', () => {
         });
     });
 
-    it('ShmPutImage should reach the server and keep the connection in sync', done => {
+    it('ShmPutImage should reach the server and keep the connection in sync', (t, done) => {
         xv.ShmPutImage(BOGUS_PORT, root, gc, 0 /* any seg */, 0x32595559, {
             srcX: 0, srcY: 0, srcWidth: 16, srcHeight: 16,
             drwX: 0, drwY: 0, drwWidth: 16, drwHeight: 16,

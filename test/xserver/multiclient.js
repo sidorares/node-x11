@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const x11 = require('../../lib');
 const { createServer } = require('../../lib/xserver');
@@ -9,7 +10,7 @@ describe('xserver: multiple clients', () => {
 
     let server, A, B, dispA, dispB, root;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         server = createServer();
         boot({ server }, (err, ctxA) => {
             if (err) return done(err);
@@ -31,7 +32,7 @@ describe('xserver: multiple clients', () => {
         server = A = B = null;
     });
 
-    it('another client sees CreateNotify via SubstructureNotify on the root', done => {
+    it('another client sees CreateNotify via SubstructureNotify on the root', (t, done) => {
         B.ChangeWindowAttributes(root, { eventMask: em.SubstructureNotify });
         sync(B, () => {
             const wid = A.AllocID();
@@ -46,7 +47,7 @@ describe('xserver: multiple clients', () => {
         });
     });
 
-    it('per-client event isolation: Expose goes only to the selecting client', done => {
+    it('per-client event isolation: Expose goes only to the selecting client', (t, done) => {
         const wid = A.AllocID();
         A.CreateWindow(wid, root, 0, 0, 30, 30, 0, 0, 0, 0,
             { eventMask: em.Exposure });
@@ -64,7 +65,7 @@ describe('xserver: multiple clients', () => {
         A.MapWindow(wid);
     });
 
-    it('client disconnect destroys its windows with DestroyNotify to others', done => {
+    it('client disconnect destroys its windows with DestroyNotify to others', (t, done) => {
         B.ChangeWindowAttributes(root, { eventMask: em.SubstructureNotify });
         const wid = A.AllocID();
         A.CreateWindow(wid, root, 0, 0, 30, 30);
@@ -86,7 +87,7 @@ describe('xserver: multiple clients', () => {
         }));
     });
 
-    it('KillClient by resource id closes that client and frees resources', done => {
+    it('KillClient by resource id closes that client and frees resources', (t, done) => {
         const wid = A.AllocID();
         A.CreateWindow(wid, root, 0, 0, 30, 30);
         sync(A, () => {
@@ -99,7 +100,7 @@ describe('xserver: multiple clients', () => {
         });
     });
 
-    it('selection handover: request/notify flow between clients', done => {
+    it('selection handover: request/notify flow between clients', (t, done) => {
         const owner = A.AllocID();
         A.CreateWindow(owner, root, 0, 0, 5, 5);
         const requestor = B.AllocID();
@@ -139,7 +140,7 @@ describe('xserver: multiple clients', () => {
         });
     });
 
-    it('ConvertSelection with no owner refuses with property None', done => {
+    it('ConvertSelection with no owner refuses with property None', (t, done) => {
         const requestor = B.AllocID();
         B.CreateWindow(requestor, root, 0, 0, 5, 5);
         B.InternAtom(false, 'XSRV_MC_NO_OWNER_SEL', (err, selection) => {
@@ -155,7 +156,7 @@ describe('xserver: multiple clients', () => {
         });
     });
 
-    it('SetSelectionOwner change sends SelectionClear to the old owner', done => {
+    it('SetSelectionOwner change sends SelectionClear to the old owner', (t, done) => {
         const winA = A.AllocID();
         A.CreateWindow(winA, root, 0, 0, 5, 5);
         const winB = B.AllocID();
@@ -174,7 +175,7 @@ describe('xserver: multiple clients', () => {
         });
     });
 
-    it('SendEvent delivers a ClientMessage with the send_event flag', done => {
+    it('SendEvent delivers a ClientMessage with the send_event flag', (t, done) => {
         const wid = A.AllocID();
         A.CreateWindow(wid, root, 0, 0, 5, 5, 0, 0, 0, 0,
             { eventMask: em.PropertyChange });

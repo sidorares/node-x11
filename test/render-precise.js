@@ -4,6 +4,7 @@
 // masks must come out the same to the byte. The real server is whatever
 // $DISPLAY names — Xvfb in CI, which rasterizes with pixman like Xorg,
 // Xwayland and XQuartz.
+const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const x11 = require('../lib');
 const raster = require('../lib/render-raster');
@@ -44,7 +45,7 @@ describe('RENDER Precise rasterization against the real server', () => {
         });
     }
 
-    before(done => {
+    before((t, done) => {
         x11.createClient((err, display) => {
             if (err)
                 return done(err);

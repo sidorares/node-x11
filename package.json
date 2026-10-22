@@ -50,7 +50,6 @@
     "async": "^3.0.1",
     "bunny": "^1.0.1",
     "eslint": "^10.7.0",
-    "mocha": "^12.0.2",
     "sax": "^1.2.4",
     "should": "^13.2.1",
     "sinon": "^22.1.0",
@@ -59,8 +58,8 @@
   "scripts": {
     "test": "node test-runner.js",
     "test:local": "./scripts/test-local.sh",
-    "test:glx-emu": "mocha test/glx-emu/ --timeout 10000",
-    "test:xserver": "mocha test/xserver/ --timeout 10000",
+    "test:glx-emu": "node --test --test-reporter=spec --test-timeout=10000 test/glx-emu/*.js",
+    "test:xserver": "node --test --test-reporter=spec --test-timeout=10000 test/xserver/*.js",
     "test:bun": "bun test test/bun",
     "lint": "eslint .",
     "gen:events": "node autogen/generate-events.js",

@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -10,7 +11,7 @@ describe('Core events (newly generated parsers)', () => {
   let black;
   let depth;
 
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (err)
               return done(err);
@@ -25,7 +26,7 @@ describe('Core events (newly generated parsers)', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.terminate();
       X.on('end', done);
       X = null;
@@ -42,7 +43,7 @@ describe('Core events (newly generated parsers)', () => {
       X.on('event', listener);
   }
 
-  it('VisibilityNotify should fire when window becomes visible', done => {
+  it('VisibilityNotify should fire when window becomes visible', (t, done) => {
       const wid = X.AllocID();
       X.CreateWindow(wid, root, 0, 0, 50, 50, 0, 0, 0, 0,
           { eventMask: x11.eventMask.VisibilityChange });
@@ -55,7 +56,7 @@ describe('Core events (newly generated parsers)', () => {
       X.MapWindow(wid);
   });
 
-  it('ReparentNotify should fire on ReparentWindow', done => {
+  it('ReparentNotify should fire on ReparentWindow', (t, done) => {
       const parent = X.AllocID();
       const child = X.AllocID();
       X.CreateWindow(parent, root, 0, 0, 100, 100);
@@ -73,7 +74,7 @@ describe('Core events (newly generated parsers)', () => {
       X.ReparentWindow(child, parent, 5, 6);
   });
 
-  it('GravityNotify should fire when parent resize moves child', done => {
+  it('GravityNotify should fire when parent resize moves child', (t, done) => {
       const parent = X.AllocID();
       const child = X.AllocID();
       X.CreateWindow(parent, root, 0, 0, 100, 100);
@@ -92,7 +93,7 @@ describe('Core events (newly generated parsers)', () => {
       X.ResizeWindow(parent, 80, 80);
   });
 
-  it('NoExposure should fire for fully valid CopyArea', done => {
+  it('NoExposure should fire for fully valid CopyArea', (t, done) => {
       const pixmap = X.AllocID();
       const dst = X.AllocID();
       const gc = X.AllocID();
@@ -111,7 +112,7 @@ describe('Core events (newly generated parsers)', () => {
       X.CopyArea(pixmap, dst, gc, 0, 0, 0, 0, 20, 20);
   });
 
-  it('GraphicsExposure should fire for out-of-bounds CopyArea source', done => {
+  it('GraphicsExposure should fire for out-of-bounds CopyArea source', (t, done) => {
       const pixmap = X.AllocID();
       const dst = X.AllocID();
       const gc = X.AllocID();
@@ -131,7 +132,7 @@ describe('Core events (newly generated parsers)', () => {
       X.CopyArea(pixmap, dst, gc, 10, 10, 0, 0, 20, 20);
   });
 
-  it('CirculateNotify should fire on CirculateWindow', done => {
+  it('CirculateNotify should fire on CirculateWindow', (t, done) => {
       const parent = X.AllocID();
       X.CreateWindow(parent, root, 0, 0, 100, 100, 0, 0, 0, 0,
           { eventMask: x11.eventMask.SubstructureNotify });
@@ -151,7 +152,7 @@ describe('Core events (newly generated parsers)', () => {
       X.CirculateWindow(parent, 0); // RaiseLowest
   });
 
-  it('ColormapNotify should fire when window colormap attribute changes', done => {
+  it('ColormapNotify should fire when window colormap attribute changes', (t, done) => {
       const wid = X.AllocID();
       X.CreateWindow(wid, root, 0, 0, 10, 10, 0, 0, 0, 0,
           { eventMask: x11.eventMask.ColormapChange });
@@ -168,7 +169,7 @@ describe('Core events (newly generated parsers)', () => {
       X.ChangeWindowAttributes(wid, { colormap: cmap });
   });
 
-  it('KeymapNotify should follow FocusIn when KeymapState selected', done => {
+  it('KeymapNotify should follow FocusIn when KeymapState selected', (t, done) => {
       const wid = X.AllocID();
       X.CreateWindow(wid, root, 0, 0, 10, 10, 0, 0, 0, 0,
           { eventMask: x11.eventMask.FocusChange | x11.eventMask.KeymapState });
@@ -181,7 +182,7 @@ describe('Core events (newly generated parsers)', () => {
       X.SetInputFocus(wid, 0);
   });
 
-  it('ResizeRequest should redirect resize from another client', done => {
+  it('ResizeRequest should redirect resize from another client', (t, done) => {
       const wid = X.AllocID();
       X.CreateWindow(wid, root, 0, 0, 50, 50, 0, 0, 0, 0,
           { eventMask: x11.eventMask.ResizeRedirect });

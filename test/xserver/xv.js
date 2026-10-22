@@ -3,6 +3,7 @@
 // is the only place the client's PutImage/ShmPutImage/QueryImageAttributes
 // and the VideoNotify/PortNotify parsers are driven end to end; test/xv.js
 // covers what a real (adaptorless) server can answer.
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const xserver = require('../../lib/xserver');
 const { boot, sync } = require('./boot');
@@ -63,12 +64,10 @@ function assertColor(actual, name, where) {
 }
 
 describe('xserver: XVideo image path', function() {
-    this.timeout(20000);
-
     let server, display, X, root, adaptor, xv, port, pixmap, gc;
     const W = 16, H = 16;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         adaptor = createXvAdaptor();
         server = xserver.createServer({ width: 256, height: 256 });
         server.registerExtension('XVideo', adaptor);
@@ -105,7 +104,7 @@ describe('xserver: XVideo image path', function() {
         });
     }
 
-    it('advertises an image adaptor with two formats', done => {
+    it('advertises an image adaptor with two formats', (t, done) => {
         assert.strictEqual(xv.major, 2);
         assert.strictEqual(xv.minor, 2);
         xv.QueryAdaptors(root, (err, adaptors) => {
@@ -132,7 +131,7 @@ describe('xserver: XVideo image path', function() {
     });
 
     describe('QueryImageAttributes', () => {
-        it('reports the packed plane layout, rounding the size up', done => {
+        it('reports the packed plane layout, rounding the size up', (t, done) => {
             xv.QueryImageAttributes(port, YUY2, 7, 5, (err, attrs) => {
                 assert.ifError(err);
                 assert.deepStrictEqual(attrs, {
@@ -147,7 +146,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('reports one pitch and one offset per plane for planar formats', done => {
+        it('reports one pitch and one offset per plane for planar formats', (t, done) => {
             xv.QueryImageAttributes(port, I420, 7, 5, (err, attrs) => {
                 assert.ifError(err);
                 assert.deepStrictEqual(attrs, {
@@ -162,7 +161,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('raises XvBadPort for a port the adaptor does not own', done => {
+        it('raises XvBadPort for a port the adaptor does not own', (t, done) => {
             xv.QueryImageAttributes(0, YUY2, 8, 8, err => {
                 assert.strictEqual(err.error, xv.errors.BadPort);
                 done();
@@ -172,7 +171,7 @@ describe('xserver: XVideo image path', function() {
     });
 
     describe('PutImage', () => {
-        it('draws a packed YUY2 frame', done => {
+        it('draws a packed YUY2 frame', (t, done) => {
             xv.QueryImageAttributes(port, YUY2, W, H, (err, plane) => {
                 assert.ifError(err);
                 const data = solidFrame(YUY2, plane, 'red', W, H);
@@ -189,7 +188,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('puts every header field at its own offset', done => {
+        it('puts every header field at its own offset', (t, done) => {
             // all-distinct values: any two fields swapped or shifted shows up
             const geometry = {
                 srcX: 1, srcY: 2, srcWidth: 3, srcHeight: 4,
@@ -209,7 +208,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('honours the pitches and offsets of a planar I420 frame', done => {
+        it('honours the pitches and offsets of a planar I420 frame', (t, done) => {
             // width 6 pads to a pitch of 8, so a decoder that ignores pitches
             // reads the wrong bytes from row 1 on
             const w = 6, h = 6;
@@ -237,7 +236,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('scales the source rectangle into the destination rectangle', done => {
+        it('scales the source rectangle into the destination rectangle', (t, done) => {
             xv.QueryImageAttributes(port, YUY2, 4, 4, (err, plane) => {
                 assert.ifError(err);
                 // left half white, right half red; U/V are shared per pair, so
@@ -265,7 +264,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('pads a payload that is not a whole number of words', done => {
+        it('pads a payload that is not a whole number of words', (t, done) => {
             xv.QueryImageAttributes(port, YUY2, 4, 4, (err, plane) => {
                 assert.ifError(err);
                 // one byte past the plane data: the request must still be
@@ -286,7 +285,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('sends a frame too large for the 16-bit length field', done => {
+        it('sends a frame too large for the 16-bit length field', (t, done) => {
             // 512x256 YUY2 is 256 KiB: 65546 words, past the 65535 a plain
             // request length can hold, so this takes the BIG-REQUESTS encoding
             const w = 512, h = 256;
@@ -318,7 +317,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('reports XvBadPort through the callback', done => {
+        it('reports XvBadPort through the callback', (t, done) => {
             xv.PutImage(0, pixmap, gc, YUY2, {
                 srcX: 0, srcY: 0, srcWidth: 2, srcHeight: 2,
                 drwX: 0, drwY: 0, drwWidth: 2, drwHeight: 2,
@@ -332,7 +331,7 @@ describe('xserver: XVideo image path', function() {
     });
 
     describe('ShmPutImage', () => {
-        it('draws from a segment at an offset and carries send_event', done => {
+        it('draws from a segment at an offset and carries send_event', (t, done) => {
             const shmseg = 0xbeef;
             xv.QueryImageAttributes(port, YUY2, 4, 4, (err, plane) => {
                 assert.ifError(err);
@@ -360,7 +359,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('reports XvBadPort through the callback', done => {
+        it('reports XvBadPort through the callback', (t, done) => {
             xv.ShmPutImage(0, pixmap, gc, 0xbeef, YUY2, {
                 srcX: 0, srcY: 0, srcWidth: 2, srcHeight: 2,
                 drwX: 0, drwY: 0, drwWidth: 2, drwHeight: 2,
@@ -374,7 +373,7 @@ describe('xserver: XVideo image path', function() {
     });
 
     describe('event selection', () => {
-        it('SelectVideoNotify delivers XvVideoNotify for a drawable', done => {
+        it('SelectVideoNotify delivers XvVideoNotify for a drawable', (t, done) => {
             X.on('event', ev => {
                 if (ev.name !== 'XvVideoNotify')
                     return;
@@ -399,7 +398,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('StopVideo ends the stream and reports it as XvVideoNotify Stopped', done => {
+        it('StopVideo ends the stream and reports it as XvVideoNotify Stopped', (t, done) => {
             const seen = [];
             X.on('event', ev => {
                 if (ev.name !== 'XvVideoNotify')
@@ -441,7 +440,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('raises XvBadPort for StopVideo on a bogus port', done => {
+        it('raises XvBadPort for StopVideo on a bogus port', (t, done) => {
             xv.StopVideo(0, pixmap, err => {
                 assert.strictEqual(err.error, xv.errors.BadPort);
                 done();
@@ -449,7 +448,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('SelectPortNotify delivers XvPortNotify when an attribute changes', done => {
+        it('SelectPortNotify delivers XvPortNotify when an attribute changes', (t, done) => {
             X.InternAtom(false, 'XV_BRIGHTNESS', (err, atom) => {
                 assert.ifError(err);
                 X.on('event', ev => {
@@ -468,7 +467,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('stops delivering once deselected', done => {
+        it('stops delivering once deselected', (t, done) => {
             X.InternAtom(false, 'XV_CONTRAST', (err, atom) => {
                 assert.ifError(err);
                 let events = 0;
@@ -495,7 +494,7 @@ describe('xserver: XVideo image path', function() {
             });
         });
 
-        it('raises XvBadPort for SelectPortNotify on a bogus port', done => {
+        it('raises XvBadPort for SelectPortNotify on a bogus port', (t, done) => {
             xv.SelectPortNotify(0, true, err => {
                 assert.strictEqual(err.error, xv.errors.BadPort);
                 done();
@@ -504,7 +503,7 @@ describe('xserver: XVideo image path', function() {
         });
     });
 
-    it('grabs and ungrabs a port, and answers QueryBestSize', done => {
+    it('grabs and ungrabs a port, and answers QueryBestSize', (t, done) => {
         xv.GrabPort(port, 0, (err, status) => {
             assert.ifError(err);
             assert.strictEqual(status, xv.GrabPortStatus.Success);

@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const { boot, sync } = require('./boot');
 
@@ -5,7 +6,7 @@ describe('xserver: fonts, cursors and misc requests', () => {
 
     let server, display, X, root;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             ({ server, display, X } = ctx);
@@ -19,7 +20,7 @@ describe('xserver: fonts, cursors and misc requests', () => {
         server = display = X = null;
     });
 
-    it('OpenFont/QueryFont serve the built-in 8x8 metrics', done => {
+    it('OpenFont/QueryFont serve the built-in 8x8 metrics', (t, done) => {
         const fid = X.AllocID();
         X.OpenFont(fid, 'whatever-name-6x13');
         X.QueryFont(fid, (err, font) => {
@@ -39,7 +40,7 @@ describe('xserver: fonts, cursors and misc requests', () => {
         });
     });
 
-    it('QueryTextExtents measures with the fixed cell size', done => {
+    it('QueryTextExtents measures with the fixed cell size', (t, done) => {
         const fid = X.AllocID();
         X.OpenFont(fid, 'fixed');
         X.QueryTextExtents(fid, 'hello', (err, ext) => {
@@ -52,7 +53,7 @@ describe('xserver: fonts, cursors and misc requests', () => {
         });
     });
 
-    it('CloseFont invalidates the font id', done => {
+    it('CloseFont invalidates the font id', (t, done) => {
         const fid = X.AllocID();
         X.OpenFont(fid, 'fixed');
         X.CloseFont(fid);
@@ -64,7 +65,7 @@ describe('xserver: fonts, cursors and misc requests', () => {
         });
     });
 
-    it('ListFonts and ListFontsWithInfo advertise "fixed"', done => {
+    it('ListFonts and ListFontsWithInfo advertise "fixed"', (t, done) => {
         X.ListFonts('*', 10, (err, names) => {
             if (err) return done(err);
             assert.deepStrictEqual(names, ['fixed']);
@@ -79,7 +80,7 @@ describe('xserver: fonts, cursors and misc requests', () => {
         });
     });
 
-    it('GetFontPath/SetFontPath are accepted', done => {
+    it('GetFontPath/SetFontPath are accepted', (t, done) => {
         X.SetFontPath(['/nonexistent']);
         X.GetFontPath((err, paths) => {
             if (err) return done(err);
@@ -88,7 +89,7 @@ describe('xserver: fonts, cursors and misc requests', () => {
         });
     });
 
-    it('cursors: create/recolor/free are tracked', done => {
+    it('cursors: create/recolor/free are tracked', (t, done) => {
         const cid = X.AllocID();
         X.CreateGlyphCursor(cid, 1, 1, 68, 69,
             { R: 0, G: 0, B: 0 }, { R: 0xffff, G: 0xffff, B: 0xffff });
@@ -109,7 +110,7 @@ describe('xserver: fonts, cursors and misc requests', () => {
         });
     });
 
-    it('QueryBestSize echoes a usable size', done => {
+    it('QueryBestSize echoes a usable size', (t, done) => {
         X.QueryBestSize(0, root, 16, 16, (err, size) => {
             if (err) return done(err);
             assert.strictEqual(size.width, 16);
@@ -118,7 +119,7 @@ describe('xserver: fonts, cursors and misc requests', () => {
         });
     });
 
-    it('ListExtensions includes the built-ins', done => {
+    it('ListExtensions includes the built-ins', (t, done) => {
         X.ListExtensions((err, names) => {
             if (err) return done(err);
             assert.ok(names.includes('BIG-REQUESTS'));
@@ -127,7 +128,7 @@ describe('xserver: fonts, cursors and misc requests', () => {
         });
     });
 
-    it('registerExtension exposes custom extensions through QueryExtension', done => {
+    it('registerExtension exposes custom extensions through QueryExtension', (t, done) => {
         const seen = [];
         server.registerExtension('TEST-EXT', {
             eventsCount: 0,
@@ -158,7 +159,7 @@ describe('xserver: fonts, cursors and misc requests', () => {
         });
     });
 
-    it('screen saver control round-trips through the stub', done => {
+    it('screen saver control round-trips through the stub', (t, done) => {
         X.GetScreenSaver((err, ss) => {
             if (err) return done(err);
             assert.strictEqual(ss.timeout, 600);
@@ -175,7 +176,7 @@ describe('xserver: fonts, cursors and misc requests', () => {
         });
     });
 
-    it('host/access-control requests are accepted; ListHosts is empty', done => {
+    it('host/access-control requests are accepted; ListHosts is empty', (t, done) => {
         X.ChangeHosts(0, 0, [127, 0, 0, 1]);
         X.SetAccessControl(0);
         X.SetCloseDownMode(0);
@@ -190,7 +191,7 @@ describe('xserver: fonts, cursors and misc requests', () => {
         });
     });
 
-    it('CreateCursor from a depth-1 pixmap pair', done => {
+    it('CreateCursor from a depth-1 pixmap pair', (t, done) => {
         const src = X.AllocID();
         X.CreatePixmap(src, root, 1, 16, 16);
         const cid = X.AllocID();

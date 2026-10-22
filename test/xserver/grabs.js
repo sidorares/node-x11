@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const x11 = require('../../lib');
 const { createServer } = require('../../lib/xserver');
@@ -9,7 +10,7 @@ describe('xserver: grabs', () => {
 
     let server, A, B, root, winA, winB;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         server = createServer();
         boot({ server }, (err, ctxA) => {
             if (err) return done(err);
@@ -37,7 +38,7 @@ describe('xserver: grabs', () => {
         server = A = B = null;
     });
 
-    it('GrabPointer succeeds; a second client gets AlreadyGrabbed', done => {
+    it('GrabPointer succeeds; a second client gets AlreadyGrabbed', (t, done) => {
         A.GrabPointer(winA, 0, em.PointerMotion, 1, 1, 0, 0, 0, (err, status) => {
             if (err) return done(err);
             assert.strictEqual(status, 0); // Success
@@ -49,7 +50,7 @@ describe('xserver: grabs', () => {
         });
     });
 
-    it('active pointer grab redirects events to the grab window/client', done => {
+    it('active pointer grab redirects events to the grab window/client', (t, done) => {
         A.GrabPointer(winA, 0, em.PointerMotion, 1, 1, 0, 0, 0, (err, status) => {
             if (err) return done(err);
             assert.strictEqual(status, 0);
@@ -74,7 +75,7 @@ describe('xserver: grabs', () => {
         });
     });
 
-    it('UngrabPointer restores normal delivery', done => {
+    it('UngrabPointer restores normal delivery', (t, done) => {
         A.GrabPointer(winA, 0, em.PointerMotion, 1, 1, 0, 0, 0, (err, status) => {
             if (err) return done(err);
             assert.strictEqual(status, 0);
@@ -91,7 +92,7 @@ describe('xserver: grabs', () => {
         });
     });
 
-    it('GrabButton triggers an implicit active grab on a matching press', done => {
+    it('GrabButton triggers an implicit active grab on a matching press', (t, done) => {
         // B grabs button 1 (any modifier) on winA - presses over winA go to B
         B.GrabButton(winA, 0, em.ButtonPress | em.ButtonRelease, 1, 1, 0, 0, 1, 0x8000);
         sync(B, () => {
@@ -123,7 +124,7 @@ describe('xserver: grabs', () => {
         });
     });
 
-    it('implicit grab keeps ButtonRelease with the pressing window', done => {
+    it('implicit grab keeps ButtonRelease with the pressing window', (t, done) => {
         server.injectPointerMove(25, 25); // over winA
         A.on('event', ev => {
             if (ev.name === 'ButtonPress') {
@@ -138,7 +139,7 @@ describe('xserver: grabs', () => {
         server.injectButton(1, true);
     });
 
-    it('GrabKeyboard routes key events to the grabbing client', done => {
+    it('GrabKeyboard routes key events to the grabbing client', (t, done) => {
         server.injectPointerMove(110, 10); // over winB (B selects KeyPress)
         A.GrabKeyboard(winA, 0, 0, 1, 1, (err, status) => {
             if (err) return done(err);
@@ -164,7 +165,7 @@ describe('xserver: grabs', () => {
         });
     });
 
-    it('GrabKeyboard marshals time and the modes at their protocol offsets', done => {
+    it('GrabKeyboard marshals time and the modes at their protocol offsets', (t, done) => {
         // Regression: the modes used to be written at bytes 10/11 — inside the
         // time field — so a real server saw a garbage timestamp and both modes
         // as Synchronous. Distinct values on every field catch any reshuffle.
@@ -179,7 +180,7 @@ describe('xserver: grabs', () => {
         });
     });
 
-    it('GrabKey activates a keyboard grab for the matching key only', done => {
+    it('GrabKey activates a keyboard grab for the matching key only', (t, done) => {
         // A passively grabs key 38 on the root (ancestor of every window)
         A.GrabKey(root, 0, 0x8000, 38, 1, 1);
         sync(A, () => {
@@ -210,7 +211,7 @@ describe('xserver: grabs', () => {
         });
     });
 
-    it('ChangeActivePointerGrab updates the grab event mask', done => {
+    it('ChangeActivePointerGrab updates the grab event mask', (t, done) => {
         A.GrabPointer(winA, 0, 0, 1, 1, 0, 0, 0, (err, status) => {
             if (err) return done(err);
             assert.strictEqual(status, 0);

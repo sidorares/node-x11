@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -11,7 +12,7 @@ describe('CreateWindow request', () => {
 
   let display;
   let X;
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (!err) {
               display = dpy;
@@ -23,20 +24,20 @@ describe('CreateWindow request', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.terminate();
       X.on('end', done);
       X = null;
       display = null;
   });
 
-  it('should exist as client member', done => {
+  it('should exist as client member', (t, done) => {
       should.exist(X.CreateWindow);
       assert.equal(typeof X.CreateWindow, 'function');
       done();
   });
 
-  it('result should present in windows tree', done => {
+  it('result should present in windows tree', (t, done) => {
       const wid = X.AllocID();
       X.CreateWindow(wid, display.screen[0].root, 0, 0, 1, 1); // 1x1 pixel window
       X.QueryTree(display.screen[0].root, (err, list) => {
@@ -48,7 +49,7 @@ describe('CreateWindow request', () => {
       });
   });
 
-  it('should work with any kind of attributes too', done => {
+  it('should work with any kind of attributes too', (t, done) => {
       const wid = X.AllocID();
       X.CreateWindow(wid, display.screen[0].root, 0, 0, 1, 1, 0, 0, 0, 0, { overrideRedirect : true }); // 1x1 pixel window
       X.QueryTree(display.screen[0].root, (err, list) => {
@@ -58,7 +59,7 @@ describe('CreateWindow request', () => {
       });
   });
 
-  it('should emit CreateNotify event when', done => {
+  it('should emit CreateNotify event when', (t, done) => {
       const wid = X.AllocID();
       const root = display.screen[0].root;
       X.ChangeWindowAttributes(root, { eventMask: x11.eventMask.SubstructureNotify });

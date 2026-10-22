@@ -3,6 +3,7 @@
 // back into the extension's handleRequest - no X server, no sockets. The
 // fake `client` object implements the sendReply/sendError contract
 // documented in browser/glx/glx-extension.js.
+const { describe, it, beforeEach } = require('node:test');
 const assert = require('assert');
 const glxClient = require('../../lib/ext/glx');
 const { createGlxExtension, RecordingBackend } = require('../../browser/glx');
@@ -102,7 +103,7 @@ function createRig(done) {
 describe('glx-emu GLX extension (loopback with the real client)', () => {
     let rig, GLX;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         createRig(r => {
             rig = r;
             GLX = r.GLX;
@@ -110,7 +111,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('answers QueryVersion with 1.4', done => {
+    it('answers QueryVersion with 1.4', (t, done) => {
         GLX.QueryVersion(1, 4, (err, version) => {
             assert.ifError(err);
             assert.deepStrictEqual(version, [1, 4]);
@@ -118,7 +119,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('answers the GLX string queries', done => {
+    it('answers the GLX string queries', (t, done) => {
         GLX.QueryExtensionsString(0, (err, extensions) => {
             assert.ifError(err);
             assert.ok(extensions.includes('GLX_SGIX_pbuffer'));
@@ -135,7 +136,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('advertises a visual config the opengl examples accept', done => {
+    it('advertises a visual config the opengl examples accept', (t, done) => {
         GLX.GetVisualConfigs(0, (err, configs) => {
             assert.ifError(err);
             assert.strictEqual(configs.length, 1);
@@ -149,7 +150,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('advertises an fbconfig the pbuffer example accepts', done => {
+    it('advertises an fbconfig the pbuffer example accepts', (t, done) => {
         GLX.GetFBConfigs(0, (err, configs) => {
             assert.ifError(err);
             assert.strictEqual(configs.length, 1);
@@ -164,7 +165,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('CreateContext + MakeCurrent yields a context tag and sizes the backend', done => {
+    it('CreateContext + MakeCurrent yields a context tag and sizes the backend', (t, done) => {
         rig.addSurface(0x600001, 400, 300);
         GLX.CreateContext(0x300001, VISUAL_ID, 0, 0, 0);
         GLX.MakeCurrent(0x600001, 0x300001, 0, (err, tag) => {
@@ -179,7 +180,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('MakeCurrent on an unknown context fails with GLXBadContext', done => {
+    it('MakeCurrent on an unknown context fails with GLXBadContext', (t, done) => {
         GLX.MakeCurrent(0x600001, 0xdead, 0, err => {
             assert.ok(err);
             assert.strictEqual(err.message, 'GLXBadContext');
@@ -187,7 +188,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('renders through the pipeline into the backend and swaps', done => {
+    it('renders through the pipeline into the backend and swaps', (t, done) => {
         rig.addSurface(0x600001, 8, 4);
         GLX.CreateContext(0x300001, VISUAL_ID, 0, 0, 0);
         GLX.MakeCurrent(0x600001, 0x300001, 0, (err, tag) => {
@@ -221,7 +222,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('Render with a bogus context tag raises GLXBadContextTag', done => {
+    it('Render with a bogus context tag raises GLXBadContextTag', (t, done) => {
         const gl = GLX.renderPipeline(12345);
         gl.Begin(gl.TRIANGLES);
         gl.End();
@@ -232,7 +233,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         done();
     });
 
-    it('runs the glxgears display-list setup end to end', done => {
+    it('runs the glxgears display-list setup end to end', (t, done) => {
         rig.addSurface(0x600001, 500, 500);
         GLX.CreateContext(0x300001, VISUAL_ID, 0, 0, 0);
         GLX.MakeCurrent(0x600001, 0x300001, 0, (err, tag) => {
@@ -268,7 +269,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('GenTextures / IsTexture / DeleteTextures bookkeeping', done => {
+    it('GenTextures / IsTexture / DeleteTextures bookkeeping', (t, done) => {
         rig.addSurface(0x600001, 16, 16);
         GLX.CreateContext(0x300001, VISUAL_ID, 0, 0, 0);
         GLX.MakeCurrent(0x600001, 0x300001, 0, (err, tag) => {
@@ -292,7 +293,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('answers the Get* state queries', done => {
+    it('answers the Get* state queries', (t, done) => {
         const MAX_LIGHTS = 0x0D31;
         const MAX_VIEWPORT_DIMS = 0x0D3A;
         GLX.GetIntegerv(0, MAX_LIGHTS, (err, maxLights) => {
@@ -318,7 +319,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('GetString returns a non-empty GL version (GL-capable context marker)', done => {
+    it('GetString returns a non-empty GL version (GL-capable context marker)', (t, done) => {
         GLX.GetString(0, GLX.VERSION, (err, version) => {
             assert.ifError(err);
             assert.ok(version.length > 0);
@@ -330,7 +331,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('Finish, GetError and RenderMode reply', done => {
+    it('Finish, GetError and RenderMode reply', (t, done) => {
         GLX.Finish(0, err => {
             assert.ifError(err);
             assert.ok(rig.backend.calls.some(c => c[0] === 'finish'));
@@ -348,7 +349,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('runs the pbuffer-interop flow: pbuffer, MakeContextCurrent, ReadPixels', done => {
+    it('runs the pbuffer-interop flow: pbuffer, MakeContextCurrent, ReadPixels', (t, done) => {
         GLX.GetFBConfigs(0, (err, configs) => {
             assert.ifError(err);
             const cfg = configs[0];
@@ -372,7 +373,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('honors PACK_ALIGNMENT for RGB ReadPixels row padding', done => {
+    it('honors PACK_ALIGNMENT for RGB ReadPixels row padding', (t, done) => {
         GLX.CreateContext(0x300001, VISUAL_ID, 0, 0, 0);
         GLX.MakeCurrent(0x600001, 0x300001, 0, (err, tag) => {
             assert.ifError(err);
@@ -388,7 +389,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('QueryContext and GetDrawableAttributes reply with attributes', done => {
+    it('QueryContext and GetDrawableAttributes reply with attributes', (t, done) => {
         rig.addSurface(0x600001, 320, 200);
         GLX.CreateContext(0x300001, VISUAL_ID, 0, 0, 0);
         GLX.QueryContext(0x300001, (err, attribs) => {
@@ -404,7 +405,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('GLX windows resolve to their underlying X drawable surface', done => {
+    it('GLX windows resolve to their underlying X drawable surface', (t, done) => {
         rig.addSurface(0x600001, 32, 16);
         GLX.CreateWindow(0, 1, 0x600001, 0x800001, []);
         GLX.CreateContext(0x300001, VISUAL_ID, 0, 0, 0);
@@ -418,7 +419,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('handles the SGI/SGIX vendor-private requests', done => {
+    it('handles the SGI/SGIX vendor-private requests', (t, done) => {
         rig.addSurface(0x600001, 10, 10);
         GLX.CreateContextWithConfigSGIX(0x300001, 1, 0, GLX.glxAttrib.RGBA_TYPE, 0, 0);
         GLX.MakeCurrentReadSGI(0, 0x600001, 0x600001, 0x300001, (err, tag) => {
@@ -439,7 +440,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('rejects unknown vendor-private-with-reply requests', done => {
+    it('rejects unknown vendor-private-with-reply requests', (t, done) => {
         GLX.VendorPrivateWithReply(0, 987654, Buffer.alloc(4), err => {
             assert.ok(err);
             assert.strictEqual(err.message, 'GLXUnsupportedPrivateRequest');
@@ -447,7 +448,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('accepts ClientInfo / SetClientInfoARB / SetClientInfo2ARB and WaitGL/WaitX', done => {
+    it('accepts ClientInfo / SetClientInfoARB / SetClientInfo2ARB and WaitGL/WaitX', (t, done) => {
         GLX.ClientInfo(1, 4, 'GL_ARB_whatever');
         GLX.SetClientInfoARB(1, 4, [[1, 4]], 'GL_ARB_whatever', 'GLX_ARB_create_context');
         GLX.SetClientInfo2ARB(1, 4, [[1, 4, 1]], '', '');
@@ -461,7 +462,7 @@ describe('glx-emu GLX extension (loopback with the real client)', () => {
         });
     });
 
-    it('survives a malformed request body without crashing', done => {
+    it('survives a malformed request body without crashing', (t, done) => {
         // truncated body for a request that reads offsets beyond it
         rig.ext.handleRequest({
             sendReply() {},

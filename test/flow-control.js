@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const assert = require('assert');
 
@@ -6,7 +7,7 @@ describe('flow control', () => {
   let display;
   let X;
   let root;
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (err) return done(err);
           display = dpy;
@@ -18,21 +19,21 @@ describe('flow control', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.on('end', done);
       X.terminate();
   });
 
   describe('void request callbacks (#85)', () => {
 
-    it('invokes the callback with null once the request succeeded', done => {
+    it('invokes the callback with null once the request succeeded', (t, done) => {
         X.ChangeWindowAttributes(root, { eventMask: 0 }, err => {
             assert.strictEqual(err, null);
             done();
         });
     });
 
-    it('routes the error to the callback of the failing request', done => {
+    it('routes the error to the callback of the failing request', (t, done) => {
         X.ChangeWindowAttributes(0, { eventMask: 0 }, err => {
             assert.ok(err instanceof Error);
             assert.strictEqual(err.error, 3); // BadWindow
@@ -41,7 +42,7 @@ describe('flow control', () => {
         });
     });
 
-    it('invokes the callback exactly once', done => {
+    it('invokes the callback exactly once', (t, done) => {
         let calls = 0;
         X.ChangeWindowAttributes(root, { eventMask: 0 }, err => {
             assert.strictEqual(err, null);
@@ -56,7 +57,7 @@ describe('flow control', () => {
         });
     });
 
-    it('reports BadAccess when another client owns SubstructureRedirect', done => {
+    it('reports BadAccess when another client owns SubstructureRedirect', (t, done) => {
         // the issue #85 scenario: register as window manager, then find out
         const wmMask = x11.eventMask.SubstructureRedirect;
         X.ChangeWindowAttributes(root, { eventMask: wmMask }, err => {
@@ -78,7 +79,7 @@ describe('flow control', () => {
 
   describe('sync()', () => {
 
-    it('completes after all previous requests were processed', done => {
+    it('completes after all previous requests were processed', (t, done) => {
         let sweeps = 0;
         X.ChangeWindowAttributes(root, { eventMask: 0 }, () => { sweeps++; });
         X.ChangeWindowAttributes(root, { eventMask: 0 }, () => { sweeps++; });
@@ -94,12 +95,12 @@ describe('flow control', () => {
 
   describe('flush()', () => {
 
-    it('fires once buffered requests were handed to the OS', done => {
+    it('fires once buffered requests were handed to the OS', (t, done) => {
         X.ChangeWindowAttributes(root, { eventMask: 0 });
         X.flush(done);
     });
 
-    it('fires with an empty write queue too', done => {
+    it('fires with an empty write queue too', (t, done) => {
         X.flush(done);
     });
 
@@ -108,8 +109,7 @@ describe('flow control', () => {
 
   describe('backpressure (#195)', () => {
 
-    it('requests return false when the socket backs up, then drain fires', function(done) {
-        this.timeout(30000);
+    it('requests return false when the socket backs up, then drain fires', { timeout: 30000 }, function(t, done) {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, 1, 1);
         const chunk = Buffer.alloc(0xfff0, 0xab);
@@ -139,8 +139,7 @@ describe('flow control', () => {
 
   describe('sequence number widening', () => {
 
-    it('matches an error to its callback past the 16-bit wire wrap', function(done) {
-        this.timeout(60000);
+    it('matches an error to its callback past the 16-bit wire wrap', { timeout: 60000 }, function(t, done) {
         for (let i = 0; i < 66000; i++)
             X.ChangeWindowAttributes(root, { eventMask: 0 });
         let voidErr = null;
@@ -163,8 +162,7 @@ describe('flow control', () => {
     // nothing coming back in between, and the next reply was widened to the
     // wrong sequence number: its callback never ran. A frame of a few
     // hundred thousand RENDER composites is enough to do it.
-    it('keeps a reply after 66000 extension requests on its callback', function(done) {
-        this.timeout(20000);
+    it('keeps a reply after 66000 extension requests on its callback', { timeout: 20000 }, function(t, done) {
         X.require('render', (err, Render) => {
             if (err)
                 return done(err);

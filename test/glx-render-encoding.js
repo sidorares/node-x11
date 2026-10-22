@@ -5,6 +5,7 @@
 // pname, and a real X server answers BadLength on the whole GLX request when
 // the command does not match (glLightfv(GL_SPOT_CUTOFF) carries one float,
 // not four). That made spot lights and light attenuation unusable.
+const { describe, it } = require('node:test');
 const should = require('should');
 const renderPipeline = require('../lib/ext/glxrender');
 

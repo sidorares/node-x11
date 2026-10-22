@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -10,7 +11,7 @@ describe('Colormap requests', () => {
   let defaultCmap;
   let writableVid; // visual with writable colormap (GrayScale/PseudoColor/DirectColor)
 
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (err)
               return done(err);
@@ -32,7 +33,7 @@ describe('Colormap requests', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.terminate();
       X.on('end', done);
       X = null;
@@ -46,7 +47,7 @@ describe('Colormap requests', () => {
       return cmap;
   }
 
-  it('LookupColor should resolve named color "red"', done => {
+  it('LookupColor should resolve named color "red"', (t, done) => {
       X.LookupColor(defaultCmap, 'red', (err, color) => {
           should.not.exist(err);
           color.exactRed.should.equal(0xffff);
@@ -56,7 +57,7 @@ describe('Colormap requests', () => {
       });
   });
 
-  it('AllocColor should return closest rgb and a queryable pixel', done => {
+  it('AllocColor should return closest rgb and a queryable pixel', (t, done) => {
       X.AllocColor(defaultCmap, 0xffff, 0x8080, 0, (err, color) => {
           should.not.exist(err);
           color.red.should.equal(0xffff);
@@ -72,7 +73,7 @@ describe('Colormap requests', () => {
       });
   });
 
-  it('AllocNamedColor should allocate named color "blue"', done => {
+  it('AllocNamedColor should allocate named color "blue"', (t, done) => {
       X.AllocNamedColor(defaultCmap, 'blue', (err, color) => {
           should.not.exist(err);
           color.exactBlue.should.equal(0xffff);
@@ -87,7 +88,7 @@ describe('Colormap requests', () => {
       });
   });
 
-  it('QueryColors should report white and black pixels', done => {
+  it('QueryColors should report white and black pixels', (t, done) => {
       const white = display.screen[0].white_pixel;
       const black = display.screen[0].black_pixel;
       X.QueryColors(defaultCmap, [white, black], (err, colors) => {
@@ -103,7 +104,7 @@ describe('Colormap requests', () => {
       });
   });
 
-  it('ListInstalledColormaps should include the default colormap', done => {
+  it('ListInstalledColormaps should include the default colormap', (t, done) => {
       X.ListInstalledColormaps(root, (err, cmaps) => {
           should.not.exist(err);
           cmaps.should.containEql(defaultCmap);
@@ -111,9 +112,11 @@ describe('Colormap requests', () => {
       });
   });
 
-  it('InstallColormap/UninstallColormap should toggle installed list', function(done) {
-      if (!writableVid)
-          return this.skip();
+  it('InstallColormap/UninstallColormap should toggle installed list', function(t, done) {
+      if (!writableVid) {
+          t.skip();
+          return done();
+      }
       const cmap = createWritableCmap();
       X.InstallColormap(cmap);
       X.ListInstalledColormaps(root, (err, cmaps) => {
@@ -129,9 +132,11 @@ describe('Colormap requests', () => {
       });
   });
 
-  it('AllocColorCells + StoreColors should store readable values', function(done) {
-      if (!writableVid)
-          return this.skip();
+  it('AllocColorCells + StoreColors should store readable values', function(t, done) {
+      if (!writableVid) {
+          t.skip();
+          return done();
+      }
       const cmap = createWritableCmap();
       X.AllocColorCells(0, cmap, 1, 0, (err, cells) => {
           should.not.exist(err);
@@ -150,9 +155,11 @@ describe('Colormap requests', () => {
       });
   });
 
-  it('StoreNamedColor should store rgb of named color', function(done) {
-      if (!writableVid)
-          return this.skip();
+  it('StoreNamedColor should store rgb of named color', function(t, done) {
+      if (!writableVid) {
+          t.skip();
+          return done();
+      }
       const cmap = createWritableCmap();
       X.AllocColorCells(0, cmap, 1, 0, (err, cells) => {
           should.not.exist(err);
@@ -169,9 +176,11 @@ describe('Colormap requests', () => {
       });
   });
 
-  it('AllocColorPlanes should return pixels and masks', function(done) {
-      if (!writableVid)
-          return this.skip();
+  it('AllocColorPlanes should return pixels and masks', function(t, done) {
+      if (!writableVid) {
+          t.skip();
+          return done();
+      }
       const cmap = createWritableCmap();
       X.AllocColorPlanes(0, cmap, 1, 1, 1, 1, (err, res) => {
           should.not.exist(err);
@@ -184,9 +193,11 @@ describe('Colormap requests', () => {
       });
   });
 
-  it('CopyColormapAndFree should move allocations to new colormap', function(done) {
-      if (!writableVid)
-          return this.skip();
+  it('CopyColormapAndFree should move allocations to new colormap', function(t, done) {
+      if (!writableVid) {
+          t.skip();
+          return done();
+      }
       const cmap = createWritableCmap();
       X.AllocColorCells(0, cmap, 1, 0, (err, cells) => {
           should.not.exist(err);

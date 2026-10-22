@@ -1,7 +1,7 @@
 // The Bun transport (lib/fdpass-bun.js), end to end over a real unix socket.
 //
 // Run with `npm run test:bun` (= `bun test test/bun`). Nothing here runs under
-// Node — mocha and test-runner.js never look into test subdirectories — and
+// Node — test-runner.js never looks into test subdirectories — and
 // that is the point: this is the half of the library Node cannot reach.
 //
 // The peer side is built here with its own hand-rolled sendmsg/recvmsg through

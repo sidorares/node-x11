@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const { boot } = require('./boot');
 
@@ -5,7 +6,7 @@ describe('xserver: errors and framing', () => {
 
     let server, display, X, root;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             ({ server, display, X } = ctx);
@@ -19,7 +20,7 @@ describe('xserver: errors and framing', () => {
         server = display = X = null;
     });
 
-    it('BadWindow carries the bad id, opcode and sequence number', done => {
+    it('BadWindow carries the bad id, opcode and sequence number', (t, done) => {
         X.MapWindow(0xbadf00d);
         const seq = X.seq_num;
         X.once('error', err => {
@@ -32,7 +33,7 @@ describe('xserver: errors and framing', () => {
         });
     });
 
-    it('BadDrawable/BadGC/BadAtom from the matching requests', done => {
+    it('BadDrawable/BadGC/BadAtom from the matching requests', (t, done) => {
         X.GetGeometry(0x123456, err => {
             assert.strictEqual(err.error, 9);              // BadDrawable
             X.ChangeGC(0x123457, { foreground: 1 });
@@ -49,7 +50,7 @@ describe('xserver: errors and framing', () => {
         });
     });
 
-    it('BadIDChoice when creating a resource outside the client range', done => {
+    it('BadIDChoice when creating a resource outside the client range', (t, done) => {
         X.CreateWindow(5, root, 0, 0, 10, 10);
         X.once('error', err => {
             assert.strictEqual(err.error, 14);
@@ -58,7 +59,7 @@ describe('xserver: errors and framing', () => {
         });
     });
 
-    it('BadValue on zero-sized CreateWindow', done => {
+    it('BadValue on zero-sized CreateWindow', (t, done) => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, 0, 10);
         X.once('error', err => {
@@ -68,7 +69,7 @@ describe('xserver: errors and framing', () => {
         });
     });
 
-    it('unknown opcode yields BadImplementation without desyncing', done => {
+    it('unknown opcode yields BadImplementation without desyncing', (t, done) => {
         // raw request with an unassigned core opcode
         X.seq_num++;
         const raw = Buffer.alloc(4);
@@ -88,7 +89,7 @@ describe('xserver: errors and framing', () => {
         });
     });
 
-    it('unknown-length garbage requests are consumed whole', done => {
+    it('unknown-length garbage requests are consumed whole', (t, done) => {
         // unassigned opcode with a 5-word body: server must consume it all
         X.seq_num++;
         const raw = Buffer.alloc(20);
@@ -107,7 +108,7 @@ describe('xserver: errors and framing', () => {
         });
     });
 
-    it('QueryExtension for an unknown extension reports absent', done => {
+    it('QueryExtension for an unknown extension reports absent', (t, done) => {
         X.QueryExtension('NO-SUCH-EXTENSION', (err, ext) => {
             if (err) return done(err);
             assert.strictEqual(ext.present, 0);

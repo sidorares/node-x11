@@ -237,7 +237,7 @@ serve it; browser presentation maps `KeyboardEvent.code` to X keycodes.
 
 ## Testing
 
-`test/xserver/*.js` (mocha, `npm run test:xserver`): each suite boots a
+`test/xserver/*.js` (`node:test`, `npm run test:xserver`): each suite boots a
 server + client over a stream pair — no real X server, no DISPLAY needed.
 The existing client is the reference driver: handshake fields, window
 lifecycle + events, properties/atoms, GetImage pixel verification of drawing
