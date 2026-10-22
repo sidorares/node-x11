@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.3.2](https://github.com/sidorares/node-x11/compare/v4.3.1...v4.3.2) (2026-10-22)
+
+
+### Bug Fixes
+
+* a unix socket whose listen queue is full is waited on, as a blocking connect would ([#310](https://github.com/sidorares/node-x11/issues/310)) ([104b156](https://github.com/sidorares/node-x11/commit/104b156f4f6c19352f5cc08e9c90d92c43c62c23))
+
 ## [4.3.1](https://github.com/sidorares/node-x11/compare/v4.3.0...v4.3.1) (2026-10-07)
 
 
