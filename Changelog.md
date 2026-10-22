@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.3.3](https://github.com/sidorares/node-x11/compare/v4.3.2...v4.3.3) (2026-10-22)
+
+
+### Bug Fixes
+
+* the npm package carries lib/, browser/ and docs/ only, 1.4 MB unpacked instead of 4.3 MB ([#313](https://github.com/sidorares/node-x11/issues/313)) ([734869e](https://github.com/sidorares/node-x11/commit/734869ed0213e8189583f302d721c3a1ed37a948))
+
 ## [4.3.2](https://github.com/sidorares/node-x11/compare/v4.3.1...v4.3.2) (2026-10-22)
 
 
