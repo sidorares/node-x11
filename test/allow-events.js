@@ -1,7 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 // This test was ported from X Test Suite @ http://cgit.freedesktop.org/xorg/test/xts/
 
@@ -56,7 +55,7 @@ describe('AllowEvents', () => {
 
     before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             screen = dpy.screen[0];
             root = screen.root;
@@ -89,12 +88,12 @@ describe('AllowEvents', () => {
         );
 
         is_pointer_frozen(X, wid, (err, frozen) => {
-            should.not.exist(err);
-            frozen.should.equal(true);
+            assert.ifError(err);
+            assert.strictEqual(frozen, true);
             X.AllowEvents(0, 0);
             is_pointer_frozen(X, wid, (err, frozen) => {
-                should.not.exist(err);
-                frozen.should.equal(false);
+                assert.ifError(err);
+                assert.strictEqual(frozen, false);
                 done();
             });
         });

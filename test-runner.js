@@ -3,9 +3,6 @@ const { run } = require('node:test');
 const { spec } = require('node:test/reporters');
 const fs = require('fs');
 const path = require('path');
-const async = require('async');
-
-const files = [];
 
 // Extension-specific test files are only added when the server advertises the
 // extension (checked with QueryExtension by on-the-wire name).
@@ -86,47 +83,39 @@ x11.createClient((err, display) => {
     // Add all files from test root directory. Subdirectories (test/xserver,
     // test/glx-emu) hold suites that need no real X server and run separately
     // via `npm run test:xserver` / `npm run test:glx-emu`.
-    async.forEach(
-        fs.readdirSync('./test').filter(
-            f => f.endsWith('.js') && fs.statSync(path.join('./test', f)).isFile()),
-        (file, cb) => {
-            const addIf = wanted => {
-                if (wanted) {
-                    files.push(path.join('./test', file));
-                }
-
-                cb();
-            };
-
-            if (file === 'dpms.js') {
-                run_dpms_test(X, addIf);
-            } else if (file === 'randr.js') {
-                run_randr_test(X, addIf);
-            } else if (extensionTests[file]) {
-                X.QueryExtension(extensionTests[file], (err, ext) => {
-                    addIf(!err && ext.present);
-                });
-            } else {
-                addIf(true);
-            }
-        },
-        () => {
-            // One file at a time: they share the server, and several
-            // change global state (keyboard mapping, screen saver, grabs).
-            // Each file runs in its own process; forceExit ends it once its
-            // tests finish even if a socket is left open. The timeout is per
-            // test on Node 24+ and per file on 22.
-            const reporter = run({ files: files.sort(), concurrency: 1, timeout: 80000, forceExit: true })
-                .on('test:fail', () => { process.exitCode = 1; })
-                .compose(spec);
-            reporter.pipe(process.stdout);
-            // This connection stays open for the whole run. An X server
-            // resets when its last client disconnects, which would happen
-            // between files (or inside one that closes its only client and
-            // reconnects): the reset wipes server state and drops a
-            // connection that arrives in the middle of it.
-            X.on('error', () => {}); // a server dying mid-run is the tests' to report
-            reporter.on('end', () => X.terminate());
+    const candidates = fs.readdirSync('./test').filter(
+        f => f.endsWith('.js') && fs.statSync(path.join('./test', f)).isFile()).sort();
+    const wanted = file => new Promise(resolve => {
+        if (file === 'dpms.js') {
+            run_dpms_test(X, resolve);
+        } else if (file === 'randr.js') {
+            run_randr_test(X, resolve);
+        } else if (extensionTests[file]) {
+            X.QueryExtension(extensionTests[file], (err, ext) => {
+                resolve(!err && ext.present);
+            });
+        } else {
+            resolve(true);
         }
-    );
+    });
+
+    Promise.all(candidates.map(wanted)).then(flags => {
+        const files = candidates.filter((file, i) => flags[i]).map(file => path.join('./test', file));
+        // One file at a time: they share the server, and several change
+        // global state (keyboard mapping, screen saver, grabs). Each file
+        // runs in its own process; forceExit ends it once its tests finish
+        // even if a socket is left open. The timeout is per test on Node 24+
+        // and per file on 22.
+        const reporter = run({ files, concurrency: 1, timeout: 80000, forceExit: true })
+            .on('test:fail', () => { process.exitCode = 1; })
+            .compose(spec);
+        reporter.pipe(process.stdout);
+        // This connection stays open for the whole run. An X server resets
+        // when its last client disconnects, which would happen between files
+        // (or inside one that closes its only client and reconnects): the
+        // reset wipes server state and drops a connection that arrives in
+        // the middle of it.
+        X.on('error', () => {}); // a server dying mid-run is the tests' to report
+        reporter.on('end', () => X.terminate());
+    });
 });

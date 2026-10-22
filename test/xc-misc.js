@@ -1,6 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('XC-MISC extension', () => {
     let display;
@@ -14,7 +14,7 @@ describe('XC-MISC extension', () => {
             display = dpy;
             X = display.client;
             X.require('xc-misc', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 xcmisc = ext;
                 done();
             });
@@ -29,35 +29,35 @@ describe('XC-MISC extension', () => {
 
     it('GetVersion should return major 1, minor >= 1', (t, done) => {
         xcmisc.GetVersion(1, 1, (err, version) => {
-            should.not.exist(err);
-            version[0].should.equal(1);
-            version[1].should.be.aboveOrEqual(1);
+            assert.ifError(err);
+            assert.strictEqual(version[0], 1);
+            assert.ok(version[1] >= 1);
             done();
         });
     });
 
     it('auto GetVersion should have set ext.major/ext.minor', () => {
-        xcmisc.major.should.equal(1);
-        xcmisc.minor.should.be.aboveOrEqual(1);
+        assert.strictEqual(xcmisc.major, 1);
+        assert.ok(xcmisc.minor >= 1);
     });
 
     it('GetXIDRange should return a non-empty id range', (t, done) => {
         xcmisc.GetXIDRange((err, range) => {
-            should.not.exist(err);
-            range.startId.should.be.above(0);
-            range.count.should.be.above(0);
+            assert.ifError(err);
+            assert.ok(range.startId > 0);
+            assert.ok(range.count > 0);
             done();
         });
     });
 
     it('GetXIDList should return the requested number of ids', (t, done) => {
         xcmisc.GetXIDList(5, (err, ids) => {
-            should.not.exist(err);
-            ids.should.be.an.Array();
-            ids.should.have.length(5);
+            assert.ifError(err);
+            assert.ok(Array.isArray(ids));
+            assert.strictEqual(ids.length, 5);
             ids.forEach(id => {
-                id.should.be.a.Number();
-                id.should.be.above(0);
+                assert.strictEqual(typeof id, 'number');
+                assert.ok(id > 0);
             });
             done();
         });

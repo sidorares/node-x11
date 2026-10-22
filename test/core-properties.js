@@ -1,7 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
   // keep for a while: this snippet helps to track global leak
   global.__defineSetter__('valueName', v => {
@@ -43,7 +42,7 @@ describe('Window property', () => {
       X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 10000000, (err, prop) => {
           if (err) return done(err);
           const propvalget = prop.data.toString();
-          assert.equal(propvalset, propvalget, 'get property result different from set property value');
+          assert.strictEqual(propvalset, propvalget, 'get property result different from set property value');
           done();
       });
   });
@@ -85,10 +84,10 @@ describe('Window property', () => {
       X.on('event', ev => {
           if (ev.name === 'PropertyNotify')
           {
-              assert.equal(ev.atom, X.atoms.WM_NAME, 'atom in notification should be same as in ChangeProperty');
+              assert.strictEqual(ev.atom, X.atoms.WM_NAME, 'atom in notification should be same as in ChangeProperty');
               // TODO: replace 0 with X.PropertyNewValue
-              assert.equal(ev.state, 0, 'atom in notification should be same as in ChangeProperty');
-              assert.equal(ev.wid, wid, 'window in notification should be same as in ChangeProperty');
+              assert.strictEqual(ev.state, 0, 'atom in notification should be same as in ChangeProperty');
+              assert.strictEqual(ev.wid, wid, 'window in notification should be same as in ChangeProperty');
               done();
               return;
           }
@@ -103,11 +102,11 @@ describe('Window property', () => {
       X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 10000000, (err, prop) => {
           if (err) return done(err);
           const propvalget = prop.data.toString();
-          assert.equal(propvalset, propvalget, 'get property result different from set property value');
+          assert.strictEqual(propvalset, propvalget, 'get property result different from set property value');
           X.DeleteProperty(wid, X.atoms.WM_NAME);
           X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 10000000, (err, prop) => {
-              assert.equal(prop.type, 0, 'non-existent property type should be 0');
-              assert.equal(prop.data.length, 0, 'non-existent property data length should be 0');
+              assert.strictEqual(prop.type, 0, 'non-existent property type should be 0');
+              assert.strictEqual(prop.data.length, 0, 'non-existent property data length should be 0');
               done();
           });
       });

@@ -1,6 +1,6 @@
 const { describe, it } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 // PutImage (and RENDER AddGlyphs) used to always emit the BIG-REQUESTS length
 // encoding — length field 0 followed by a CARD32 — which a server only accepts
@@ -12,7 +12,7 @@ const should = require('should');
 
 function withClient(options, fn, done) {
     x11.createClient(options, (err, dpy) => {
-        should.not.exist(err);
+        assert.ifError(err);
         const X = dpy.client;
         fn(X, dpy, () => {
             X.terminate();
@@ -35,14 +35,14 @@ function putGetRoundTrip(X, dpy, w, h, finish) {
     for (let i = 0; i < bytes; i++) src[i] = (i * 37 + 11) & 0xff;
     X.PutImage(2, pid, gc, w, h, 0, 0, 0, depth, src);
     X.GetImage(2, pid, 0, 0, w, h, 0xffffffff, (err, img) => {
-        should.not.exist(err);
+        assert.ifError(err);
         let bad = 0;
         for (let i = 0; i < bytes; i += 4) {
             if (img.data[i] !== src[i] ||
                 img.data[i + 1] !== src[i + 1] ||
                 img.data[i + 2] !== src[i + 2]) bad++;
         }
-        bad.should.equal(0);
+        assert.strictEqual(bad, 0);
         X.FreeGC(gc);
         X.FreePixmap(pid);
         finish();
@@ -88,7 +88,7 @@ describe('RENDER AddGlyphs request encoding', () => {
             let xerr = null;
             X.on('error', err => { xerr = err; });
             X.require('render', (err, render) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 const gsid = X.AllocID();
                 render.CreateGlyphSet(gsid, render.a8);
                 // a 4x4 fully-opaque glyph, origin at its lower-left
@@ -99,7 +99,7 @@ describe('RENDER AddGlyphs request encoding', () => {
                 // force a round trip so any error against the AddGlyphs request
                 // has been delivered before we assert
                 X.GetInputFocus(() => {
-                    should.not.exist(xerr);
+                    assert.ifError(xerr);
                     render.FreeGlyphSet(gsid);
                     close();
                 });

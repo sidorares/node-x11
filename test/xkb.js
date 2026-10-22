@@ -1,16 +1,16 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('XKEYBOARD extension', () => {
     let X, xkb;
 
     before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             X.require('xkb', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 xkb = ext;
                 done();
             });
@@ -20,22 +20,22 @@ describe('XKEYBOARD extension', () => {
     });
 
     it('UseExtension should report a supported 1.x server version', function() {
-        xkb.supported.should.equal(1);
-        xkb.serverMajor.should.equal(1);
-        xkb.serverMinor.should.be.aboveOrEqual(0);
+        assert.strictEqual(xkb.supported, 1);
+        assert.strictEqual(xkb.serverMajor, 1);
+        assert.ok(xkb.serverMinor >= 0);
     });
 
     it('GetState should return group and modifier state of the core keyboard', function(t, done) {
         xkb.GetState(xkb.UseCoreKbd, (err, state) => {
-            should.not.exist(err);
-            state.deviceID.should.be.above(0);
-            state.group.should.be.within(0, 3);
-            state.lockedGroup.should.be.within(0, 3);
-            state.mods.should.be.within(0, 255);
-            state.baseMods.should.be.within(0, 255);
-            state.latchedMods.should.be.within(0, 255);
-            state.lockedMods.should.be.within(0, 255);
-            state.ptrBtnState.should.be.a.Number();
+            assert.ifError(err);
+            assert.ok(state.deviceID > 0);
+            assert.ok(state.group >= 0 && state.group <= 3);
+            assert.ok(state.lockedGroup >= 0 && state.lockedGroup <= 3);
+            assert.ok(state.mods >= 0 && state.mods <= 255);
+            assert.ok(state.baseMods >= 0 && state.baseMods <= 255);
+            assert.ok(state.latchedMods >= 0 && state.latchedMods <= 255);
+            assert.ok(state.lockedMods >= 0 && state.lockedMods <= 255);
+            assert.strictEqual(typeof state.ptrBtnState, 'number');
             done();
         });
     });
@@ -49,7 +49,7 @@ describe('XKEYBOARD extension', () => {
         // round trip to make sure any error for the bell has arrived
         xkb.GetState(xkb.UseCoreKbd, err => {
             X.removeListener('error', onError);
-            should.not.exist(err);
+            assert.ifError(err);
             done();
         });
     });
@@ -58,13 +58,13 @@ describe('XKEYBOARD extension', () => {
         const lockMask = xkb.ModMask.Lock; // caps lock
         xkb.LatchLockState(xkb.UseCoreKbd, lockMask, lockMask, false, 0, 0, 0, false, 0);
         xkb.GetState(xkb.UseCoreKbd, (err, state) => {
-            should.not.exist(err);
-            (state.lockedMods & lockMask).should.equal(lockMask);
+            assert.ifError(err);
+            assert.strictEqual(state.lockedMods & lockMask, lockMask);
             // restore: other tests share the server's keyboard state
             xkb.LatchLockState(xkb.UseCoreKbd, lockMask, 0, false, 0, 0, 0, false, 0);
             xkb.GetState(xkb.UseCoreKbd, (err, state) => {
-                should.not.exist(err);
-                (state.lockedMods & lockMask).should.equal(0);
+                assert.ifError(err);
+                assert.strictEqual(state.lockedMods & lockMask, 0);
                 done();
             });
         });
@@ -80,9 +80,9 @@ describe('XKEYBOARD extension', () => {
             // deselect again to not disturb later tests
             xkb.SelectEvents(xkb.UseCoreKbd, xkb.EventType.BellNotify,
                 xkb.EventType.BellNotify, 0, 0, 0);
-            ev.pitch.should.equal(440);
-            ev.duration.should.equal(10);
-            ev.eventOnly.should.equal(1);
+            assert.strictEqual(ev.pitch, 440);
+            assert.strictEqual(ev.duration, 10);
+            assert.strictEqual(ev.eventOnly, 1);
             done();
         };
         X.on('event', onEvent);
@@ -91,12 +91,12 @@ describe('XKEYBOARD extension', () => {
 
     it('GetControls should return the default repeat timings', function(t, done) {
         xkb.GetControls(xkb.UseCoreKbd, (err, ctrls) => {
-            should.not.exist(err);
-            ctrls.numGroups.should.be.aboveOrEqual(1);
-            ctrls.repeatDelay.should.be.above(0);
-            ctrls.repeatInterval.should.be.above(0);
-            ctrls.mouseKeysDfltBtn.should.be.above(0);
-            ctrls.perKeyRepeat.length.should.equal(32);
+            assert.ifError(err);
+            assert.ok(ctrls.numGroups >= 1);
+            assert.ok(ctrls.repeatDelay > 0);
+            assert.ok(ctrls.repeatInterval > 0);
+            assert.ok(ctrls.mouseKeysDfltBtn > 0);
+            assert.strictEqual(ctrls.perKeyRepeat.length, 32);
             done();
         });
     });
@@ -106,18 +106,18 @@ describe('XKEYBOARD extension', () => {
             xkb.NameDetail.KeyNames | xkb.NameDetail.GroupNames |
             xkb.NameDetail.VirtualModNames | xkb.NameDetail.IndicatorNames;
         xkb.GetNames(xkb.UseCoreKbd, which, (err, names) => {
-            should.not.exist(err);
-            names.which.should.equal(which);
-            names.minKeyCode.should.be.above(0);
-            names.maxKeyCode.should.be.above(names.minKeyCode);
-            names.keyNames.length.should.equal(names.nKeys);
-            names.keyNames.should.containEql('AE01');
-            names.virtualModNames.length.should.be.above(0);
-            names.keycodesName.should.be.above(0);
-            names.symbolsName.should.be.above(0);
+            assert.ifError(err);
+            assert.strictEqual(names.which, which);
+            assert.ok(names.minKeyCode > 0);
+            assert.ok(names.maxKeyCode > names.minKeyCode);
+            assert.strictEqual(names.keyNames.length, names.nKeys);
+            assert.ok(names.keyNames.includes('AE01'));
+            assert.ok(names.virtualModNames.length > 0);
+            assert.ok(names.keycodesName > 0);
+            assert.ok(names.symbolsName > 0);
             X.GetAtomName(names.keycodesName, (err, keycodesName) => {
-                should.not.exist(err);
-                keycodesName.length.should.be.above(0);
+                assert.ifError(err);
+                assert.ok(keycodesName.length > 0);
                 done();
             });
         });

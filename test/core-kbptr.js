@@ -1,7 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 describe('Keyboard and pointer control requests', () => {
 
@@ -30,23 +29,23 @@ describe('Keyboard and pointer control requests', () => {
 
   it('GetKeyboardControl should return current settings', (t, done) => {
       X.GetKeyboardControl((err, control) => {
-          should.not.exist(err);
-          control.bellPercent.should.be.within(0, 100);
-          control.bellPitch.should.be.above(0);
-          control.autoRepeats.length.should.equal(32);
-          [0, 1].should.containEql(control.globalAutoRepeat);
+          assert.ifError(err);
+          assert.ok(control.bellPercent >= 0 && control.bellPercent <= 100);
+          assert.ok(control.bellPitch > 0);
+          assert.strictEqual(control.autoRepeats.length, 32);
+          assert.ok([0, 1].includes(control.globalAutoRepeat));
           done();
       });
   });
 
   it('ChangeKeyboardControl should roundtrip bell settings', (t, done) => {
       X.GetKeyboardControl((err, before) => {
-          should.not.exist(err);
+          assert.ifError(err);
           X.ChangeKeyboardControl({ bellPercent: 55, bellPitch: 456 });
           X.GetKeyboardControl((err2, control) => {
-              should.not.exist(err2);
-              control.bellPercent.should.equal(55);
-              control.bellPitch.should.equal(456);
+              assert.ifError(err2);
+              assert.strictEqual(control.bellPercent, 55);
+              assert.strictEqual(control.bellPitch, 456);
               X.ChangeKeyboardControl({
                   bellPercent: before.bellPercent,
                   bellPitch: before.bellPitch
@@ -58,13 +57,13 @@ describe('Keyboard and pointer control requests', () => {
 
   it('ChangePointerControl/GetPointerControl should roundtrip', (t, done) => {
       X.GetPointerControl((err, before) => {
-          should.not.exist(err);
+          assert.ifError(err);
           X.ChangePointerControl(3, 1, 42, true, true);
           X.GetPointerControl((err2, control) => {
-              should.not.exist(err2);
-              control.accelNumerator.should.equal(3);
-              control.accelDenominator.should.equal(1);
-              control.threshold.should.equal(42);
+              assert.ifError(err2);
+              assert.strictEqual(control.accelNumerator, 3);
+              assert.strictEqual(control.accelDenominator, 1);
+              assert.strictEqual(control.threshold, 42);
               X.ChangePointerControl(
                   before.accelNumerator,
                   before.accelDenominator,
@@ -79,14 +78,14 @@ describe('Keyboard and pointer control requests', () => {
 
   it('GetScreenSaver should roundtrip with SetScreenSaver', (t, done) => {
       X.GetScreenSaver((err, before) => {
-          should.not.exist(err);
+          assert.ifError(err);
           X.SetScreenSaver(543, 21, 1, 1);
           X.GetScreenSaver((err2, saver) => {
-              should.not.exist(err2);
-              saver.timeout.should.equal(543);
-              saver.interval.should.equal(21);
-              saver.preferBlanking.should.equal(1);
-              saver.allowExposures.should.equal(1);
+              assert.ifError(err2);
+              assert.strictEqual(saver.timeout, 543);
+              assert.strictEqual(saver.interval, 21);
+              assert.strictEqual(saver.preferBlanking, 1);
+              assert.strictEqual(saver.allowExposures, 1);
               X.SetScreenSaver(
                   before.timeout,
                   before.interval,
@@ -101,12 +100,12 @@ describe('Keyboard and pointer control requests', () => {
   it('ChangeKeyboardMapping/GetKeyboardMapping should roundtrip', (t, done) => {
       const keycode = display.max_keycode; // remap the last valid keycode
       X.GetKeyboardMapping(keycode, 1, (err, before) => {
-          should.not.exist(err);
+          assert.ifError(err);
           X.ChangeKeyboardMapping(keycode, 2, [0x61, 0x41]); // a, A
           X.GetKeyboardMapping(keycode, 1, (err2, rows) => {
-              should.not.exist(err2);
-              rows[0][0].should.equal(0x61);
-              rows[0][1].should.equal(0x41);
+              assert.ifError(err2);
+              assert.strictEqual(rows[0][0], 0x61);
+              assert.strictEqual(rows[0][1], 0x41);
               if (before[0] && before[0].length)
                   X.ChangeKeyboardMapping(keycode, before[0].length, before[0]);
               done();
@@ -116,11 +115,11 @@ describe('Keyboard and pointer control requests', () => {
 
   it('GetPointerMapping/SetPointerMapping should roundtrip', (t, done) => {
       X.GetPointerMapping((err, map) => {
-          should.not.exist(err);
-          map.length.should.be.above(0);
+          assert.ifError(err);
+          assert.ok(map.length > 0);
           X.SetPointerMapping(map, (err2, status) => {
-              should.not.exist(err2);
-              status.should.equal(0); // Success
+              assert.ifError(err2);
+              assert.strictEqual(status, 0); // Success
               done();
           });
       });
@@ -128,14 +127,14 @@ describe('Keyboard and pointer control requests', () => {
 
   it('GetModifierMapping/SetModifierMapping should roundtrip', (t, done) => {
       X.GetModifierMapping((err, rows) => {
-          should.not.exist(err);
-          rows.length.should.equal(8);
+          assert.ifError(err);
+          assert.strictEqual(rows.length, 8);
           X.SetModifierMapping(rows, (err2, status) => {
-              should.not.exist(err2);
-              status.should.equal(0); // Success
+              assert.ifError(err2);
+              assert.strictEqual(status, 0); // Success
               X.GetModifierMapping((err3, rows2) => {
-                  should.not.exist(err3);
-                  assert.deepEqual(rows2, rows);
+                  assert.ifError(err3);
+                  assert.deepStrictEqual(rows2, rows);
                   done();
               });
           });
@@ -147,15 +146,15 @@ describe('Keyboard and pointer control requests', () => {
       X.Bell(-50);
       // broken opcode/length would corrupt the stream and error before this reply
       X.GetInputFocus(err => {
-          should.not.exist(err);
+          assert.ifError(err);
           done();
       });
   });
 
   it('GetMotionEvents should return an array', (t, done) => {
       X.GetMotionEvents(root, 0, 0, (err, events) => {
-          should.not.exist(err);
-          events.should.be.an.Array();
+          assert.ifError(err);
+          assert.ok(Array.isArray(events));
           done();
       });
   });

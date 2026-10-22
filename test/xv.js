@@ -1,6 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 // Xvfb exposes the XVideo extension but (typically) zero adaptors, so there
 // is no real port to drive. Port-based requests are then validated with a
@@ -24,24 +24,24 @@ describe('XVideo extension', () => {
 
     before((t, done) => {
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             display = dpy;
             X = dpy.client;
             root = dpy.screen[0].root;
             X.require('xv', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 xv = ext;
                 gc = X.AllocID();
                 X.CreateGC(gc, root);
                 xv.QueryAdaptors(root, (err, list) => {
-                    should.not.exist(err);
+                    assert.ifError(err);
                     adaptors = list;
                     if (adaptors.length === 0)
                         return done();
                     port = adaptors[0].baseId;
                     // with a real adaptor, pick a format for the image path
                     xv.ListImageFormats(port, (err, formats) => {
-                        should.not.exist(err);
+                        assert.ifError(err);
                         if (formats.length > 0)
                             imageFormat = formats[0];
                         done();
@@ -64,22 +64,22 @@ describe('XVideo extension', () => {
     });
 
     it('QueryExtension should report version 2.2 or later', () => {
-        xv.major.should.be.aboveOrEqual(2);
+        assert.ok(xv.major >= 2);
         if (xv.major === 2)
-            xv.minor.should.be.aboveOrEqual(2);
+            assert.ok(xv.minor >= 2);
     });
 
     it('QueryAdaptors should return a well-formed (possibly empty) list', () => {
-        adaptors.should.be.an.Array();
+        assert.ok(Array.isArray(adaptors));
         adaptors.forEach(a => {
-            a.baseId.should.be.above(0);
-            a.name.should.be.a.String();
-            a.numPorts.should.be.aboveOrEqual(1);
-            a.type.should.be.within(0, 31);
-            a.formats.should.be.an.Array();
+            assert.ok(a.baseId > 0);
+            assert.strictEqual(typeof a.name, 'string');
+            assert.ok(a.numPorts >= 1);
+            assert.ok(a.type >= 0 && a.type <= 31);
+            assert.ok(Array.isArray(a.formats));
             a.formats.forEach(f => {
-                f.visual.should.be.above(0);
-                f.depth.should.be.above(0);
+                assert.ok(f.visual > 0);
+                assert.ok(f.depth > 0);
             });
         });
     });
@@ -87,17 +87,17 @@ describe('XVideo extension', () => {
     it('QueryEncodings should list encodings or raise XvBadPort', (t, done) => {
         if (port !== null) {
             xv.QueryEncodings(port, (err, encodings) => {
-                should.not.exist(err);
-                encodings.should.be.an.Array();
-                encodings.length.should.be.aboveOrEqual(1);
-                encodings[0].name.should.be.a.String();
-                encodings[0].width.should.be.above(0);
-                encodings[0].height.should.be.above(0);
+                assert.ifError(err);
+                assert.ok(Array.isArray(encodings));
+                assert.ok(encodings.length >= 1);
+                assert.strictEqual(typeof encodings[0].name, 'string');
+                assert.ok(encodings[0].width > 0);
+                assert.ok(encodings[0].height > 0);
                 done();
             });
         } else {
             xv.QueryEncodings(BOGUS_PORT, err => {
-                err.error.should.equal(xv.errors.BadPort);
+                assert.strictEqual(err.error, xv.errors.BadPort);
                 done();
                 return true; // error handled, don't emit on the client
             });
@@ -107,14 +107,14 @@ describe('XVideo extension', () => {
     it('GrabPort/UngrabPort should succeed or raise XvBadPort', (t, done) => {
         if (port !== null) {
             xv.GrabPort(port, 0, (err, status) => {
-                should.not.exist(err);
-                status.should.equal(xv.GrabPortStatus.Success);
+                assert.ifError(err);
+                assert.strictEqual(status, xv.GrabPortStatus.Success);
                 xv.UngrabPort(port, 0);
                 done();
             });
         } else {
             xv.GrabPort(BOGUS_PORT, 0, err => {
-                err.error.should.equal(xv.errors.BadPort);
+                assert.strictEqual(err.error, xv.errors.BadPort);
                 done();
                 return true;
             });
@@ -124,14 +124,14 @@ describe('XVideo extension', () => {
     it('QueryBestSize should return a size or raise XvBadPort', (t, done) => {
         if (port !== null) {
             xv.QueryBestSize(port, 320, 240, 640, 480, false, (err, size) => {
-                should.not.exist(err);
-                size.width.should.be.above(0);
-                size.height.should.be.above(0);
+                assert.ifError(err);
+                assert.ok(size.width > 0);
+                assert.ok(size.height > 0);
                 done();
             });
         } else {
             xv.QueryBestSize(BOGUS_PORT, 320, 240, 640, 480, false, err => {
-                err.error.should.equal(xv.errors.BadPort);
+                assert.strictEqual(err.error, xv.errors.BadPort);
                 done();
                 return true;
             });
@@ -141,17 +141,17 @@ describe('XVideo extension', () => {
     it('QueryPortAttributes should list attributes or raise XvBadPort', (t, done) => {
         if (port !== null) {
             xv.QueryPortAttributes(port, (err, attributes) => {
-                should.not.exist(err);
-                attributes.should.be.an.Array();
+                assert.ifError(err);
+                assert.ok(Array.isArray(attributes));
                 attributes.forEach(a => {
-                    a.name.should.be.a.String();
-                    a.flags.should.be.a.Number();
+                    assert.strictEqual(typeof a.name, 'string');
+                    assert.strictEqual(typeof a.flags, 'number');
                 });
                 done();
             });
         } else {
             xv.QueryPortAttributes(BOGUS_PORT, err => {
-                err.error.should.equal(xv.errors.BadPort);
+                assert.strictEqual(err.error, xv.errors.BadPort);
                 done();
                 return true;
             });
@@ -162,7 +162,7 @@ describe('XVideo extension', () => {
         // even with a real port an attribute atom would be needed, so always
         // exercise the error path here
         xv.GetPortAttribute(BOGUS_PORT, 1 /* any atom */, err => {
-            err.error.should.equal(xv.errors.BadPort);
+            assert.strictEqual(err.error, xv.errors.BadPort);
             done();
             return true;
         });
@@ -173,8 +173,8 @@ describe('XVideo extension', () => {
         const seq = X.seq_num;
         errorHandler = err => {
             errorHandler = null;
-            err.error.should.equal(xv.errors.BadPort);
-            err.seq.should.equal(seq);
+            assert.strictEqual(err.error, xv.errors.BadPort);
+            assert.strictEqual(err.seq, seq);
             done();
         };
     });
@@ -182,18 +182,18 @@ describe('XVideo extension', () => {
     it('ListImageFormats should list formats or raise XvBadPort', (t, done) => {
         if (port !== null) {
             xv.ListImageFormats(port, (err, formats) => {
-                should.not.exist(err);
-                formats.should.be.an.Array();
+                assert.ifError(err);
+                assert.ok(Array.isArray(formats));
                 formats.forEach(f => {
-                    f.id.should.be.above(0);
-                    f.bpp.should.be.above(0);
-                    f.guid.length.should.equal(16);
+                    assert.ok(f.id > 0);
+                    assert.ok(f.bpp > 0);
+                    assert.strictEqual(f.guid.length, 16);
                 });
                 done();
             });
         } else {
             xv.ListImageFormats(BOGUS_PORT, err => {
-                err.error.should.equal(xv.errors.BadPort);
+                assert.strictEqual(err.error, xv.errors.BadPort);
                 done();
                 return true;
             });
@@ -211,9 +211,9 @@ describe('XVideo extension', () => {
     const stillInSync = done => {
         const seq = X.seq_num;
         X.GetInputFocus((err, focus) => {
-            should.not.exist(err);
-            focus.should.be.an.Object();
-            X.seq_num.should.equal(seq + 1);
+            assert.ifError(err);
+            assert.ok(focus !== null && typeof focus === 'object');
+            assert.strictEqual(X.seq_num, seq + 1);
             done();
         });
     };
@@ -222,7 +222,7 @@ describe('XVideo extension', () => {
         // always the error path: with a real port this would stop whatever
         // another client is putting into the root window
         xv.StopVideo(BOGUS_PORT, root, err => {
-            err.error.should.equal(xv.errors.BadPort);
+            assert.strictEqual(err.error, xv.errors.BadPort);
             stillInSync(done);
             return true;
         });
@@ -231,9 +231,9 @@ describe('XVideo extension', () => {
     it('SelectVideoNotify should be accepted for any drawable', (t, done) => {
         // takes a drawable, not a port: it works on an adaptorless server
         xv.SelectVideoNotify(root, true, err => {
-            should.not.exist(err);
+            assert.ifError(err);
             xv.SelectVideoNotify(root, false, err => {
-                should.not.exist(err);
+                assert.ifError(err);
                 done();
                 return true;
             });
@@ -244,14 +244,14 @@ describe('XVideo extension', () => {
     it('SelectPortNotify should subscribe or raise XvBadPort', (t, done) => {
         if (port !== null) {
             xv.SelectPortNotify(port, true, err => {
-                should.not.exist(err);
+                assert.ifError(err);
                 xv.SelectPortNotify(port, false);
                 done();
                 return true;
             });
         } else {
             xv.SelectPortNotify(BOGUS_PORT, true, err => {
-                err.error.should.equal(xv.errors.BadPort);
+                assert.strictEqual(err.error, xv.errors.BadPort);
                 done();
                 return true;
             });
@@ -261,19 +261,19 @@ describe('XVideo extension', () => {
     it('QueryImageAttributes should report a plane layout or raise XvBadPort', (t, done) => {
         if (port !== null && imageFormat !== null) {
             xv.QueryImageAttributes(port, imageFormat.id, 320, 240, (err, attrs) => {
-                should.not.exist(err);
-                attrs.numPlanes.should.equal(imageFormat.numPlanes);
-                attrs.dataSize.should.be.above(0);
-                attrs.width.should.be.aboveOrEqual(320);
-                attrs.height.should.be.aboveOrEqual(240);
-                attrs.pitches.length.should.equal(attrs.numPlanes);
-                attrs.offsets.length.should.equal(attrs.numPlanes);
-                attrs.offsets[0].should.equal(0);
+                assert.ifError(err);
+                assert.strictEqual(attrs.numPlanes, imageFormat.numPlanes);
+                assert.ok(attrs.dataSize > 0);
+                assert.ok(attrs.width >= 320);
+                assert.ok(attrs.height >= 240);
+                assert.strictEqual(attrs.pitches.length, attrs.numPlanes);
+                assert.strictEqual(attrs.offsets.length, attrs.numPlanes);
+                assert.strictEqual(attrs.offsets[0], 0);
                 done();
             });
         } else {
             xv.QueryImageAttributes(BOGUS_PORT, 0x32595559, 16, 16, err => {
-                err.error.should.equal(xv.errors.BadPort);
+                assert.strictEqual(err.error, xv.errors.BadPort);
                 done();
                 return true;
             });
@@ -288,7 +288,7 @@ describe('XVideo extension', () => {
             data: Buffer.alloc(16 * 16 * 2)
         };
         xv.PutImage(BOGUS_PORT, root, gc, 0x32595559, img, err => {
-            err.error.should.equal(xv.errors.BadPort);
+            assert.strictEqual(err.error, xv.errors.BadPort);
             stillInSync(done);
             return true;
         });
@@ -304,7 +304,7 @@ describe('XVideo extension', () => {
             data: Buffer.alloc(512 * 512 * 3)
         };
         xv.PutImage(BOGUS_PORT, root, gc, 0x32595559, img, err => {
-            err.error.should.equal(xv.errors.BadPort);
+            assert.strictEqual(err.error, xv.errors.BadPort);
             stillInSync(done);
             return true;
         });
@@ -320,9 +320,9 @@ describe('XVideo extension', () => {
         };
         const seq = X.seq_num;
         xv.PutImage(BOGUS_PORT, root, gc, 0x32595559, img, err => {
-            err.message.should.match(/maximum request length/);
+            assert.match(err.message, /maximum request length/);
             // nothing went out: the sequence number did not move
-            X.seq_num.should.equal(seq);
+            assert.strictEqual(X.seq_num, seq);
             stillInSync(done);
             return true;
         });
@@ -334,7 +334,7 @@ describe('XVideo extension', () => {
             drwX: 0, drwY: 0, drwWidth: 16, drwHeight: 16,
             width: 16, height: 16, offset: 0, sendEvent: false
         }, err => {
-            err.error.should.equal(xv.errors.BadPort);
+            assert.strictEqual(err.error, xv.errors.BadPort);
             stillInSync(done);
             return true;
         });

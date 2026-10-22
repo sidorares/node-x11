@@ -83,6 +83,10 @@ Details the script handles for you:
   `describe`, not on `this`. `t.skip()` only marks a test: in a callback-style
   test follow it with `return done()` (a bare `return t.skip()` waits out the
   timeout), and in a `beforeEach` it does not stop the body from running.
+  Assertions are `require('node:assert/strict')` (`assert.ifError(err)` for
+  callback errors) and spies are `node:test`'s `mock` — `t.mock.method()` in
+  a test restores itself when the test ends. No assertion or mocking
+  libraries: the only test devDependency is the runner Node ships.
 - `test/bun/` is the one suite Node cannot run: the descriptor transport built
   on `bun:ffi` (`lib/fdpass-bun.js`). It needs `bun` on PATH; its X-server
   tests skip themselves when `DISPLAY` is unset. Subdirectories of `test/` are

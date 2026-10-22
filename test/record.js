@@ -1,6 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 // RECORD extension. Recording requires a dedicated connection for EnableContext:
 // the control connection creates/registers/disables/frees the context, while a
@@ -19,17 +19,17 @@ describe('RECORD extension', () => {
         };
         // control connection: owns the context, issues the recorded requests
         const c1 = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             X.require('record', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 record = ext;
                 // dedicated enable connection
                 const c2 = x11.createClient((err2, dpy2) => {
-                    should.not.exist(err2);
+                    assert.ifError(err2);
                     Xenable = dpy2.client;
                     Xenable.require('record', (err3, ext2) => {
-                        should.not.exist(err3);
+                        assert.ifError(err3);
                         recordEnable = ext2;
                         setupFinished = true;
                         done();
@@ -42,8 +42,8 @@ describe('RECORD extension', () => {
     });
 
     it('QueryVersion should report at least 1.13', function() {
-        record.major.should.equal(1);
-        record.minor.should.be.aboveOrEqual(0);
+        assert.strictEqual(record.major, 1);
+        assert.ok(record.minor >= 0);
     });
 
     it('CreateContext + GetContext round-trip', function(t, done) {
@@ -52,15 +52,15 @@ describe('RECORD extension', () => {
             { coreRequests: { first: 0, last: 127 } }
         ]);
         record.GetContext(context, (err, info) => {
-            should.not.exist(err);
-            info.enabled.should.equal(false);
-            info.interceptedClients.should.be.an.Array();
+            assert.ifError(err);
+            assert.strictEqual(info.enabled, false);
+            assert.ok(Array.isArray(info.interceptedClients));
             // one range registered for the AllClients pseudo-client
-            info.interceptedClients.length.should.be.aboveOrEqual(1);
+            assert.ok(info.interceptedClients.length >= 1);
             const ranges = info.interceptedClients[0].ranges;
-            ranges.length.should.be.aboveOrEqual(1);
-            ranges[0].coreRequests.first.should.equal(0);
-            ranges[0].coreRequests.last.should.equal(127);
+            assert.ok(ranges.length >= 1);
+            assert.strictEqual(ranges[0].coreRequests.first, 0);
+            assert.strictEqual(ranges[0].coreRequests.last, 127);
             record.FreeContext(context);
             done();
         });
@@ -92,7 +92,7 @@ describe('RECORD extension', () => {
         // the server may process the connections in either order, so sync the
         // control connection first to make sure the context exists
         record.GetContext(context, err => {
-            should.not.exist(err);
+            assert.ifError(err);
             enable();
         });
 
@@ -115,8 +115,8 @@ describe('RECORD extension', () => {
             // fires when EndOfData terminates the multi-reply series
             if (err)
                 return finish(err);
-            started.should.equal(true);
-            sawInternAtom.should.equal(true);
+            assert.strictEqual(started, true);
+            assert.strictEqual(sawInternAtom, true);
             finish();
         });
     });

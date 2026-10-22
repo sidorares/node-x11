@@ -1,6 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('Core events (newly generated parsers)', () => {
 
@@ -48,8 +48,8 @@ describe('Core events (newly generated parsers)', () => {
       X.CreateWindow(wid, root, 0, 0, 50, 50, 0, 0, 0, 0,
           { eventMask: x11.eventMask.VisibilityChange });
       onEvent('VisibilityNotify', ev => {
-          ev.wid.should.equal(wid);
-          ev.state.should.equal(0); // Unobscured
+          assert.strictEqual(ev.wid, wid);
+          assert.strictEqual(ev.state, 0); // Unobscured
           X.DestroyWindow(wid);
           done();
       });
@@ -63,11 +63,11 @@ describe('Core events (newly generated parsers)', () => {
       X.CreateWindow(child, root, 0, 0, 20, 20, 0, 0, 0, 0,
           { eventMask: x11.eventMask.StructureNotify });
       onEvent('ReparentNotify', ev => {
-          ev.event.should.equal(child);
-          ev.wid.should.equal(child);
-          ev.parent.should.equal(parent);
-          ev.x.should.equal(5);
-          ev.y.should.equal(6);
+          assert.strictEqual(ev.event, child);
+          assert.strictEqual(ev.wid, child);
+          assert.strictEqual(ev.parent, parent);
+          assert.strictEqual(ev.x, 5);
+          assert.strictEqual(ev.y, 6);
           X.DestroyWindow(parent);
           done();
       });
@@ -83,10 +83,10 @@ describe('Core events (newly generated parsers)', () => {
           { winGravity: 9, eventMask: x11.eventMask.StructureNotify });
       X.MapWindow(parent);
       onEvent('GravityNotify', ev => {
-          ev.event.should.equal(child);
-          ev.wid.should.equal(child);
-          ev.x.should.equal(30);
-          ev.y.should.equal(30);
+          assert.strictEqual(ev.event, child);
+          assert.strictEqual(ev.wid, child);
+          assert.strictEqual(ev.x, 30);
+          assert.strictEqual(ev.y, 30);
           X.DestroyWindow(parent);
           done();
       });
@@ -102,8 +102,8 @@ describe('Core events (newly generated parsers)', () => {
       X.CreateGC(gc, dst, { graphicsExposures: 1, foreground: black });
       X.PolyFillRectangle(pixmap, gc, [0, 0, 20, 20]);
       onEvent('NoExposure', ev => {
-          ev.drawable.should.equal(dst);
-          ev.majorOpcode.should.equal(62); // CopyArea
+          assert.strictEqual(ev.drawable, dst);
+          assert.strictEqual(ev.majorOpcode, 62); // CopyArea
           X.FreeGC(gc);
           X.FreePixmap(pixmap);
           X.FreePixmap(dst);
@@ -121,8 +121,8 @@ describe('Core events (newly generated parsers)', () => {
       X.CreateGC(gc, dst, { graphicsExposures: 1, foreground: black });
       X.PolyFillRectangle(pixmap, gc, [0, 0, 20, 20]);
       onEvent('GraphicsExposure', ev => {
-          ev.drawable.should.equal(dst);
-          ev.majorOpcode.should.equal(62); // CopyArea
+          assert.strictEqual(ev.drawable, dst);
+          assert.strictEqual(ev.majorOpcode, 62); // CopyArea
           X.FreeGC(gc);
           X.FreePixmap(pixmap);
           X.FreePixmap(dst);
@@ -143,9 +143,9 @@ describe('Core events (newly generated parsers)', () => {
       X.MapWindow(parent);
       X.MapSubwindows(parent);
       onEvent('CirculateNotify', ev => {
-          ev.event.should.equal(parent);
-          ev.wid.should.equal(child1);
-          ev.place.should.equal(0); // Top
+          assert.strictEqual(ev.event, parent);
+          assert.strictEqual(ev.wid, child1);
+          assert.strictEqual(ev.place, 0); // Top
           X.DestroyWindow(parent);
           done();
       });
@@ -159,9 +159,9 @@ describe('Core events (newly generated parsers)', () => {
       const cmap = X.AllocID();
       X.CreateColormap(cmap, root, display.screen[0].root_visual, 0);
       onEvent('ColormapNotify', ev => {
-          ev.wid.should.equal(wid);
-          ev.colormap.should.equal(cmap);
-          ev.new.should.equal(1);
+          assert.strictEqual(ev.wid, wid);
+          assert.strictEqual(ev.colormap, cmap);
+          assert.strictEqual(ev.new, 1);
           X.DestroyWindow(wid);
           X.FreeColormap(cmap);
           done();
@@ -175,7 +175,7 @@ describe('Core events (newly generated parsers)', () => {
           { eventMask: x11.eventMask.FocusChange | x11.eventMask.KeymapState });
       X.MapWindow(wid);
       onEvent('KeymapNotify', ev => {
-          ev.keys.length.should.equal(31);
+          assert.strictEqual(ev.keys.length, 31);
           X.DestroyWindow(wid);
           done();
       });
@@ -188,16 +188,16 @@ describe('Core events (newly generated parsers)', () => {
           { eventMask: x11.eventMask.ResizeRedirect });
       X.MapWindow(wid);
       onEvent('ResizeRequest', ev => {
-          ev.wid.should.equal(wid);
-          ev.width.should.equal(70);
-          ev.height.should.equal(80);
+          assert.strictEqual(ev.wid, wid);
+          assert.strictEqual(ev.width, 70);
+          assert.strictEqual(ev.height, 80);
           X.DestroyWindow(wid);
           X2.terminate();
           done();
       });
       let X2;
       x11.createClient((err, dpy2) => {
-          should.not.exist(err);
+          assert.ifError(err);
           X2 = dpy2.client;
           X2.ResizeWindow(wid, 70, 80);
       });

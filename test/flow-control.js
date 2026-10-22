@@ -1,6 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 describe('flow control', () => {
 

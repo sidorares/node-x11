@@ -1,7 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 describe('Misc control requests', () => {
 
@@ -31,16 +30,16 @@ describe('Misc control requests', () => {
   it('NoOperation should be accepted by server', (t, done) => {
       X.NoOperation();
       X.GetInputFocus(err => {
-          should.not.exist(err);
+          assert.ifError(err);
           done();
       });
   });
 
   it('ListHosts should return host list and access control mode', (t, done) => {
       X.ListHosts((err, res) => {
-          should.not.exist(err);
-          [0, 1].should.containEql(res.mode);
-          res.hosts.should.be.an.Array();
+          assert.ifError(err);
+          assert.ok([0, 1].includes(res.mode));
+          assert.ok(Array.isArray(res.hosts));
           done();
       });
   });
@@ -49,16 +48,16 @@ describe('Misc control requests', () => {
       const addr = [127, 0, 0, 2];
       X.ChangeHosts(0, 0, addr); // insert Internet host
       X.ListHosts((err, res) => {
-          should.not.exist(err);
+          assert.ifError(err);
           const found = res.hosts.some(
               h => h.family === 0 && h.address.equals(Buffer.from(addr)));
-          found.should.be.true();
+          assert.strictEqual(found, true);
           X.ChangeHosts(1, 0, addr); // delete it
           X.ListHosts((err2, res2) => {
-              should.not.exist(err2);
+              assert.ifError(err2);
               const found2 = res2.hosts.some(
                   h => h.family === 0 && h.address.equals(Buffer.from(addr)));
-              found2.should.be.false();
+              assert.strictEqual(found2, false);
               done();
           });
       });
@@ -66,11 +65,11 @@ describe('Misc control requests', () => {
 
   it('SetAccessControl should toggle mode reported by ListHosts', (t, done) => {
       X.ListHosts((err, before) => {
-          should.not.exist(err);
+          assert.ifError(err);
           X.SetAccessControl(1);
           X.ListHosts((err2, res) => {
-              should.not.exist(err2);
-              res.mode.should.equal(1);
+              assert.ifError(err2);
+              assert.strictEqual(res.mode, 1);
               X.SetAccessControl(before.mode);
               done();
           });
@@ -81,7 +80,7 @@ describe('Misc control requests', () => {
       X.SetCloseDownMode(2); // RetainTemporary
       X.SetCloseDownMode(0); // back to Destroy
       X.GetInputFocus(err => {
-          should.not.exist(err);
+          assert.ifError(err);
           done();
       });
   });
@@ -90,18 +89,18 @@ describe('Misc control requests', () => {
       const wid = X.AllocID();
       X.CreateWindow(wid, root, 0, 0, 1, 1);
       X.InternAtom(false, 'NODE_X11_ROT_A', (err, atomA) => {
-          should.not.exist(err);
+          assert.ifError(err);
           X.InternAtom(false, 'NODE_X11_ROT_B', (err2, atomB) => {
-              should.not.exist(err2);
+              assert.ifError(err2);
               X.ChangeProperty(0, wid, atomA, X.atoms.STRING, 8, 'valueA');
               X.ChangeProperty(0, wid, atomB, X.atoms.STRING, 8, 'valueB');
               X.RotateProperties(wid, 1, [atomA, atomB]);
               X.GetProperty(0, wid, atomA, X.atoms.STRING, 0, 100, (err3, prop) => {
-                  should.not.exist(err3);
-                  assert.equal(prop.data.toString(), 'valueB');
+                  assert.ifError(err3);
+                  assert.strictEqual(prop.data.toString(), 'valueB');
                   X.GetProperty(0, wid, atomB, X.atoms.STRING, 0, 100, (err4, prop2) => {
-                      should.not.exist(err4);
-                      assert.equal(prop2.data.toString(), 'valueA');
+                      assert.ifError(err4);
+                      assert.strictEqual(prop2.data.toString(), 'valueA');
                       X.DestroyWindow(wid);
                       done();
                   });

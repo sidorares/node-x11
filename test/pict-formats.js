@@ -4,7 +4,7 @@
 // screen or more than one depth, so the nesting is exercised here against a
 // hand-built reply instead.
 const { describe, it } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const { unpackPictFormats } = require('../lib/ext/render');
 
 // reply body as the client sees it: the first 8 bytes of the reply are

@@ -1,6 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('SHAPE extension', () => {
     let display;
@@ -18,7 +18,7 @@ describe('SHAPE extension', () => {
             X = display.client;
             root = display.screen[0].root;
             X.require('shape', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 shape = ext;
                 wid1 = X.AllocID();
                 X.CreateWindow(wid1, root, 0, 0, 100, 100);
@@ -46,21 +46,21 @@ describe('SHAPE extension', () => {
     it('Rectangles + GetRectangles should round-trip a bounding shape', (t, done) => {
         shape.Rectangles(shape.Op.Set, shape.Kind.Bounding, wid1, 0, 0, shapeRects);
         shape.GetRectangles(wid1, shape.Kind.Bounding, (err, res) => {
-            should.not.exist(err);
-            res.ordering.should.be.within(0, 3);
-            sortRects(res.rectangles).should.eql(sortRects(shapeRects));
+            assert.ifError(err);
+            assert.ok(res.ordering >= 0 && res.ordering <= 3);
+            assert.deepStrictEqual(sortRects(res.rectangles), sortRects(shapeRects));
             done();
         });
     });
 
     it('QueryExtents should report the bounding shape extents', (t, done) => {
         shape.QueryExtents(wid1, (err, extents) => {
-            should.not.exist(err);
-            extents.boundingShaped.should.equal(true);
-            extents.clipShaped.should.equal(false);
-            extents.bounding.should.eql({ x: 0, y: 0, width: 30, height: 30 });
+            assert.ifError(err);
+            assert.strictEqual(extents.boundingShaped, true);
+            assert.strictEqual(extents.clipShaped, false);
+            assert.deepStrictEqual(extents.bounding, { x: 0, y: 0, width: 30, height: 30 });
             // clip shape not set: extents cover the whole 100x100 window
-            extents.clip.should.eql({ x: 0, y: 0, width: 100, height: 100 });
+            assert.deepStrictEqual(extents.clip, { x: 0, y: 0, width: 100, height: 100 });
             done();
         });
     });
@@ -69,8 +69,8 @@ describe('SHAPE extension', () => {
         shape.Combine(shape.Op.Set, shape.Kind.Bounding, shape.Kind.Bounding,
             wid2, 0, 0, wid1);
         shape.GetRectangles(wid2, shape.Kind.Bounding, (err, res) => {
-            should.not.exist(err);
-            sortRects(res.rectangles).should.eql(sortRects(shapeRects));
+            assert.ifError(err);
+            assert.deepStrictEqual(sortRects(res.rectangles), sortRects(shapeRects));
             done();
         });
     });
@@ -78,12 +78,11 @@ describe('SHAPE extension', () => {
     it('Offset should translate the shape', (t, done) => {
         shape.Offset(shape.Kind.Bounding, wid1, 5, 7);
         shape.QueryExtents(wid1, (err, extents) => {
-            should.not.exist(err);
-            extents.bounding.should.eql({ x: 5, y: 7, width: 30, height: 30 });
+            assert.ifError(err);
+            assert.deepStrictEqual(extents.bounding, { x: 5, y: 7, width: 30, height: 30 });
             shape.GetRectangles(wid1, shape.Kind.Bounding, (err, res) => {
-                should.not.exist(err);
-                sortRects(res.rectangles).should.eql(
-                    sortRects(shapeRects.map(r => [r[0] + 5, r[1] + 7, r[2], r[3]])));
+                assert.ifError(err);
+                assert.deepStrictEqual(sortRects(res.rectangles), sortRects(shapeRects.map(r => [r[0] + 5, r[1] + 7, r[2], r[3]])));
                 done();
             });
         });

@@ -1,7 +1,6 @@
 const { describe, it, before, after, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const util = require('util');
 
 describe('XTEST extension', () => {
@@ -14,7 +13,7 @@ describe('XTEST extension', () => {
                 display = dpy;
                 X = display.client;
                 X.require('xtest', (err, ext) => {
-                    should.not.exist(err);
+                    assert.ifError(err);
                     xtest = ext;
                     done();
                 });
@@ -29,7 +28,7 @@ describe('XTEST extension', () => {
     describe('GetVersion', () => {
         it('should return version 2.2', (t, done) => {
             xtest.GetVersion(2, 2, (err, version) => {
-                version.should.eql([2, 2]);
+                assert.deepStrictEqual(version, [2, 2]);
                 done();
             });
         });
@@ -42,8 +41,8 @@ describe('XTEST extension', () => {
             X.CreateWindow(wid, root, 0, 0, 10, 10);
             xtest.CompareCursor(wid, xtest.Cursor.None, (err, same) => {
                 X.DestroyWindow(wid);
-                should.not.exist(err);
-                same.should.equal(true);
+                assert.ifError(err);
+                assert.strictEqual(same, true);
                 done();
             });
         });
@@ -60,13 +59,13 @@ describe('XTEST extension', () => {
             const wid = X.AllocID();
             X.CreateWindow(wid, root, 0, 0, 10, 10, 0, 0, 0, 0, { cursor: cid });
             xtest.CompareCursor(wid, cid, (err, same) => {
-                should.not.exist(err);
-                same.should.equal(true);
+                assert.ifError(err);
+                assert.strictEqual(same, true);
                 xtest.CompareCursor(wid, xtest.Cursor.None, (err, same) => {
                     X.DestroyWindow(wid);
                     X.FreeCursor(cid);
-                    should.not.exist(err);
-                    same.should.equal(false);
+                    assert.ifError(err);
+                    assert.strictEqual(same, false);
                     done();
                 });
             });
@@ -77,15 +76,15 @@ describe('XTEST extension', () => {
         it('MotionNotify should move the pointer to the requested position', (t, done) => {
             const root = display.screen[0].root;
             X.QueryPointer(root, (err, before) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 // detail 0 = absolute, root 0 = current screen
                 xtest.FakeInput(xtest.MotionNotify, 0, 0, 0, 33, 44);
                 X.QueryPointer(root, (err, pointer) => {
                     // always restore the shared pointer position
                     X.WarpPointer(0, root, 0, 0, 0, 0, before.rootX, before.rootY);
-                    should.not.exist(err);
-                    pointer.rootX.should.equal(33);
-                    pointer.rootY.should.equal(44);
+                    assert.ifError(err);
+                    assert.strictEqual(pointer.rootX, 33);
+                    assert.strictEqual(pointer.rootY, 44);
                     done();
                 });
             });
@@ -102,10 +101,10 @@ describe('XTEST extension', () => {
             xtest.GrabControl(true);
             // sync round-trip: an error for GrabControl would arrive first
             X.GetInputFocus(err => {
-                should.not.exist(err);
+                assert.ifError(err);
                 xtest.GrabControl(false);
                 X.GetInputFocus(err => {
-                    should.not.exist(err);
+                    assert.ifError(err);
                     done();
                 });
             });

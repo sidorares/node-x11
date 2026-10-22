@@ -1,5 +1,5 @@
 const { describe, it, before, after } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const x11 = require('../lib');
 const { unpackEvent, packers, eventTypes } = require('../lib/generated/core-events');
 

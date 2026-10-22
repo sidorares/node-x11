@@ -1,19 +1,19 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('DAMAGE extension', () => {
     let X, root, white, black, damageExt;
 
     before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             root = dpy.screen[0].root;
             white = dpy.screen[0].white_pixel;
             black = dpy.screen[0].black_pixel;
             X.require('damage', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 damageExt = ext;
                 done();
             });
@@ -35,9 +35,9 @@ describe('DAMAGE extension', () => {
             if (ev.name !== 'DamageNotify' || ev.damage !== damage)
                 return;
             X.removeListener('event', listener);
-            ev.drawable.should.equal(wid);
+            assert.strictEqual(ev.drawable, wid);
             // routing by type must work as it does for every other event
-            ev.type.should.equal(damageExt.firstEvent + damageExt.events.DamageNotify);
+            assert.strictEqual(ev.type, damageExt.firstEvent + damageExt.events.DamageNotify);
             damageExt.Destroy(damage);
             X.FreeGC(gc);
             X.DestroyWindow(wid);
@@ -56,9 +56,9 @@ describe('DAMAGE extension', () => {
         X.on('error', onError);
         // round-trip to flush any pending error for the requests above
         X.GetGeometry(root, err => {
-            should.not.exist(err);
+            assert.ifError(err);
             X.removeListener('error', onError);
-            errors.should.have.length(0);
+            assert.strictEqual(errors.length, 0);
             done();
         });
     });

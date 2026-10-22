@@ -1,5 +1,5 @@
 const { describe, it } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const { createServer, createStreamPair } = require('../../lib/xserver');
 const { boot } = require('./boot');
 

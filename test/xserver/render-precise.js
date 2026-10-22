@@ -5,7 +5,7 @@
 // test/raster-precise.test.js checks its own rasterizer against.
 // test/render-precise.js compares against a real server on random geometry.
 const { describe, it, beforeEach, afterEach } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const { boot } = require('./boot');
 const raster = require('../../lib/render-raster');
 

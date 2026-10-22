@@ -1,6 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('Cursor requests', () => {
 
@@ -46,7 +46,7 @@ describe('Cursor requests', () => {
       X.CreateWindow(wid, root, 0, 0, 10, 10, 0, 0, 0, 0, { cursor: cid });
       // any of the above failing would error before this reply arrives
       X.GetWindowAttributes(wid, (err, attrs) => {
-          should.not.exist(err);
+          assert.ifError(err);
           X.DestroyWindow(wid);
           X.FreeCursor(cid);
           done();
@@ -57,7 +57,7 @@ describe('Cursor requests', () => {
       const cid = createLeftPtrCursor();
       X.RecolorCursor(cid, red, white);
       X.GetInputFocus(err => {
-          should.not.exist(err);
+          assert.ifError(err);
           X.FreeCursor(cid);
           done();
       });
@@ -68,7 +68,7 @@ describe('Cursor requests', () => {
       X.FreeCursor(cid);
       X.removeAllListeners('error'); // drop the beforeEach done-listener
       X.on('error', err => {
-          err.message.should.equal('Bad cursor');
+          assert.strictEqual(err.message, 'Bad cursor');
           done();
       });
       X.RecolorCursor(cid, red, white);
@@ -76,9 +76,9 @@ describe('Cursor requests', () => {
 
   it('QueryBestSize should return non-zero cursor size', (t, done) => {
       X.QueryBestSize(0, root, 16, 16, (err, size) => {
-          should.not.exist(err);
-          size.width.should.be.above(0);
-          size.height.should.be.above(0);
+          assert.ifError(err);
+          assert.ok(size.width > 0);
+          assert.ok(size.height > 0);
           done();
       });
   });

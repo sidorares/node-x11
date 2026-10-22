@@ -1,6 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('GC requests', () => {
 
@@ -55,8 +55,8 @@ describe('GC requests', () => {
       X.CopyGC(gcWhite, gcDst, ['foreground']);
       X.PolyFillRectangle(pixmap, gcDst, [0, 0, 20, 20]);
       X.GetImage(2, pixmap, 0, 0, 20, 20, 0xffffffff, (err, img) => {
-          should.not.exist(err);
-          getPixel(img.data, 10, 10).should.equal(white >>> 0);
+          assert.ifError(err);
+          assert.strictEqual(getPixel(img.data, 10, 10), white >>> 0);
           X.FreeGC(gcWhite);
           X.FreeGC(gcDst);
           done();
@@ -71,9 +71,9 @@ describe('GC requests', () => {
       X.SetClipRectangles(gc, 0, 0, 0, [0, 0, 10, 20]); // left half only
       X.PolyFillRectangle(pixmap, gc, [0, 0, 20, 20]); // fill all - clipped
       X.GetImage(2, pixmap, 0, 0, 20, 20, 0xffffffff, (err, img) => {
-          should.not.exist(err);
-          getPixel(img.data, 5, 10).should.equal(white >>> 0);
-          getPixel(img.data, 15, 10).should.equal(black >>> 0);
+          assert.ifError(err);
+          assert.strictEqual(getPixel(img.data, 5, 10), white >>> 0);
+          assert.strictEqual(getPixel(img.data, 15, 10), black >>> 0);
           X.FreeGC(gc);
           done();
       });
@@ -85,7 +85,7 @@ describe('GC requests', () => {
       X.SetDashes(gc, 0, [3, 2]);
       // any encoding error would trigger BadLength/BadValue before the reply below
       X.GetInputFocus(err => {
-          should.not.exist(err);
+          assert.ifError(err);
           X.FreeGC(gc);
           done();
       });
@@ -97,7 +97,7 @@ describe('GC requests', () => {
       X.FreeGC(gc);
       X.removeAllListeners('error'); // drop the beforeEach done-listener
       X.on('error', err => {
-          err.message.should.equal('Bad GContext');
+          assert.strictEqual(err.message, 'Bad GContext');
           done();
       });
       X.ChangeGC(gc, { foreground: white });

@@ -5,7 +5,7 @@
 // $DISPLAY names — Xvfb in CI, which rasterizes with pixman like Xorg,
 // Xwayland and XQuartz.
 const { describe, it, before, after } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const x11 = require('../lib');
 const raster = require('../lib/render-raster');
 const { boot } = require('./xserver/boot');

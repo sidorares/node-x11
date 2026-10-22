@@ -1,6 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 describe('DOUBLE-BUFFER extension', () => {
     let X, root, white, black, dbe, wid, gc, backBuf;
@@ -10,13 +10,13 @@ describe('DOUBLE-BUFFER extension', () => {
 
     before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X = dpy.client;
             root = dpy.screen[0].root;
             white = dpy.screen[0].white_pixel;
             black = dpy.screen[0].black_pixel;
             X.require('dbe', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 dbe = ext;
                 wid = X.AllocID();
                 X.CreateWindow(wid, root, 0, 0, W, H, 0, 0, 0, 0,
@@ -32,16 +32,16 @@ describe('DOUBLE-BUFFER extension', () => {
     });
 
     it('GetVersion should report version 1.0', function() {
-        dbe.major.should.equal(1);
-        dbe.minor.should.be.aboveOrEqual(0);
+        assert.strictEqual(dbe.major, 1);
+        assert.ok(dbe.minor >= 0);
     });
 
     it('AllocateBackBufferName + GetBackBufferAttributes should round-trip the window', function(t, done) {
         backBuf = X.AllocID();
         dbe.AllocateBackBufferName(wid, backBuf, dbe.SwapAction.Undefined);
         dbe.GetBackBufferAttributes(backBuf, (err, attrs) => {
-            should.not.exist(err);
-            attrs.window.should.equal(wid);
+            assert.ifError(err);
+            assert.strictEqual(attrs.window, wid);
             done();
         });
     });
@@ -50,15 +50,15 @@ describe('DOUBLE-BUFFER extension', () => {
         // the back buffer is a drawable: paint it white with a core request
         X.PolyFillRectangle(backBuf, gc, [0, 0, W, H]);
         X.GetImage(2, backBuf, 0, 0, W, H, 0xffffffff, (err, imgBack) => {
-            should.not.exist(err);
+            assert.ifError(err);
             X.GetImage(2, wid, 0, 0, W, H, 0xffffffff, (err, imgFrontBefore) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 // front buffer still shows the black window background
-                imgFrontBefore.data.equals(imgBack.data).should.be.false();
+                assert.strictEqual(imgFrontBefore.data.equals(imgBack.data), false);
                 dbe.SwapBuffers([{ window: wid, swapAction: dbe.SwapAction.Untouched }]);
                 X.GetImage(2, wid, 0, 0, W, H, 0xffffffff, (err, imgFrontAfter) => {
-                    should.not.exist(err);
-                    imgFrontAfter.data.equals(imgBack.data).should.be.true();
+                    assert.ifError(err);
+                    assert.strictEqual(imgFrontAfter.data.equals(imgBack.data), true);
                     done();
                 });
             });
@@ -67,14 +67,14 @@ describe('DOUBLE-BUFFER extension', () => {
 
     it('GetVisualInfo should list double-buffer capable visuals for the root screen', function(t, done) {
         dbe.GetVisualInfo([root], (err, screens) => {
-            should.not.exist(err);
-            screens.should.be.an.Array();
-            screens.length.should.equal(1);
-            screens[0].length.should.be.above(0);
+            assert.ifError(err);
+            assert.ok(Array.isArray(screens));
+            assert.strictEqual(screens.length, 1);
+            assert.ok(screens[0].length > 0);
             screens[0].forEach(info => {
-                info.visual.should.be.above(0);
-                info.depth.should.be.above(0);
-                info.perfLevel.should.be.a.Number();
+                assert.ok(info.visual > 0);
+                assert.ok(info.depth > 0);
+                assert.strictEqual(typeof info.perfLevel, 'number');
             });
             done();
         });
@@ -85,8 +85,8 @@ describe('DOUBLE-BUFFER extension', () => {
         dbe.EndIdiom();
         // round trip to make sure neither request produced an error
         dbe.GetVersion(1, 0, (err, vers) => {
-            should.not.exist(err);
-            vers[0].should.equal(1);
+            assert.ifError(err);
+            assert.strictEqual(vers[0], 1);
             done();
         });
     });
@@ -94,8 +94,8 @@ describe('DOUBLE-BUFFER extension', () => {
     it('DeallocateBackBufferName should invalidate the buffer name', function(t, done) {
         dbe.DeallocateBackBufferName(backBuf);
         dbe.GetBackBufferAttributes(backBuf, (err, attrs) => {
-            should.not.exist(err);
-            attrs.window.should.equal(0); // None: no longer attached to the window
+            assert.ifError(err);
+            assert.strictEqual(attrs.window, 0); // None: no longer attached to the window
             done();
         });
     });

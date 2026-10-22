@@ -1,7 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 describe('KillKlient request', () => {
 
@@ -9,7 +8,7 @@ describe('KillKlient request', () => {
   let X;
   beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
-          should.not.exist(err);
+          assert.ifError(err);
           display = dpy;
           X = display.client;
           const root = display.screen[0].root;
@@ -27,18 +26,18 @@ describe('KillKlient request', () => {
   });
 
   it('should exist as client member', () => {
-      should.exist(X.KillKlient);
-      assert.equal(typeof X.KillKlient, 'function');
+      assert.ok(X.KillKlient != null);
+      assert.strictEqual(typeof X.KillKlient, 'function');
   });
 
   it('should terminate other client connection', (t, done) => {
       x11.createClient((err, dpy) => {
-          should.not.exist(err);
+          assert.ifError(err);
           const otherclient = dpy.client;
           const wnd = otherclient.AllocID();
           X.once('event', ev => {
-              ev.name.should.equal('CreateNotify');
-              ev.wid.should.equal(wnd);
+              assert.strictEqual(ev.name, 'CreateNotify');
+              assert.strictEqual(ev.wid, wnd);
               X.KillKlient(wnd);
           });
 

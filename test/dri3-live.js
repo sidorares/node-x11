@@ -10,7 +10,7 @@
 // PixmapFromBuffer, read the pixels back out of the server-side pixmap —
 // then a Present of that pixmap through CompleteNotify/IdleNotify.
 const { describe, it, before, after } = require('node:test');
-const should = require('should');
+const assert = require('node:assert/strict');
 const x11 = require('../lib');
 
 let dri = null;
@@ -45,10 +45,10 @@ describe('DRI3 extension (live server)', { skip: !dri && 'x11-dri is not install
             root = display.screen[0].root;
             depth = display.screen[0].root_depth;
             X.require('dri3', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 DRI3 = ext;
                 X.require('present', (err2, p) => {
-                    should.not.exist(err2);
+                    assert.ifError(err2);
                     Present = p;
                     done();
                 });
@@ -91,16 +91,16 @@ describe('DRI3 extension (live server)', { skip: !dri && 'x11-dri is not install
     }
 
     it('negotiates at least version 1.0', () => {
-        DRI3.major.should.be.aboveOrEqual(1);
-        DRI3.fdCapable.should.equal(true, 'unix-socket connections are fd-capable by default');
+        assert.ok(DRI3.major >= 1);
+        assert.strictEqual(DRI3.fdCapable, true, 'unix-socket connections are fd-capable by default');
     });
 
     it('lists supported modifiers for the root window', (t, done) => {
         DRI3.GetSupportedModifiers(root, depth, 32, (err, mods) => {
-            should.not.exist(err);
-            mods.windowModifiers.should.be.an.Array();
-            mods.screenModifiers.should.be.an.Array();
-            mods.windowModifiers.forEach(m => (typeof m).should.equal('bigint'));
+            assert.ifError(err);
+            assert.ok(Array.isArray(mods.windowModifiers));
+            assert.ok(Array.isArray(mods.screenModifiers));
+            mods.windowModifiers.forEach(m => assert.strictEqual(typeof m, 'bigint'));
             done();
         });
     });
@@ -123,8 +123,8 @@ describe('DRI3 extension (live server)', { skip: !dri && 'x11-dri is not install
         gl.clearColor(1, 0.5, 0, 1); // 0xff8000
         gl.clear(gl.COLOR_BUFFER_BIT);
         const out = surface.swap();
-        out.isNew.should.equal(true);
-        (typeof out.modifier).should.equal('bigint');
+        assert.strictEqual(out.isNew, true);
+        assert.strictEqual(typeof out.modifier, 'bigint');
 
         ensurePixmap(out, root, (impErr, pixmap) => {
             if (impErr) {
@@ -136,9 +136,9 @@ describe('DRI3 extension (live server)', { skip: !dri && 'x11-dri is not install
             }
             gpuUsable = true;
             X.GetImage(2, pixmap, 0, 0, W, H, 0xffffffff, (err, img) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 for (const at of [0, (H / 2 * W + W / 2) * 4, (W * H - 1) * 4])
-                    (img.data.readUInt32LE(at) & 0xffffff).should.equal(0xff8000);
+                    assert.strictEqual(img.data.readUInt32LE(at) & 0xffffff, 0xff8000);
                 surface.release(out.key);
                 done();
             });
@@ -167,7 +167,7 @@ describe('DRI3 extension (live server)', { skip: !dri && 'x11-dri is not install
         let idle = false;
         const onEvent = ev => {
             if (ev.name === 'PresentCompleteNotify' && ev.serial === 7) {
-                ev.kind.should.equal(Present.CompleteKind.Pixmap);
+                assert.strictEqual(ev.kind, Present.CompleteKind.Pixmap);
                 complete = true;
             } else if (ev.name === 'PresentIdleNotify' && ev.serial === 7) {
                 surface.release(out.key);
@@ -182,7 +182,7 @@ describe('DRI3 extension (live server)', { skip: !dri && 'x11-dri is not install
         X.on('event', onEvent);
 
         ensurePixmap(out, wid, (impErr, pixmap) => {
-            should.not.exist(impErr); // it imported for the same device above
+            assert.ifError(impErr); // it imported for the same device above
             // Async: complete immediately, not at a vblank that a headless
             // or throttled server may never deliver
             Present.Pixmap(wid, pixmap, { serial: 7, options: Present.Option.Async });

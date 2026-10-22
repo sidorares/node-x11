@@ -2,7 +2,7 @@
 // before the connection is made, which is exactly why getting it wrong is so
 // hard to diagnose from the outside.
 const { describe, it, beforeEach, afterEach } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');

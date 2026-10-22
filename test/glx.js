@@ -1,6 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 // GLX tests. Query-style requests work against any server advertising GLX;
 // context creation and rendering additionally require indirect GLX contexts,
@@ -35,13 +35,13 @@ describe('GLX extension', function() {
         connDead = false;
         let setupFinished = false;
         const client = x11.createClient((err, dpy) => {
-            should.not.exist(err);
+            assert.ifError(err);
             display = dpy;
             X = dpy.client;
             root = dpy.screen[0].root;
             X.on('end', () => { connDead = true; });
             X.require('glx', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 GLX = ext;
                 setupFinished = true;
                 done();
@@ -83,22 +83,22 @@ describe('GLX extension', function() {
 
     itIf(serverGone, 'QueryVersion should report at least GLX 1.2', function(t, done) {
         GLX.QueryVersion(1, 4, guard(done, (err, version) => {
-            should.not.exist(err);
-            version[0].should.equal(1);
-            version[1].should.be.aboveOrEqual(2);
+            assert.ifError(err);
+            assert.strictEqual(version[0], 1);
+            assert.ok(version[1] >= 2);
             done();
         }));
     });
 
     itIf(serverGone, 'QueryServerString should return NUL-free vendor and version strings', function(t, done) {
         GLX.QueryServerString(0, GLX.glxConst.VENDOR, guard(done, (err, vendor) => {
-            should.not.exist(err);
-            vendor.should.be.a.String();
-            vendor.length.should.be.above(0);
-            vendor.should.not.match(/\0/);
+            assert.ifError(err);
+            assert.strictEqual(typeof vendor, 'string');
+            assert.ok(vendor.length > 0);
+            assert.doesNotMatch(vendor, /\0/);
             GLX.QueryServerString(0, GLX.glxConst.VERSION, guard(done, (err, version) => {
-                should.not.exist(err);
-                version.should.match(/^1\.[2-9]/);
+                assert.ifError(err);
+                assert.match(version, /^1\.[2-9]/);
                 done();
             }));
         }));
@@ -106,23 +106,23 @@ describe('GLX extension', function() {
 
     itIf(serverGone, 'QueryExtensionsString should return a GLX extension list', function(t, done) {
         GLX.QueryExtensionsString(0, guard(done, (err, extensions) => {
-            should.not.exist(err);
-            extensions.should.match(/GLX_ARB_multisample/);
-            extensions.should.not.match(/\0/);
+            assert.ifError(err);
+            assert.match(extensions, /GLX_ARB_multisample/);
+            assert.doesNotMatch(extensions, /\0/);
             done();
         }));
     });
 
     itIf(serverGone, 'GetVisualConfigs should decode base and extended properties', function(t, done) {
         GLX.GetVisualConfigs(0, guard(done, (err, configs) => {
-            should.not.exist(err);
-            configs.should.be.an.Array();
-            configs.length.should.be.above(0);
+            assert.ifError(err);
+            assert.ok(Array.isArray(configs));
+            assert.ok(configs.length > 0);
             const cfg = configs[0];
-            cfg.should.have.property('visualID');
-            cfg.should.have.property('rgbMode');
-            cfg.should.have.property('doubleBufferMode');
-            cfg.should.have.property('depthBits');
+            assert.ok('visualID' in cfg);
+            assert.ok('rgbMode' in cfg);
+            assert.ok('doubleBufferMode' in cfg);
+            assert.ok('depthBits' in cfg);
             // remember an RGBA double-buffered visual for the context tests
             visualConfig = configs.find(c =>
                 c.rgbMode && c.doubleBufferMode && c.depthBits > 0);
@@ -132,11 +132,11 @@ describe('GLX extension', function() {
 
     itIf(serverGone, 'GetFBConfigs should decode attributes by name', function(t, done) {
         GLX.GetFBConfigs(0, guard(done, (err, configs) => {
-            should.not.exist(err);
-            configs.length.should.be.above(0);
-            configs[0].should.have.property('FBCONFIG_ID');
-            configs[0].should.have.property('RENDER_TYPE');
-            configs[0].should.have.property('DRAWABLE_TYPE');
+            assert.ifError(err);
+            assert.ok(configs.length > 0);
+            assert.ok('FBCONFIG_ID' in configs[0]);
+            assert.ok('RENDER_TYPE' in configs[0]);
+            assert.ok('DRAWABLE_TYPE' in configs[0]);
             // an fbconfig usable for both windows and pbuffers
             fbconfig = configs.find(c =>
                 (c.DRAWABLE_TYPE & GLX.glxConst.WINDOW_BIT) &&
@@ -152,30 +152,30 @@ describe('GLX extension', function() {
         const spec = { RENDER_TYPE: C.RGBA_BIT, DRAWABLE_TYPE: C.WINDOW_BIT,
             RED_SIZE: 1, GREEN_SIZE: 1, BLUE_SIZE: 1, DOUBLEBUFFER: true };
         GLX.ChooseFBConfig(0, spec, guard(done, (err, chosen) => {
-            should.not.exist(err);
-            chosen.should.be.an.Array();
-            chosen.length.should.be.above(0);
+            assert.ifError(err);
+            assert.ok(Array.isArray(chosen));
+            assert.ok(chosen.length > 0);
             // every returned config satisfies the request
             for (const c of chosen) {
-                (c.RENDER_TYPE & C.RGBA_BIT).should.be.above(0);
-                (c.DRAWABLE_TYPE & C.WINDOW_BIT).should.be.above(0);
-                c.RED_SIZE.should.be.above(0);
-                c.DOUBLEBUFFER.should.equal(1);
+                assert.ok((c.RENDER_TYPE & C.RGBA_BIT) > 0);
+                assert.ok((c.DRAWABLE_TYPE & C.WINDOW_BIT) > 0);
+                assert.ok(c.RED_SIZE > 0);
+                assert.strictEqual(c.DOUBLEBUFFER, 1);
             }
             // the best config has no caveat and the deepest color available
             // among the matches (sort rules 1 and 2)
             const best = chosen[0];
-            (best.CONFIG_CAVEAT === undefined ||
-                best.CONFIG_CAVEAT === C.NONE).should.be.true();
+            assert.ok(best.CONFIG_CAVEAT === undefined ||
+                best.CONFIG_CAVEAT === C.NONE);
             const colorBits = c => c.RED_SIZE + c.GREEN_SIZE + c.BLUE_SIZE;
             for (const c of chosen)
-                colorBits(best).should.be.aboveOrEqual(colorBits(c));
+                assert.ok(colorBits(best) >= colorBits(c));
             // results come from the server's fbconfig list
             GLX.GetFBConfigs(0, guard(done, (err2, all) => {
-                should.not.exist(err2);
+                assert.ifError(err2);
                 const allIds = new Set(all.map(c => c.FBCONFIG_ID));
                 for (const c of chosen)
-                    allIds.has(c.FBCONFIG_ID).should.be.true();
+                    assert.strictEqual(allIds.has(c.FBCONFIG_ID), true);
                 done();
             }));
         }));
@@ -183,21 +183,21 @@ describe('GLX extension', function() {
 
     itIf(serverGone, 'ChooseFBConfig with an impossible spec should return an empty list', function(t, done) {
         GLX.ChooseFBConfig(0, { RED_SIZE: 1024 }, guard(done, (err, chosen) => {
-            should.not.exist(err);
-            chosen.should.be.an.Array();
-            chosen.length.should.equal(0);
+            assert.ifError(err);
+            assert.ok(Array.isArray(chosen));
+            assert.strictEqual(chosen.length, 0);
             done();
         }));
     });
 
     itIf(serverGone, 'GetFBConfigsSGIX should agree with GetFBConfigs', function(t, done) {
         GLX.GetFBConfigsSGIX(0, guard(done, (err, configs) => {
-            should.not.exist(err);
-            configs.length.should.be.above(0);
-            configs[0].should.have.property('FBCONFIG_ID');
+            assert.ifError(err);
+            assert.ok(configs.length > 0);
+            assert.ok('FBCONFIG_ID' in configs[0]);
             GLX.GetFBConfigs(0, guard(done, (err, coreConfigs) => {
-                should.not.exist(err);
-                configs.length.should.equal(coreConfigs.length);
+                assert.ifError(err);
+                assert.strictEqual(configs.length, coreConfigs.length);
                 done();
             }));
         }));
@@ -208,7 +208,7 @@ describe('GLX extension', function() {
         GLX.SetClientInfoARB(1, 4, [[1, 4], [2, 1]], 'GL_ARB_multisample', 'GLX_ARB_create_context');
         // round-trip to make sure neither request produced a protocol error
         GLX.QueryVersion(1, 4, guard(done, (err) => {
-            should.not.exist(err);
+            assert.ifError(err);
             done();
         }));
     });
@@ -228,10 +228,10 @@ describe('GLX extension', function() {
                 GLX.DestroyContext(probe);
             else {
                 // BadValue (2), value 0: indirect GLX contexts disabled
-                err.error.should.equal(2);
-                err.majorOpcode.should.equal(GLX.majorOpcode);
-                err.minorOpcode.should.equal(3);
-                err.badParam.should.equal(0);
+                assert.strictEqual(err.error, 2);
+                assert.strictEqual(err.majorOpcode, GLX.majorOpcode);
+                assert.strictEqual(err.minorOpcode, 3);
+                assert.strictEqual(err.badParam, 0);
             }
             done();
             return true; // handled: keep it off client.on('error')
@@ -286,8 +286,8 @@ describe('GLX extension', function() {
                 ctx = X.AllocID();
                 GLX.CreateContext(ctx, cfg.visualID, 0, 0, 0);
                 GLX.MakeCurrent(win, ctx, 0, guard(done, (err, newTag) => {
-                    should.not.exist(err);
-                    newTag.should.be.above(0);
+                    assert.ifError(err);
+                    assert.ok(newTag > 0);
                     tag = newTag;
                     // modern Linux X servers accept indirect contexts but no
                     // longer execute GL behind them (no rasterization, state
@@ -295,7 +295,7 @@ describe('GLX extension', function() {
                     // still does. An empty GL_VERSION string is the reliable
                     // tell; detect it so GL-execution tests can skip.
                     GLX.GetString(tag, GLX.VERSION, guard(done, (err, version) => {
-                        should.not.exist(err);
+                        assert.ifError(err);
                         glExecutes = version.length > 0;
                         done();
                     }));
@@ -305,8 +305,8 @@ describe('GLX extension', function() {
 
         itIf(noIndirect, 'IsDirect should report false for an indirect context', function(t, done) {
             GLX.IsDirect(ctx, guard(done, (err, isDirect) => {
-                should.not.exist(err);
-                isDirect.should.equal(false);
+                assert.ifError(err);
+                assert.strictEqual(isDirect, false);
                 done();
             }));
         });
@@ -314,24 +314,24 @@ describe('GLX extension', function() {
         itIf(noIndirect, 'QueryContext should report the context attributes', function(t, done) {
             const cfg = visualConfig;
             GLX.QueryContext(ctx, guard(done, (err, attribs) => {
-                should.not.exist(err);
-                attribs.should.have.property('VISUAL_ID', cfg.visualID);
-                attribs.should.have.property('SCREEN', 0);
+                assert.ifError(err);
+                assert.strictEqual(attribs.VISUAL_ID, cfg.visualID);
+                assert.strictEqual(attribs.SCREEN, 0);
                 done();
             }));
         });
 
         itIf(noIndirect, 'GetString should return GL strings', function(t, done) {
             GLX.GetString(tag, GLX.VENDOR, guard(done, (err, vendor) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 // some servers (e.g. debian bookworm Xvfb) return empty GL
                 // strings to indirect contexts - only check the type then
-                vendor.should.be.a.String();
+                assert.strictEqual(typeof vendor, 'string');
                 GLX.GetString(tag, GLX.VERSION, guard(done, (err, version) => {
-                    should.not.exist(err);
-                    version.should.be.a.String();
+                    assert.ifError(err);
+                    assert.strictEqual(typeof version, 'string');
                     if (version.length)
-                        version.should.match(/^\d+\.\d+/);
+                        assert.match(version, /^\d+\.\d+/);
                     done();
                 }));
             }));
@@ -339,13 +339,13 @@ describe('GLX extension', function() {
 
         itIf(noGL, 'GetIntegerv should return single values and arrays', function(t, done) {
             GLX.GetIntegerv(tag, GLX.MAX_TEXTURE_SIZE, guard(done, (err, size) => {
-                should.not.exist(err);
-                size.should.be.a.Number();
-                size.should.be.above(0);
+                assert.ifError(err);
+                assert.strictEqual(typeof size, 'number');
+                assert.ok(size > 0);
                 GLX.GetIntegerv(tag, 0x0BA2 /* GL_VIEWPORT */, guard(done, (err, viewport) => {
-                    should.not.exist(err);
-                    viewport.should.be.an.Array();
-                    viewport.length.should.equal(4);
+                    assert.ifError(err);
+                    assert.ok(Array.isArray(viewport));
+                    assert.strictEqual(viewport.length, 4);
                     done();
                 }));
             }));
@@ -353,12 +353,12 @@ describe('GLX extension', function() {
 
         itIf(noGL, 'GetFloatv and GetBooleanv should decode their types', function(t, done) {
             GLX.GetFloatv(tag, 0x0B21 /* GL_LINE_WIDTH */, guard(done, (err, width) => {
-                should.not.exist(err);
-                width.should.be.a.Number();
-                width.should.be.approximately(1, 0.001);
+                assert.ifError(err);
+                assert.strictEqual(typeof width, 'number');
+                assert.ok(Math.abs(width - 1) <= 0.001);
                 GLX.GetBooleanv(tag, 0x0C32 /* GL_DOUBLEBUFFER */, guard(done, (err, doubleBuffered) => {
-                    should.not.exist(err);
-                    doubleBuffered.should.be.a.Boolean();
+                    assert.ifError(err);
+                    assert.strictEqual(typeof doubleBuffered, 'boolean');
                     done();
                 }));
             }));
@@ -367,13 +367,13 @@ describe('GLX extension', function() {
         itIf(noGL, 'IsEnabled should reflect Enable/Disable', function(t, done) {
             const gl = GLX.renderPipeline(tag);
             GLX.IsEnabled(tag, GLX.DEPTH_TEST, guard(done, (err, enabled) => {
-                should.not.exist(err);
-                enabled.should.equal(false);
+                assert.ifError(err);
+                assert.strictEqual(enabled, false);
                 gl.Enable(gl.DEPTH_TEST);
                 gl.Render();
                 GLX.IsEnabled(tag, GLX.DEPTH_TEST, guard(done, (err, enabled) => {
-                    should.not.exist(err);
-                    enabled.should.equal(true);
+                    assert.ifError(err);
+                    assert.strictEqual(enabled, true);
                     gl.Disable(gl.DEPTH_TEST);
                     gl.Render();
                     done();
@@ -401,16 +401,16 @@ describe('GLX extension', function() {
             gl.Render();
 
             GLX.Finish(tag, guard(done, err => {
-                should.not.exist(err);
+                assert.ifError(err);
                 GLX.ReadPixels(tag, 32, 32, 1, 1, GLX.RGBA, GLX.UNSIGNED_BYTE, 0, 0, guard(done, (err, center) => {
-                    should.not.exist(err);
-                    center[0].should.be.above(200); // red
-                    center[1].should.be.below(50);
-                    center[2].should.be.below(50);
+                    assert.ifError(err);
+                    assert.ok(center[0] > 200); // red
+                    assert.ok(center[1] < 50);
+                    assert.ok(center[2] < 50);
                     GLX.ReadPixels(tag, 0, 63, 1, 1, GLX.RGBA, GLX.UNSIGNED_BYTE, 0, 0, guard(done, (err, corner) => {
-                        should.not.exist(err);
-                        corner[0].should.be.below(50); // blue
-                        corner[2].should.be.above(200);
+                        assert.ifError(err);
+                        assert.ok(corner[0] < 50); // blue
+                        assert.ok(corner[2] > 200);
                         done();
                     }));
                 }));
@@ -419,8 +419,8 @@ describe('GLX extension', function() {
 
         itIf(noGL, 'display lists: GenLists/NewList/EndList/IsList/DeleteLists', function(t, done) {
             GLX.GenLists(tag, 2, guard(done, (err, base) => {
-                should.not.exist(err);
-                base.should.be.above(0);
+                assert.ifError(err);
+                assert.ok(base > 0);
                 GLX.NewList(tag, base, GLX.COMPILE);
                 const gl = GLX.renderPipeline(tag);
                 gl.Begin(gl.POINTS);
@@ -429,12 +429,12 @@ describe('GLX extension', function() {
                 gl.Render();
                 GLX.EndList(tag);
                 GLX.IsList(tag, base, guard(done, (err, isList) => {
-                    should.not.exist(err);
-                    isList.should.equal(true);
+                    assert.ifError(err);
+                    assert.strictEqual(isList, true);
                     GLX.DeleteLists(tag, base, 2);
                     GLX.IsList(tag, base, guard(done, (err, isList) => {
-                        should.not.exist(err);
-                        isList.should.equal(false);
+                        assert.ifError(err);
+                        assert.strictEqual(isList, false);
                         done();
                     }));
                 }));
@@ -444,23 +444,23 @@ describe('GLX extension', function() {
         itIf(noGL, 'textures: GenTextures/IsTexture/AreTexturesResident/DeleteTextures', function(t, done) {
             const gl = GLX.renderPipeline(tag);
             GLX.GenTextures(tag, 3, guard(done, (err, textures) => {
-                should.not.exist(err);
-                textures.length.should.equal(3);
-                textures.forEach(t => t.should.be.above(0));
+                assert.ifError(err);
+                assert.strictEqual(textures.length, 3);
+                textures.forEach(t => assert.ok(t > 0));
                 // a texture id only becomes a texture once bound
                 gl.BindTexture(gl.TEXTURE_2D, textures[0]);
                 gl.Render();
                 GLX.IsTexture(tag, textures[0], guard(done, (err, isTexture) => {
-                    should.not.exist(err);
-                    isTexture.should.equal(true);
+                    assert.ifError(err);
+                    assert.strictEqual(isTexture, true);
                     GLX.AreTexturesResident(tag, [textures[0]], guard(done, (err, res) => {
-                        should.not.exist(err);
-                        res.should.have.property('allResident');
-                        res.residences.length.should.equal(1);
+                        assert.ifError(err);
+                        assert.ok('allResident' in res);
+                        assert.strictEqual(res.residences.length, 1);
                         GLX.DeleteTextures(tag, textures);
                         GLX.IsTexture(tag, textures[0], guard(done, (err, isTexture) => {
-                            should.not.exist(err);
-                            isTexture.should.equal(false);
+                            assert.ifError(err);
+                            assert.strictEqual(isTexture, false);
                             done();
                         }));
                     }));
@@ -470,12 +470,12 @@ describe('GLX extension', function() {
 
         itIf(noGL, 'RenderMode should switch modes and report zero values', function(t, done) {
             GLX.RenderMode(tag, GLX.RENDER, guard(done, (err, result) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 // retval is the number of feedback/selection values generated
                 // in the previous mode - zero when it was GL_RENDER
-                result.retval.should.equal(0);
-                result.newMode.should.equal(GLX.RENDER);
-                result.data.should.be.an.Array();
+                assert.strictEqual(result.retval, 0);
+                assert.strictEqual(result.newMode, GLX.RENDER);
+                assert.ok(Array.isArray(result.data));
                 done();
             }));
         });
@@ -486,8 +486,8 @@ describe('GLX extension', function() {
             GLX.WaitX(tag);
             GLX.Flush(tag);
             GLX.GetError(tag, guard(done, (err, glError) => {
-                should.not.exist(err);
-                glError.should.equal(0);
+                assert.ifError(err);
+                assert.strictEqual(glError, 0);
                 done();
             }));
         });
@@ -497,16 +497,16 @@ describe('GLX extension', function() {
             gl.Enable(0xdead); // not a valid GL capability
             gl.Render();
             GLX.GetError(tag, guard(done, (err, glError) => {
-                should.not.exist(err);
-                glError.should.equal(0x0500); // GL_INVALID_ENUM
+                assert.ifError(err);
+                assert.strictEqual(glError, 0x0500); // GL_INVALID_ENUM
                 done();
             }));
         });
 
         itIf(noIndirect, 'errors should use GLX error names', function(t, done) {
             GLX.MakeCurrent(win, 0xbad0bad, 0, guard(done, (err) => {
-                should.exist(err);
-                err.message.should.equal('GLXBadContext');
+                assert.ok(err != null);
+                assert.strictEqual(err.message, 'GLXBadContext');
                 done();
                 return true; // error handled, don't re-emit on the client
             }));
@@ -526,22 +526,22 @@ describe('GLX extension', function() {
             // when another context is current its tag must be passed as
             // oldContextTag, otherwise the server raises GLXBadContext
             GLX.MakeContextCurrent(tag, pbuffer, pbuffer, pbCtx, guard(done, (err, pbTag) => {
-                should.not.exist(err);
-                pbTag.should.be.above(0);
+                assert.ifError(err);
+                assert.ok(pbTag > 0);
                 GLX.GetDrawableAttributes(pbuffer, guard(done, (err, attribs) => {
-                    should.not.exist(err);
-                    attribs.should.have.property('WIDTH', 32);
-                    attribs.should.have.property('HEIGHT', 32);
+                    assert.ifError(err);
+                    assert.strictEqual(attribs.WIDTH, 32);
+                    assert.strictEqual(attribs.HEIGHT, 32);
 
                     // rebind the main window context, then clean up
                     function cleanup() {
                         GLX.MakeCurrent(win, ctx, pbTag, guard(done, (err, newTag) => {
-                            should.not.exist(err);
+                            assert.ifError(err);
                             tag = newTag;
                             GLX.DestroyPbuffer(pbuffer);
                             GLX.DestroyContext(pbCtx);
                             GLX.QueryVersion(1, 4, guard(done, err => {
-                                should.not.exist(err);
+                                assert.ifError(err);
                                 done();
                             }));
                         }));
@@ -557,10 +557,10 @@ describe('GLX extension', function() {
                     gl.Clear(gl.COLOR_BUFFER_BIT);
                     gl.Render();
                     GLX.Finish(pbTag, guard(done, err => {
-                        should.not.exist(err);
+                        assert.ifError(err);
                         GLX.ReadPixels(pbTag, 16, 16, 1, 1, GLX.RGBA, GLX.UNSIGNED_BYTE, 0, 0, guard(done, (err, px) => {
-                            should.not.exist(err);
-                            px[1].should.be.above(200); // green
+                            assert.ifError(err);
+                            assert.ok(px[1] > 200); // green
                             cleanup();
                         }));
                     }));
@@ -589,12 +589,12 @@ describe('GLX extension', function() {
             const glxwin = X.AllocID();
             GLX.CreateWindow(0, cfg.FBCONFIG_ID, win, glxwin, []);
             GLX.GetDrawableAttributes(glxwin, guard(done, (err, attribs) => {
-                should.not.exist(err);
-                attribs.should.have.property('FBCONFIG_ID', cfg.FBCONFIG_ID);
+                assert.ifError(err);
+                assert.strictEqual(attribs.FBCONFIG_ID, cfg.FBCONFIG_ID);
                 GLX.DestroyWindow(glxwin);
                 X.DestroyWindow(win);
                 GLX.QueryVersion(1, 4, guard(done, err => {
-                    should.not.exist(err);
+                    assert.ifError(err);
                     done();
                 }));
             }));
@@ -610,8 +610,8 @@ describe('GLX extension', function() {
                 [GLX.glxAttrib.CONTEXT_MAJOR_VERSION_ARB, 1,
                  GLX.glxAttrib.CONTEXT_MINOR_VERSION_ARB, 0]);
             GLX.IsDirect(ctx, guard(done, (err, isDirect) => {
-                should.not.exist(err);
-                isDirect.should.equal(false);
+                assert.ifError(err);
+                assert.strictEqual(isDirect, false);
                 GLX.DestroyContext(ctx);
                 done();
             }));
@@ -626,8 +626,8 @@ describe('GLX extension', function() {
             GLX.CreateContextWithConfigSGIX(ctx, fbconfig.FBCONFIG_ID, 0,
                 GLX.glxAttrib.RGBA_TYPE, 0, 0);
             GLX.IsDirect(ctx, guard(done, (err, isDirect) => {
-                should.not.exist(err);
-                isDirect.should.equal(false);
+                assert.ifError(err);
+                assert.strictEqual(isDirect, false);
                 GLX.DestroyContext(ctx);
                 done();
             }));
@@ -641,12 +641,12 @@ describe('GLX extension', function() {
             const pbuffer = X.AllocID();
             GLX.CreateGLXPbufferSGIX(0, fbconfig.FBCONFIG_ID, pbuffer, 16, 16, []);
             GLX.GetDrawableAttributesSGIX(pbuffer, guard(done, (err, attribs) => {
-                should.not.exist(err);
-                attribs.should.have.property('WIDTH', 16);
-                attribs.should.have.property('HEIGHT', 16);
+                assert.ifError(err);
+                assert.strictEqual(attribs.WIDTH, 16);
+                assert.strictEqual(attribs.HEIGHT, 16);
                 GLX.DestroyGLXPbufferSGIX(pbuffer);
                 GLX.QueryVersion(1, 4, guard(done, err => {
-                    should.not.exist(err);
+                    assert.ifError(err);
                     done();
                 }));
             }));
@@ -655,8 +655,8 @@ describe('GLX extension', function() {
         itIf(noIndirect, 'GLX_SGI_make_current_read: MakeCurrentReadSGI', function(t, done) {
             // rebind the main window context with separate read drawable
             GLX.MakeCurrentReadSGI(tag, win, win, ctx, guard(done, (err, newTag) => {
-                should.not.exist(err);
-                newTag.should.be.above(0);
+                assert.ifError(err);
+                assert.ok(newTag > 0);
                 tag = newTag;
                 done();
             }));

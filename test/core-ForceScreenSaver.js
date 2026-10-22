@@ -1,7 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 describe('ForceScreenSaver request', () => {
 
@@ -27,8 +26,8 @@ describe('ForceScreenSaver request', () => {
   });
 
   it('should exist as client member', (t, done) => {
-      should.exist(X.ForceScreenSaver);
-      assert.equal(typeof X.ForceScreenSaver, 'function');
+      assert.ok(X.ForceScreenSaver != null);
+      assert.strictEqual(typeof X.ForceScreenSaver, 'function');
       done();
   });
 

@@ -1,7 +1,6 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 
 describe('Window subtree requests', () => {
 
@@ -45,8 +44,8 @@ describe('Window subtree requests', () => {
       const children = createChildren(2);
       X.MapSubwindows(parent);
       X.GetWindowAttributes(children[1], (err, attrs) => {
-          should.not.exist(err);
-          attrs.mapState.should.equal(2); // Viewable
+          assert.ifError(err);
+          assert.strictEqual(attrs.mapState, 2); // Viewable
           done();
       });
   });
@@ -56,8 +55,8 @@ describe('Window subtree requests', () => {
       X.MapSubwindows(parent);
       X.UnmapSubwindows(parent);
       X.GetWindowAttributes(children[0], (err, attrs) => {
-          should.not.exist(err);
-          attrs.mapState.should.equal(0); // Unmapped
+          assert.ifError(err);
+          assert.strictEqual(attrs.mapState, 0); // Unmapped
           done();
       });
   });
@@ -66,8 +65,8 @@ describe('Window subtree requests', () => {
       createChildren(3);
       X.DestroySubwindows(parent);
       X.QueryTree(parent, (err, tree) => {
-          should.not.exist(err);
-          tree.children.length.should.equal(0);
+          assert.ifError(err);
+          assert.strictEqual(tree.children.length, 0);
           done();
       });
   });
@@ -78,8 +77,8 @@ describe('Window subtree requests', () => {
       X.MapSubwindows(parent);
       X.CirculateWindow(parent, 0); // RaiseLowest
       X.QueryTree(parent, (err, tree) => {
-          should.not.exist(err);
-          assert.deepEqual(tree.children, [children[1], children[0]]);
+          assert.ifError(err);
+          assert.deepStrictEqual(tree.children, [children[1], children[0]]);
           done();
       });
   });

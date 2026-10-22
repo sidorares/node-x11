@@ -1,6 +1,6 @@
 const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
-const should = require('should');
+const assert = require('node:assert/strict');
 
 // Present events (CompleteNotify etc.) are GenericEvents, dispatched via
 // X.geEventParsers (see lib/ext/present.js); the last test below covers the
@@ -36,7 +36,7 @@ describe('Present extension', () => {
             depth = display.screen[0].root_depth;
             bytesPP = depth <= 8 ? 1 : (depth <= 16 ? 2 : 4);
             X.require('present', (err, ext) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 present = ext;
                 done();
             });
@@ -61,17 +61,17 @@ describe('Present extension', () => {
     }
 
     it('QueryVersion should report at least 1.0', () => {
-        present.major.should.be.aboveOrEqual(1);
-        present.minor.should.be.aboveOrEqual(0);
+        assert.ok(present.major >= 1);
+        assert.ok(present.minor >= 0);
     });
 
     it('QueryCapabilities should return a capability mask for the root window', (t, done) => {
         present.QueryCapabilities(root, (err, caps) => {
-            should.not.exist(err);
-            caps.should.be.a.Number();
+            assert.ifError(err);
+            assert.strictEqual(typeof caps, 'number');
             const known = present.Capability.Async | present.Capability.Fence |
                 present.Capability.UST | 8 /* AsyncMayTear */ | 16 /* Syncobj */;
-            (caps & ~known).should.equal(0);
+            assert.strictEqual(caps & ~known, 0);
             done();
         });
     });
@@ -100,7 +100,7 @@ describe('Present extension', () => {
             let attempts = 0;
             const poll = () => {
                 X.GetImage(2, wid, 0, 0, W, H, 0xffffffff, (err, img) => {
-                    should.not.exist(err);
+                    assert.ifError(err);
                     if (getPixel(img.data, W >> 1, H >> 1) === (white >>> 0))
                         return done();
                     if (++attempts > 40)
@@ -131,8 +131,8 @@ describe('Present extension', () => {
         setTimeout(() => {
             present.QueryCapabilities(root, (err, caps) => {
                 X.removeListener('error', onError);
-                should.not.exist(err);
-                errors.should.have.length(0);
+                assert.ifError(err);
+                assert.strictEqual(errors.length, 0);
                 done();
             });
         }, 100);
@@ -146,8 +146,8 @@ describe('Present extension', () => {
         present.SelectInput(eid, wid, present.EventMask.NoEvent);
         present.QueryCapabilities(root, (err, caps) => {
             X.removeListener('error', onError);
-            should.not.exist(err);
-            errors.should.have.length(0);
+            assert.ifError(err);
+            assert.strictEqual(errors.length, 0);
             done();
         });
     });
@@ -159,14 +159,14 @@ describe('Present extension', () => {
             if (ev.name !== 'PresentCompleteNotify')
                 return;
             X.removeListener('event', listener);
-            ev.kind.should.equal(present.CompleteKind.NotifyMSC);
-            ev.window.should.equal(wid);
-            ev.serial.should.equal(serial);
-            ev.msc.should.be.a.Number();
+            assert.strictEqual(ev.kind, present.CompleteKind.NotifyMSC);
+            assert.strictEqual(ev.window, wid);
+            assert.strictEqual(ev.serial, serial);
+            assert.strictEqual(typeof ev.msc, 'number');
             // a later request must still round-trip: proves the variable-length
             // GenericEvent did not corrupt the reply stream framing
             present.QueryCapabilities(root, (err, caps) => {
-                should.not.exist(err);
+                assert.ifError(err);
                 present.SelectInput(eid, wid, present.EventMask.NoEvent);
                 done();
             });

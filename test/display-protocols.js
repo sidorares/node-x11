@@ -2,7 +2,7 @@
 // These tests run against an in-process fake server: no real X server needed.
 const { describe, it } = require('node:test');
 const x11 = require('../lib');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const { EventEmitter } = require('events');
 
 describe('parseDisplay', () => {

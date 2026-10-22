@@ -1,5 +1,5 @@
 const { describe, it, beforeEach, afterEach } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const { EventEmitter } = require('events');
 const x11 = require('../lib');
 const FrameBuffer = require('../lib/framebuffer');

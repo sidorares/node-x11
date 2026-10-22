@@ -3,7 +3,7 @@
 // GetVisualConfigs / CreateContext / MakeCurrent / Render round trips with
 // a RecordingBackend. Self-skips if the server core is not available.
 const { describe, it, before, after } = require('node:test');
-const assert = require('assert');
+const assert = require('node:assert/strict');
 const { createGlxExtension, RecordingBackend } = require('../../browser/glx');
 
 let serverAvailable = false;
