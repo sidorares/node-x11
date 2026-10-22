@@ -383,6 +383,9 @@ window:
 node examples/xprop.js 0x400001    # or no argument for the root window
 ```
 
+It is the one example the npm package ships, so in a project that depends on
+`x11` it runs as `node node_modules/x11/examples/xprop.js`.
+
 [`examples/xprop.js`](../examples/xprop.js) decodes each property by type,
 prints `WM_NORMAL_HINTS`/`WM_HINTS` field by field with the flags word spelled
 out (a flags word of `0` is a legal property that declares *nothing*, and is
@@ -399,4 +402,5 @@ not implemented by this library — see
 ## Running against a test server
 
 The test suite runs against a private Xvfb: `npm run test:local` (see
-`scripts/test-local.sh`). Runnable demos live in `examples/`.
+`scripts/test-local.sh`). Runnable demos live in `examples/` in the repository;
+the npm package carries `lib/`, `browser/`, these docs and `examples/xprop.js`.
