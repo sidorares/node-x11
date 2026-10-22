@@ -36,6 +36,13 @@
     "url": "git+https://github.com/sidorares/node-x11.git"
   },
   "main": "./lib",
+  "files": [
+    "lib/",
+    "browser/",
+    "docs/",
+    "examples/xprop.js",
+    "Changelog.md"
+  ],
   "engines": {
     "node": ">=18"
   },
