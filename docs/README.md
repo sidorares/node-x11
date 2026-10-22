@@ -38,6 +38,12 @@ style, e.g. `/private/tmp/com.apple.launchd.../org.xquartz:0`), and over TCP
 (port 6000 + display number) otherwise. `~/.Xauthority` (or `$XAUTHORITY`) is
 used for authentication automatically.
 
+A unix socket whose listen queue is full is waited on, for up to two seconds,
+the way Xlib's blocking connect waits — rather than failing at once, which a
+non-blocking connect does (`EAGAIN` under Node, `ECONNREFUSED` under Bun).
+Xwayland's queue is one connection deep under both mutter and weston, so two
+clients starting together on a Wayland desktop would otherwise lose one.
+
 Cookie selection follows the file's own order, taking the first entry whose
 display matches — an empty display field in the entry matches any — and whose
 address matches, either exactly or because the entry is `FamilyWild`, the
