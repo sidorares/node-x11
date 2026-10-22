@@ -1,3 +1,4 @@
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const x11 = require('../../lib');
 const { createServer, createStreamPair } = require('../../lib/xserver');
@@ -14,7 +15,7 @@ describe('xserver: packet bursts arriving in one chunk', () => {
     // and small enough that a burst is a few chunks, not a few thousand
     const BURST = 5000;
 
-    it('handles thousands of requests written as one chunk', done => {
+    it('handles thousands of requests written as one chunk', (t, done) => {
         // buffering is what puts them all in one write: unbuffered, each
         // request is its own chunk and nothing queues up behind it
         boot({ clientOptions: { bufferRequests: true } }, (err, ctx) => {
@@ -41,7 +42,7 @@ describe('xserver: packet bursts arriving in one chunk', () => {
         });
     });
 
-    it('dispatches thousands of events written as one chunk', done => {
+    it('dispatches thousands of events written as one chunk', (t, done) => {
         const server = createServer();
         const [clientSide, serverSide] = createStreamPair();
         server.addClientStream(serverSide);

@@ -1,3 +1,4 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -10,109 +11,105 @@ const should = require('should');
 // of the extension's BadSeg error parser.
 
 describe('MIT-SHM extension', () => {
-    before(function(done) {
-        const self = this;
+    let X, root, depth, shm;
+
+    before(function(t, done) {
         x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X = dpy.client;
-            self.root = dpy.screen[0].root;
-            self.depth = dpy.screen[0].root_depth;
-            self.X.require('shm', (err, ext) => {
+            X = dpy.client;
+            root = dpy.screen[0].root;
+            depth = dpy.screen[0].root_depth;
+            X.require('shm', (err, ext) => {
                 should.not.exist(err);
-                self.shm = ext;
+                shm = ext;
                 done();
             });
         });
     });
 
     it('QueryVersion (auto-called) should report at least 1.1 and a sane pixmap format', function() {
-        this.shm.major.should.equal(1);
-        this.shm.minor.should.be.aboveOrEqual(1);
-        this.shm.sharedPixmaps.should.be.a.Boolean();
+        shm.major.should.equal(1);
+        shm.minor.should.be.aboveOrEqual(1);
+        shm.sharedPixmaps.should.be.a.Boolean();
         // pixmapFormat is one of the core image formats; only meaningful
         // when shared pixmaps are supported
-        if (this.shm.sharedPixmaps)
-            this.shm.pixmapFormat.should.equal(this.shm.ImageFormat.ZPixmap);
-        this.shm.uid.should.be.a.Number();
-        this.shm.gid.should.be.a.Number();
+        if (shm.sharedPixmaps)
+            shm.pixmapFormat.should.equal(shm.ImageFormat.ZPixmap);
+        shm.uid.should.be.a.Number();
+        shm.gid.should.be.a.Number();
     });
 
-    it('QueryVersion round-trip should match the cached values', function(done) {
-        const self = this;
-        this.shm.QueryVersion((err, vers) => {
+    it('QueryVersion round-trip should match the cached values', function(t, done) {
+        shm.QueryVersion((err, vers) => {
             should.not.exist(err);
-            vers.majorVersion.should.equal(self.shm.major);
-            vers.minorVersion.should.equal(self.shm.minor);
-            vers.sharedPixmaps.should.equal(self.shm.sharedPixmaps);
-            vers.pixmapFormat.should.equal(self.shm.pixmapFormat);
+            vers.majorVersion.should.equal(shm.major);
+            vers.minorVersion.should.equal(shm.minor);
+            vers.sharedPixmaps.should.equal(shm.sharedPixmaps);
+            vers.pixmapFormat.should.equal(shm.pixmapFormat);
             done();
         });
     });
 
-    it('Attach with a bogus shmid should raise BadAccess from the SHM opcode', function(done) {
-        const self = this;
-        const seg = this.X.AllocID();
+    it('Attach with a bogus shmid should raise BadAccess from the SHM opcode', function(t, done) {
+        const seg = X.AllocID();
         // the SEG XID is fresh and valid, so the server gets past the XID
         // check and fails in shmat() on the bogus shmid -> core BadAccess
         // (the extension BadSeg error is only raised for unattached SEG XIDs,
         // covered by the tests below)
-        this.shm.Attach(seg, 0x7fffffff, false);
-        const seq = this.X.seq_num;
-        this.X.once('error', err => {
+        shm.Attach(seg, 0x7fffffff, false);
+        const seq = X.seq_num;
+        X.once('error', err => {
             err.error.should.equal(10); // BadAccess
             err.seq.should.equal(seq);
-            err.majorOpcode.should.equal(self.shm.majorOpcode);
+            err.majorOpcode.should.equal(shm.majorOpcode);
             err.minorOpcode.should.equal(1);
             done();
         });
     });
 
-    it('Detach of an unattached segment should raise the extension BadSeg error', function(done) {
-        const self = this;
-        const seg = this.X.AllocID();
-        this.shm.Detach(seg);
-        const seq = this.X.seq_num;
-        this.X.once('error', err => {
-            err.error.should.equal(self.shm.firstError + self.shm.errors.BadSeg);
+    it('Detach of an unattached segment should raise the extension BadSeg error', function(t, done) {
+        const seg = X.AllocID();
+        shm.Detach(seg);
+        const seq = X.seq_num;
+        X.once('error', err => {
+            err.error.should.equal(shm.firstError + shm.errors.BadSeg);
             err.seq.should.equal(seq);
             err.badParam.should.equal(seg);
-            err.majorOpcode.should.equal(self.shm.majorOpcode);
+            err.majorOpcode.should.equal(shm.majorOpcode);
             err.minorOpcode.should.equal(2);
             err.message.should.match(/MIT-SHM/);
             done();
         });
     });
 
-    it('PutImage with an unattached segment should raise BadSeg', function(done) {
-        const self = this;
-        const gc = this.X.AllocID();
-        this.X.CreateGC(gc, this.root);
-        const seg = this.X.AllocID();
-        this.shm.PutImage(this.root, gc, {
+    it('PutImage with an unattached segment should raise BadSeg', function(t, done) {
+        const gc = X.AllocID();
+        X.CreateGC(gc, root);
+        const seg = X.AllocID();
+        shm.PutImage(root, gc, {
             totalWidth: 4, totalHeight: 4,
             srcX: 0, srcY: 0, srcWidth: 4, srcHeight: 4,
             dstX: 0, dstY: 0,
-            depth: this.depth, format: this.shm.ImageFormat.ZPixmap,
+            depth: depth, format: shm.ImageFormat.ZPixmap,
             sendEvent: false, shmseg: seg, offset: 0
         });
-        const seq = this.X.seq_num;
-        this.X.once('error', err => {
-            err.error.should.equal(self.shm.firstError + self.shm.errors.BadSeg);
+        const seq = X.seq_num;
+        X.once('error', err => {
+            err.error.should.equal(shm.firstError + shm.errors.BadSeg);
             err.seq.should.equal(seq);
             err.badParam.should.equal(seg);
             err.minorOpcode.should.equal(3);
-            self.X.FreeGC(gc);
+            X.FreeGC(gc);
             done();
         });
     });
 
-    it('GetImage with an unattached segment should raise BadSeg via the reply callback', function(done) {
-        const self = this;
-        const seg = this.X.AllocID();
-        this.shm.GetImage(this.root, 0, 0, 4, 4, 0xffffffff,
-            this.shm.ImageFormat.ZPixmap, seg, 0, err => {
+    it('GetImage with an unattached segment should raise BadSeg via the reply callback', function(t, done) {
+        const seg = X.AllocID();
+        shm.GetImage(root, 0, 0, 4, 4, 0xffffffff,
+            shm.ImageFormat.ZPixmap, seg, 0, err => {
                 should.exist(err);
-                err.error.should.equal(self.shm.firstError + self.shm.errors.BadSeg);
+                err.error.should.equal(shm.firstError + shm.errors.BadSeg);
                 err.badParam.should.equal(seg);
                 err.minorOpcode.should.equal(4);
                 done();
@@ -120,16 +117,17 @@ describe('MIT-SHM extension', () => {
             });
     });
 
-    it('CreatePixmap with an unattached segment should raise BadSeg', function(done) {
-        if (!this.shm.sharedPixmaps)
-            return this.skip(); // server would answer BadImplementation
-        const self = this;
-        const pid = this.X.AllocID();
-        const seg = this.X.AllocID();
-        this.shm.CreatePixmap(pid, this.root, 4, 4, this.depth, seg, 0);
-        const seq = this.X.seq_num;
-        this.X.once('error', err => {
-            err.error.should.equal(self.shm.firstError + self.shm.errors.BadSeg);
+    it('CreatePixmap with an unattached segment should raise BadSeg', function(t, done) {
+        if (!shm.sharedPixmaps) {
+            t.skip(); // server would answer BadImplementation
+            return done();
+        }
+        const pid = X.AllocID();
+        const seg = X.AllocID();
+        shm.CreatePixmap(pid, root, 4, 4, depth, seg, 0);
+        const seq = X.seq_num;
+        X.once('error', err => {
+            err.error.should.equal(shm.firstError + shm.errors.BadSeg);
             err.seq.should.equal(seq);
             err.badParam.should.equal(seg);
             err.minorOpcode.should.equal(5);
@@ -141,14 +139,14 @@ describe('MIT-SHM extension', () => {
         // cannot trigger a real completion event without a live segment, so
         // feed the registered parser a hand-built event body (bytes 8..31 of
         // the 32-byte event) and check the field mapping
-        const parser = this.X.eventParsers[this.shm.firstEvent + this.shm.events.ShmCompletion];
+        const parser = X.eventParsers[shm.firstEvent + shm.events.ShmCompletion];
         should.exist(parser);
         const raw = Buffer.alloc(24);
         raw.writeUInt16LE(3, 0);          // minor_event
         raw.writeUInt8(130, 2);           // major_event
         raw.writeUInt32LE(0x00a00001, 4); // shmseg
         raw.writeUInt32LE(4096, 8);       // offset
-        const ev = parser(this.shm.firstEvent, 42, 0x00500001, 0, raw);
+        const ev = parser(shm.firstEvent, 42, 0x00500001, 0, raw);
         ev.name.should.equal('ShmCompletion');
         ev.seq.should.equal(42);
         ev.drawable.should.equal(0x00500001);
@@ -158,9 +156,9 @@ describe('MIT-SHM extension', () => {
         ev.offset.should.equal(4096);
     });
 
-    after(function(done) {
-        this.X.terminate();
-        this.X.on('end', done);
+    after(function(t, done) {
+        X.terminate();
+        X.on('end', done);
     });
 });
 
@@ -171,20 +169,21 @@ describe('MIT-SHM extension', () => {
 // without /dev/shm — `usable()` reports false and the round-trip tests skip,
 // exactly as a real caller would fall back to core PutImage.
 describe('MIT-SHM shared segments (provider-backed)', () => {
-    before(function(done) {
-        const self = this;
+    let X, display, root, depth, shm, ok;
+
+    before(function(t, done) {
         x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X = dpy.client;
-            self.display = dpy;
-            self.root = dpy.screen[0].root;
-            self.depth = dpy.screen[0].root_depth;
-            self.X.require('shm', (err, ext) => {
+            X = dpy.client;
+            display = dpy;
+            root = dpy.screen[0].root;
+            depth = dpy.screen[0].root_depth;
+            X.require('shm', (err, ext) => {
                 should.not.exist(err);
-                self.shm = ext;
-                ext.usable((e, ok) => {
+                shm = ext;
+                ext.usable((e, usable) => {
                     should.not.exist(e);
-                    self.ok = ok;
+                    ok = usable;
                     done();
                 });
             });
@@ -192,40 +191,41 @@ describe('MIT-SHM shared segments (provider-backed)', () => {
     });
 
     it('exposes isLocalSocket on the display', function() {
-        this.display.isLocalSocket.should.be.a.Boolean();
+        display.isLocalSocket.should.be.a.Boolean();
     });
 
-    it('usable() resolves a boolean, cached, consistent with the provider', function(done) {
-        const self = this;
-        this.ok.should.be.a.Boolean();
-        if (this.ok) {
-            should.exist(this.shm.provider);
-            this.shm.fdCapable.should.equal(true);
+    it('usable() resolves a boolean, cached, consistent with the provider', function(t, done) {
+        ok.should.be.a.Boolean();
+        if (ok) {
+            should.exist(shm.provider);
+            shm.fdCapable.should.equal(true);
         }
         // second call is cached and must agree
-        this.shm.usable((e, ok2) => {
+        shm.usable((e, ok2) => {
             should.not.exist(e);
-            ok2.should.equal(self.ok);
+            ok2.should.equal(ok);
             done();
         });
     });
 
-    it('createSegment -> putImage round-trips real pixels', function(done) {
-        if (!this.ok) return this.skip();
-        const self = this;
+    it('createSegment -> putImage round-trips real pixels', function(t, done) {
+        if (!ok) {
+            t.skip();
+            return done();
+        }
         const W = 64, H = 64, size = W * H * 4;
-        this.shm.createSegment(size, (err, seg) => {
+        shm.createSegment(size, (err, seg) => {
             should.not.exist(err);
             seg.shmseg.should.be.a.Number();
             seg.size.should.equal(size);
             for (let i = 0; i < size; i++)
                 seg.buffer[i] = (i * 37) & 0xff;
-            const pid = self.X.AllocID();
-            const gc = self.X.AllocID();
-            self.X.CreatePixmap(pid, self.root, self.depth, W, H);
-            self.X.CreateGC(gc, pid);
-            seg.putImage(pid, gc, { width: W, height: H, depth: self.depth });
-            self.X.GetImage(2, pid, 0, 0, W, H, 0xffffffff, (err, img) => {
+            const pid = X.AllocID();
+            const gc = X.AllocID();
+            X.CreatePixmap(pid, root, depth, W, H);
+            X.CreateGC(gc, pid);
+            seg.putImage(pid, gc, { width: W, height: H, depth: depth });
+            X.GetImage(2, pid, 0, 0, W, H, 0xffffffff, (err, img) => {
                 should.not.exist(err);
                 let bad = 0;
                 for (let i = 0; i < size; i += 4)
@@ -233,26 +233,28 @@ describe('MIT-SHM shared segments (provider-backed)', () => {
                         img.data[i + 1] !== seg.buffer[i + 1] ||
                         img.data[i + 2] !== seg.buffer[i + 2]) bad++;
                 bad.should.equal(0);
-                self.X.FreeGC(gc);
-                self.X.FreePixmap(pid);
+                X.FreeGC(gc);
+                X.FreePixmap(pid);
                 seg.detach(done);
             });
         });
     });
 
-    it('shm GetImage reads pixels back into the segment buffer', function(done) {
-        if (!this.ok) return this.skip();
-        const self = this;
+    it('shm GetImage reads pixels back into the segment buffer', function(t, done) {
+        if (!ok) {
+            t.skip();
+            return done();
+        }
         const W = 48, H = 48, size = W * H * 4;
-        this.shm.createSegment(size, (err, seg) => {
+        shm.createSegment(size, (err, seg) => {
             should.not.exist(err);
             for (let i = 0; i < size; i++)
                 seg.buffer[i] = (i * 53) & 0xff;
-            const pid = self.X.AllocID();
-            const gc = self.X.AllocID();
-            self.X.CreatePixmap(pid, self.root, self.depth, W, H);
-            self.X.CreateGC(gc, pid);
-            seg.putImage(pid, gc, { width: W, height: H, depth: self.depth });
+            const pid = X.AllocID();
+            const gc = X.AllocID();
+            X.CreatePixmap(pid, root, depth, W, H);
+            X.CreateGC(gc, pid);
+            seg.putImage(pid, gc, { width: W, height: H, depth: depth });
             const reference = Buffer.from(seg.buffer);
             seg.buffer.fill(0);
             seg.getImage(pid, 0, 0, W, H, 0xffffffff, undefined, 0, (err, rep) => {
@@ -264,43 +266,45 @@ describe('MIT-SHM shared segments (provider-backed)', () => {
                         seg.buffer[i + 1] !== reference[i + 1] ||
                         seg.buffer[i + 2] !== reference[i + 2]) bad++;
                 bad.should.equal(0);
-                self.X.FreeGC(gc);
-                self.X.FreePixmap(pid);
+                X.FreeGC(gc);
+                X.FreePixmap(pid);
                 seg.detach(done);
             });
         });
     });
 
-    it('emits ShmCompletion on the segment when putImage sends an event', function(done) {
-        if (!this.ok) return this.skip();
-        const self = this;
+    it('emits ShmCompletion on the segment when putImage sends an event', function(t, done) {
+        if (!ok) {
+            t.skip();
+            return done();
+        }
         const W = 32, H = 32, size = W * H * 4;
-        this.shm.createSegment(size, (err, seg) => {
+        shm.createSegment(size, (err, seg) => {
             should.not.exist(err);
-            const pid = self.X.AllocID();
-            const gc = self.X.AllocID();
-            self.X.CreatePixmap(pid, self.root, self.depth, W, H);
-            self.X.CreateGC(gc, pid);
+            const pid = X.AllocID();
+            const gc = X.AllocID();
+            X.CreatePixmap(pid, root, depth, W, H);
+            X.CreateGC(gc, pid);
             seg.once('complete', offset => {
                 offset.should.equal(0);
-                self.X.FreeGC(gc);
-                self.X.FreePixmap(pid);
+                X.FreeGC(gc);
+                X.FreePixmap(pid);
                 seg.detach(done);
             });
-            seg.putImage(pid, gc, { width: W, height: H, depth: self.depth, sendEvent: true });
+            seg.putImage(pid, gc, { width: W, height: H, depth: depth, sendEvent: true });
         });
     });
 
-    after(function(done) {
-        this.X.terminate();
-        this.X.on('end', done);
+    after(function(t, done) {
+        X.terminate();
+        X.on('end', done);
     });
 });
 
 // Disabling SHM must be a clean, non-throwing "no fast path", so callers can
 // probe once and route to core requests.
 describe('MIT-SHM disabled (shm: false)', () => {
-    it('usable() is false and createSegment fails without throwing', function(done) {
+    it('usable() is false and createSegment fails without throwing', function(t, done) {
         x11.createClient({ shm: false }, (err, dpy) => {
             should.not.exist(err);
             const X = dpy.client;
@@ -329,7 +333,7 @@ describe('MIT-SHM disabled (shm: false)', () => {
 // throws out of a callback and takes the process down. Closing mid-attach must
 // report an error on the callback instead.
 describe('MIT-SHM attach racing connection close', () => {
-    it('reports an error instead of throwing when the client closes mid-attach', function(done) {
+    it('reports an error instead of throwing when the client closes mid-attach', function(t, done) {
         x11.createClient((err, dpy) => {
             should.not.exist(err);
             const X = dpy.client;

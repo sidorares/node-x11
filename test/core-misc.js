@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -8,7 +9,7 @@ describe('Misc control requests', () => {
   let X;
   let root;
 
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (err)
               return done(err);
@@ -20,14 +21,14 @@ describe('Misc control requests', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.terminate();
       X.on('end', done);
       X = null;
       display = null;
   });
 
-  it('NoOperation should be accepted by server', done => {
+  it('NoOperation should be accepted by server', (t, done) => {
       X.NoOperation();
       X.GetInputFocus(err => {
           should.not.exist(err);
@@ -35,7 +36,7 @@ describe('Misc control requests', () => {
       });
   });
 
-  it('ListHosts should return host list and access control mode', done => {
+  it('ListHosts should return host list and access control mode', (t, done) => {
       X.ListHosts((err, res) => {
           should.not.exist(err);
           [0, 1].should.containEql(res.mode);
@@ -44,7 +45,7 @@ describe('Misc control requests', () => {
       });
   });
 
-  it('ChangeHosts should insert and delete a host', done => {
+  it('ChangeHosts should insert and delete a host', (t, done) => {
       const addr = [127, 0, 0, 2];
       X.ChangeHosts(0, 0, addr); // insert Internet host
       X.ListHosts((err, res) => {
@@ -63,7 +64,7 @@ describe('Misc control requests', () => {
       });
   });
 
-  it('SetAccessControl should toggle mode reported by ListHosts', done => {
+  it('SetAccessControl should toggle mode reported by ListHosts', (t, done) => {
       X.ListHosts((err, before) => {
           should.not.exist(err);
           X.SetAccessControl(1);
@@ -76,7 +77,7 @@ describe('Misc control requests', () => {
       });
   });
 
-  it('SetCloseDownMode should be accepted by server', done => {
+  it('SetCloseDownMode should be accepted by server', (t, done) => {
       X.SetCloseDownMode(2); // RetainTemporary
       X.SetCloseDownMode(0); // back to Destroy
       X.GetInputFocus(err => {
@@ -85,7 +86,7 @@ describe('Misc control requests', () => {
       });
   });
 
-  it('RotateProperties should rotate property values', done => {
+  it('RotateProperties should rotate property values', (t, done) => {
       const wid = X.AllocID();
       X.CreateWindow(wid, root, 0, 0, 1, 1);
       X.InternAtom(false, 'NODE_X11_ROT_A', (err, atomA) => {

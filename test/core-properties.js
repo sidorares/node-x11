@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -12,7 +13,7 @@ describe('Window property', () => {
   let display;
   let X;
   let wid;
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (!err) {
               display = dpy;
@@ -28,14 +29,14 @@ describe('Window property', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.terminate();
       X.on('end', done);
       X = null;
       display = null;
   });
 
-  it('shuld exist after set with ChangeProperty', done => {
+  it('shuld exist after set with ChangeProperty', (t, done) => {
       X.on('error', done);
       const propvalset = "some property value";
       X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, propvalset);
@@ -47,7 +48,7 @@ describe('Window property', () => {
       });
   });
 
-  it('should report the format the property was stored with', done => {
+  it('should report the format the property was stored with', (t, done) => {
       X.on('error', done);
       // 8 vs 32 is not derivable from the type: a CARDINAL array of bytes and
       // one of words are both CARDINAL, and telling them apart is the whole
@@ -77,7 +78,7 @@ describe('Window property', () => {
       });
   });
 
-  it('should generate PropertyNotify event', done => {
+  it('should generate PropertyNotify event', (t, done) => {
       X.on('error', done);
       const propvalset = "some property value";
       X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, propvalset);
@@ -95,7 +96,7 @@ describe('Window property', () => {
       });
   });
 
-  it('should not exist after DeleteProperty called', done => {
+  it('should not exist after DeleteProperty called', (t, done) => {
       X.on('error', done);
       const propvalset = "some property value";
       X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, propvalset);

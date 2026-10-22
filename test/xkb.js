@@ -1,15 +1,17 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
 describe('XKEYBOARD extension', () => {
-    before(function(done) {
-        const self = this;
+    let X, xkb;
+
+    before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X = dpy.client;
-            self.X.require('xkb', (err, ext) => {
+            X = dpy.client;
+            X.require('xkb', (err, ext) => {
                 should.not.exist(err);
-                self.xkb = ext;
+                xkb = ext;
                 done();
             });
         });
@@ -18,13 +20,13 @@ describe('XKEYBOARD extension', () => {
     });
 
     it('UseExtension should report a supported 1.x server version', function() {
-        this.xkb.supported.should.equal(1);
-        this.xkb.serverMajor.should.equal(1);
-        this.xkb.serverMinor.should.be.aboveOrEqual(0);
+        xkb.supported.should.equal(1);
+        xkb.serverMajor.should.equal(1);
+        xkb.serverMinor.should.be.aboveOrEqual(0);
     });
 
-    it('GetState should return group and modifier state of the core keyboard', function(done) {
-        this.xkb.GetState(this.xkb.UseCoreKbd, (err, state) => {
+    it('GetState should return group and modifier state of the core keyboard', function(t, done) {
+        xkb.GetState(xkb.UseCoreKbd, (err, state) => {
             should.not.exist(err);
             state.deviceID.should.be.above(0);
             state.group.should.be.within(0, 3);
@@ -38,24 +40,21 @@ describe('XKEYBOARD extension', () => {
         });
     });
 
-    it('Bell should ring without error', function(done) {
-        const self = this;
+    it('Bell should ring without error', function(t, done) {
         const onError = err => done(err);
-        this.X.on('error', onError);
+        X.on('error', onError);
         // eventOnly bell: reaches the server, but keeps CI quiet
-        this.xkb.Bell(this.xkb.UseCoreKbd, this.xkb.DfltXIClass, this.xkb.DfltXIId,
+        xkb.Bell(xkb.UseCoreKbd, xkb.DfltXIClass, xkb.DfltXIId,
             0, 0, 1, -1, -1, 0, 0);
         // round trip to make sure any error for the bell has arrived
-        this.xkb.GetState(this.xkb.UseCoreKbd, err => {
-            self.X.removeListener('error', onError);
+        xkb.GetState(xkb.UseCoreKbd, err => {
+            X.removeListener('error', onError);
             should.not.exist(err);
             done();
         });
     });
 
-    it('LatchLockState should lock a modifier, visible via GetState, then restore', function(done) {
-        const self = this;
-        const xkb = this.xkb;
+    it('LatchLockState should lock a modifier, visible via GetState, then restore', function(t, done) {
         const lockMask = xkb.ModMask.Lock; // caps lock
         xkb.LatchLockState(xkb.UseCoreKbd, lockMask, lockMask, false, 0, 0, 0, false, 0);
         xkb.GetState(xkb.UseCoreKbd, (err, state) => {
@@ -71,15 +70,13 @@ describe('XKEYBOARD extension', () => {
         });
     });
 
-    it('SelectEvents + eventOnly Bell should deliver an XkbBellNotify event', function(done) {
-        const self = this;
-        const xkb = this.xkb;
+    it('SelectEvents + eventOnly Bell should deliver an XkbBellNotify event', function(t, done) {
         xkb.SelectEvents(xkb.UseCoreKbd, xkb.EventType.BellNotify, 0,
             xkb.EventType.BellNotify, 0, 0);
         const onEvent = ev => {
             if (ev.name !== 'XkbBellNotify')
                 return;
-            self.X.removeListener('event', onEvent);
+            X.removeListener('event', onEvent);
             // deselect again to not disturb later tests
             xkb.SelectEvents(xkb.UseCoreKbd, xkb.EventType.BellNotify,
                 xkb.EventType.BellNotify, 0, 0, 0);
@@ -88,12 +85,12 @@ describe('XKEYBOARD extension', () => {
             ev.eventOnly.should.equal(1);
             done();
         };
-        this.X.on('event', onEvent);
+        X.on('event', onEvent);
         xkb.Bell(xkb.UseCoreKbd, xkb.DfltXIClass, xkb.DfltXIId, 50, 0, 1, 440, 10, 0, 0);
     });
 
-    it('GetControls should return the default repeat timings', function(done) {
-        this.xkb.GetControls(this.xkb.UseCoreKbd, (err, ctrls) => {
+    it('GetControls should return the default repeat timings', function(t, done) {
+        xkb.GetControls(xkb.UseCoreKbd, (err, ctrls) => {
             should.not.exist(err);
             ctrls.numGroups.should.be.aboveOrEqual(1);
             ctrls.repeatDelay.should.be.above(0);
@@ -104,9 +101,7 @@ describe('XKEYBOARD extension', () => {
         });
     });
 
-    it('GetNames should return keycodes/symbols atoms and per-key names', function(done) {
-        const self = this;
-        const xkb = this.xkb;
+    it('GetNames should return keycodes/symbols atoms and per-key names', function(t, done) {
         const which = xkb.NameDetail.Keycodes | xkb.NameDetail.Symbols |
             xkb.NameDetail.KeyNames | xkb.NameDetail.GroupNames |
             xkb.NameDetail.VirtualModNames | xkb.NameDetail.IndicatorNames;
@@ -120,7 +115,7 @@ describe('XKEYBOARD extension', () => {
             names.virtualModNames.length.should.be.above(0);
             names.keycodesName.should.be.above(0);
             names.symbolsName.should.be.above(0);
-            self.X.GetAtomName(names.keycodesName, (err, keycodesName) => {
+            X.GetAtomName(names.keycodesName, (err, keycodesName) => {
                 should.not.exist(err);
                 keycodesName.length.should.be.above(0);
                 done();
@@ -128,10 +123,10 @@ describe('XKEYBOARD extension', () => {
         });
     });
 
-    after(function(done) {
+    after(function(t, done) {
         // defensive: make sure no modifier lock leaks to other test files
-        this.xkb.LatchLockState(this.xkb.UseCoreKbd, 0xff, 0, false, 0, 0xff, 0, false, 0);
-        this.X.terminate();
-        this.X.on('end', done);
+        xkb.LatchLockState(xkb.UseCoreKbd, 0xff, 0, false, 0, 0xff, 0, false, 0);
+        X.terminate();
+        X.on('end', done);
     });
 });

@@ -1,16 +1,18 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
 describe('SYNC extension', () => {
-    before(function(done) {
-        const self = this;
+    let X, root, sync, counter, alarm;
+
+    before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X = dpy.client;
-            self.root = dpy.screen[0].root;
-            self.X.require('sync', (err, ext) => {
+            X = dpy.client;
+            root = dpy.screen[0].root;
+            X.require('sync', (err, ext) => {
                 should.not.exist(err);
-                self.sync = ext;
+                sync = ext;
                 done();
             });
         });
@@ -18,22 +20,22 @@ describe('SYNC extension', () => {
         client.on('error', done);
     });
 
-    after(function(done) {
-        if (this.alarm)
-            this.sync.DestroyAlarm(this.alarm);
-        if (this.counter)
-            this.sync.DestroyCounter(this.counter);
-        this.X.terminate();
-        this.X.on('end', done);
+    after(function(t, done) {
+        if (alarm)
+            sync.DestroyAlarm(alarm);
+        if (counter)
+            sync.DestroyCounter(counter);
+        X.terminate();
+        X.on('end', done);
     });
 
     it('Initialize should report version 3.x', function() {
-        this.sync.major.should.equal(3);
-        this.sync.minor.should.be.aboveOrEqual(0);
+        sync.major.should.equal(3);
+        sync.minor.should.be.aboveOrEqual(0);
     });
 
-    it('ListSystemCounters should include SERVERTIME', function(done) {
-        this.sync.ListSystemCounters((err, counters) => {
+    it('ListSystemCounters should include SERVERTIME', function(t, done) {
+        sync.ListSystemCounters((err, counters) => {
             should.not.exist(err);
             counters.should.be.an.Array();
             const names = counters.map(c => c.name);
@@ -46,26 +48,25 @@ describe('SYNC extension', () => {
         });
     });
 
-    it('CreateCounter with initial value 100 should QueryCounter back 100', function(done) {
-        this.counter = this.X.AllocID();
-        this.sync.CreateCounter(this.counter, 100);
-        this.sync.QueryCounter(this.counter, (err, value) => {
+    it('CreateCounter with initial value 100 should QueryCounter back 100', function(t, done) {
+        counter = X.AllocID();
+        sync.CreateCounter(counter, 100);
+        sync.QueryCounter(counter, (err, value) => {
             should.not.exist(err);
             value.should.equal(100);
             done();
         });
     });
 
-    it('SetCounter and ChangeCounter should round-trip (incl. 64-bit and negative values)', function(done) {
-        const self = this;
+    it('SetCounter and ChangeCounter should round-trip (incl. 64-bit and negative values)', function(t, done) {
         const big = Math.pow(2, 40) + 7; // needs the hi 32-bit half
-        self.sync.SetCounter(self.counter, big);
-        self.sync.QueryCounter(self.counter, (err, value) => {
+        sync.SetCounter(counter, big);
+        sync.QueryCounter(counter, (err, value) => {
             should.not.exist(err);
             value.should.equal(big);
-            self.sync.SetCounter(self.counter, 10);
-            self.sync.ChangeCounter(self.counter, -25);
-            self.sync.QueryCounter(self.counter, (err, value2) => {
+            sync.SetCounter(counter, 10);
+            sync.ChangeCounter(counter, -25);
+            sync.QueryCounter(counter, (err, value2) => {
                 should.not.exist(err);
                 value2.should.equal(-15);
                 done();
@@ -73,66 +74,62 @@ describe('SYNC extension', () => {
         });
     });
 
-    it('CreateAlarm and QueryAlarm should round-trip alarm attributes', function(done) {
-        const self = this;
-        self.sync.SetCounter(self.counter, 0);
-        self.alarm = self.X.AllocID();
-        self.sync.CreateAlarm(self.alarm, {
-            counter: self.counter,
-            valueType: self.sync.ValueType.Absolute,
+    it('CreateAlarm and QueryAlarm should round-trip alarm attributes', function(t, done) {
+        sync.SetCounter(counter, 0);
+        alarm = X.AllocID();
+        sync.CreateAlarm(alarm, {
+            counter: counter,
+            valueType: sync.ValueType.Absolute,
             value: 1000,
-            testType: self.sync.TestType.PositiveComparison,
+            testType: sync.TestType.PositiveComparison,
             delta: 1,
             events: 1
         });
-        self.sync.QueryAlarm(self.alarm, (err, alarm) => {
+        sync.QueryAlarm(alarm, (err, alarm) => {
             should.not.exist(err);
-            alarm.trigger.counter.should.equal(self.counter);
-            alarm.trigger.waitType.should.equal(self.sync.ValueType.Absolute);
+            alarm.trigger.counter.should.equal(counter);
+            alarm.trigger.waitType.should.equal(sync.ValueType.Absolute);
             alarm.trigger.waitValue.should.equal(1000);
-            alarm.trigger.testType.should.equal(self.sync.TestType.PositiveComparison);
+            alarm.trigger.testType.should.equal(sync.TestType.PositiveComparison);
             alarm.delta.should.equal(1);
             alarm.events.should.equal(true);
-            alarm.state.should.equal(self.sync.AlarmState.Active);
+            alarm.state.should.equal(sync.AlarmState.Active);
             done();
         });
     });
 
-    it('ChangeAlarm should update the trigger value', function(done) {
-        const self = this;
-        self.sync.ChangeAlarm(self.alarm, { value: 50 });
-        self.sync.QueryAlarm(self.alarm, (err, alarm) => {
+    it('ChangeAlarm should update the trigger value', function(t, done) {
+        sync.ChangeAlarm(alarm, { value: 50 });
+        sync.QueryAlarm(alarm, (err, alarm) => {
             should.not.exist(err);
             alarm.trigger.waitValue.should.equal(50);
-            alarm.trigger.counter.should.equal(self.counter);
+            alarm.trigger.counter.should.equal(counter);
             done();
         });
     });
 
-    it('crossing the alarm threshold should deliver an AlarmNotify event', function(done) {
-        const self = this;
-        self.X.once('event', ev => {
+    it('crossing the alarm threshold should deliver an AlarmNotify event', function(t, done) {
+        X.once('event', ev => {
             ev.name.should.equal('AlarmNotify');
-            ev.alarm.should.equal(self.alarm);
+            ev.alarm.should.equal(alarm);
             ev.counterValue.should.equal(60);
-            ev.state.should.equal(self.sync.AlarmState.Active);
+            ev.state.should.equal(sync.AlarmState.Active);
             done();
         });
-        self.sync.SetCounter(self.counter, 60); // alarm threshold is 50
+        sync.SetCounter(counter, 60); // alarm threshold is 50
     });
 
-    it('Await should block the client until a second connection satisfies the condition', function(done) {
-        const self = this;
-        const awaited = self.X.AllocID();
-        self.sync.CreateCounter(awaited, 0);
-        self.sync.QueryCounter(awaited, (err, value) => {
+    it('Await should block the client until a second connection satisfies the condition', function(t, done) {
+        const awaited = X.AllocID();
+        sync.CreateCounter(awaited, 0);
+        sync.QueryCounter(awaited, (err, value) => {
             should.not.exist(err);
             value.should.equal(0);
 
             let unblocked = false;
             let gotCounterNotify = false;
 
-            self.X.once('event', ev => {
+            X.once('event', ev => {
                 ev.name.should.equal('CounterNotify');
                 ev.counter.should.equal(awaited);
                 ev.counterValue.should.equal(5);
@@ -140,21 +137,21 @@ describe('SYNC extension', () => {
                 gotCounterNotify = true;
             });
 
-            self.sync.Await([{
+            sync.Await([{
                 counter: awaited,
-                valueType: self.sync.ValueType.Absolute,
+                valueType: sync.ValueType.Absolute,
                 value: 5,
-                testType: self.sync.TestType.PositiveComparison,
+                testType: sync.TestType.PositiveComparison,
                 eventThreshold: 0
             }]);
 
             // this reply can only arrive once the Await condition is met
-            self.sync.QueryCounter(awaited, (err, value2) => {
+            sync.QueryCounter(awaited, (err, value2) => {
                 should.not.exist(err);
                 unblocked = true;
                 value2.should.equal(5);
                 gotCounterNotify.should.equal(true);
-                self.sync.DestroyCounter(awaited);
+                sync.DestroyCounter(awaited);
                 done();
             });
 
@@ -175,14 +172,13 @@ describe('SYNC extension', () => {
         });
     });
 
-    it('SetPriority and GetPriority should round-trip on own client', function(done) {
-        const self = this;
-        self.sync.SetPriority(0, 5); // 0 = the requesting client
-        self.sync.GetPriority(0, (err, priority) => {
+    it('SetPriority and GetPriority should round-trip on own client', function(t, done) {
+        sync.SetPriority(0, 5); // 0 = the requesting client
+        sync.GetPriority(0, (err, priority) => {
             should.not.exist(err);
             priority.should.equal(5);
-            self.sync.SetPriority(0, 0);
-            self.sync.GetPriority(0, (err, priority2) => {
+            sync.SetPriority(0, 0);
+            sync.GetPriority(0, (err, priority2) => {
                 should.not.exist(err);
                 priority2.should.equal(0);
                 done();
@@ -190,47 +186,47 @@ describe('SYNC extension', () => {
         });
     });
 
-    it('fences should create, trigger, reset and query', function(done) {
-        const self = this;
-        if (self.sync.minor < 1) {
+    it('fences should create, trigger, reset and query', function(t, done) {
+        if (sync.minor < 1) {
             // fences were added in SYNC 3.1
-            return this.skip();
+            t.skip();
+            return done();
         }
-        const fence = self.X.AllocID();
-        self.sync.CreateFence(self.root, fence, false);
-        self.sync.QueryFence(fence, (err, triggered) => {
+        const fence = X.AllocID();
+        sync.CreateFence(root, fence, false);
+        sync.QueryFence(fence, (err, triggered) => {
             should.not.exist(err);
             triggered.should.equal(false);
-            self.sync.TriggerFence(fence);
-            self.sync.QueryFence(fence, (err, triggered2) => {
+            sync.TriggerFence(fence);
+            sync.QueryFence(fence, (err, triggered2) => {
                 should.not.exist(err);
                 triggered2.should.equal(true);
-                self.sync.ResetFence(fence);
-                self.sync.QueryFence(fence, (err, triggered3) => {
+                sync.ResetFence(fence);
+                sync.QueryFence(fence, (err, triggered3) => {
                     should.not.exist(err);
                     triggered3.should.equal(false);
-                    self.sync.DestroyFence(fence);
+                    sync.DestroyFence(fence);
                     done();
                 });
             });
         });
     });
 
-    it('AwaitFence should block until a second connection triggers the fence', function(done) {
-        const self = this;
-        if (self.sync.minor < 1) {
-            return this.skip();
+    it('AwaitFence should block until a second connection triggers the fence', function(t, done) {
+        if (sync.minor < 1) {
+            t.skip();
+            return done();
         }
-        const fence = self.X.AllocID();
-        self.sync.CreateFence(self.root, fence, false);
+        const fence = X.AllocID();
+        sync.CreateFence(root, fence, false);
 
         let unblocked = false;
-        self.sync.AwaitFence([fence]);
-        self.sync.QueryFence(fence, (err, triggered) => {
+        sync.AwaitFence([fence]);
+        sync.QueryFence(fence, (err, triggered) => {
             should.not.exist(err);
             unblocked = true;
             triggered.should.equal(true);
-            self.sync.DestroyFence(fence);
+            sync.DestroyFence(fence);
             done();
         });
 

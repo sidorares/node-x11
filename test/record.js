@@ -1,3 +1,4 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -6,8 +7,9 @@ const should = require('should');
 // second, dedicated connection issues EnableContext and receives the intercepted
 // protocol data.
 describe('RECORD extension', () => {
-    before(function(done) {
-        const self = this;
+    let X, record, Xenable, recordEnable;
+
+    before(function(t, done) {
         let setupFinished = false;
         const setupError = err => {
             if (!setupFinished) {
@@ -18,17 +20,17 @@ describe('RECORD extension', () => {
         // control connection: owns the context, issues the recorded requests
         const c1 = x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X = dpy.client;
-            self.X.require('record', (err, ext) => {
+            X = dpy.client;
+            X.require('record', (err, ext) => {
                 should.not.exist(err);
-                self.record = ext;
+                record = ext;
                 // dedicated enable connection
                 const c2 = x11.createClient((err2, dpy2) => {
                     should.not.exist(err2);
-                    self.Xenable = dpy2.client;
-                    self.Xenable.require('record', (err3, ext2) => {
+                    Xenable = dpy2.client;
+                    Xenable.require('record', (err3, ext2) => {
                         should.not.exist(err3);
-                        self.recordEnable = ext2;
+                        recordEnable = ext2;
                         setupFinished = true;
                         done();
                     });
@@ -40,17 +42,16 @@ describe('RECORD extension', () => {
     });
 
     it('QueryVersion should report at least 1.13', function() {
-        this.record.major.should.equal(1);
-        this.record.minor.should.be.aboveOrEqual(0);
+        record.major.should.equal(1);
+        record.minor.should.be.aboveOrEqual(0);
     });
 
-    it('CreateContext + GetContext round-trip', function(done) {
-        const self = this;
-        const context = this.X.AllocID();
-        this.record.CreateContext(context, 0, [this.record.CS.AllClients], [
+    it('CreateContext + GetContext round-trip', function(t, done) {
+        const context = X.AllocID();
+        record.CreateContext(context, 0, [record.CS.AllClients], [
             { coreRequests: { first: 0, last: 127 } }
         ]);
-        this.record.GetContext(context, (err, info) => {
+        record.GetContext(context, (err, info) => {
             should.not.exist(err);
             info.enabled.should.equal(false);
             info.interceptedClients.should.be.an.Array();
@@ -60,19 +61,18 @@ describe('RECORD extension', () => {
             ranges.length.should.be.aboveOrEqual(1);
             ranges[0].coreRequests.first.should.equal(0);
             ranges[0].coreRequests.last.should.equal(127);
-            self.record.FreeContext(context);
+            record.FreeContext(context);
             done();
         });
     });
 
-    it('EnableContext should intercept a recorded client request', function(done) {
-        const self = this;
-        const context = this.X.AllocID();
+    it('EnableContext should intercept a recorded client request', function(t, done) {
+        const context = X.AllocID();
         let finished = false;
 
         // record ALL core requests issued by the control connection
-        const controlSpec = this.X.display.resource_base;
-        this.record.CreateContext(context, 0, [controlSpec], [
+        const controlSpec = X.display.resource_base;
+        record.CreateContext(context, 0, [controlSpec], [
             { coreRequests: { first: 0, last: 127 } }
         ]);
 
@@ -81,7 +81,7 @@ describe('RECORD extension', () => {
                 return;
             finished = true;
             // always clean up so we never leave a context enabled on the server
-            self.record.FreeContext(context);
+            record.FreeContext(context);
             done(err);
         };
 
@@ -91,24 +91,24 @@ describe('RECORD extension', () => {
         // EnableContext goes over a different connection than CreateContext;
         // the server may process the connections in either order, so sync the
         // control connection first to make sure the context exists
-        this.record.GetContext(context, err => {
+        record.GetContext(context, err => {
             should.not.exist(err);
             enable();
         });
 
-        const enable = () => this.recordEnable.EnableContext(context, reply => {
-            if (reply.category === self.record.Category.StartOfData) {
+        const enable = () => recordEnable.EnableContext(context, reply => {
+            if (reply.category === record.Category.StartOfData) {
                 started = true;
                 // recording is now live: issue a known request on the control connection
-                self.X.InternAtom(false, 'X11_RECORD_TEST_ATOM', () => {});
+                X.InternAtom(false, 'X11_RECORD_TEST_ATOM', () => {});
                 return;
             }
-            if (reply.category === self.record.Category.FromClient && reply.data.length > 0) {
+            if (reply.category === record.Category.FromClient && reply.data.length > 0) {
                 // first byte of a recorded request is its opcode; InternAtom == 16
                 if (reply.data.readUInt8(0) === 16) {
                     sawInternAtom = true;
                     // stop recording from the control connection
-                    self.record.DisableContext(context);
+                    record.DisableContext(context);
                 }
             }
         }, (err) => {
@@ -121,12 +121,11 @@ describe('RECORD extension', () => {
         });
     });
 
-    after(function(done) {
-        const self = this;
-        this.Xenable.terminate();
-        this.Xenable.on('end', () => {
-            self.X.terminate();
-            self.X.on('end', done);
+    after(function(t, done) {
+        Xenable.terminate();
+        Xenable.on('end', () => {
+            X.terminate();
+            X.on('end', done);
         });
     });
 });

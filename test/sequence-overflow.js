@@ -1,3 +1,4 @@
+const { describe, it, beforeEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -5,7 +6,7 @@ const assert = require('assert');
 describe('Client', () => {
 
   let display;
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (!err) {
               display = dpy;
@@ -18,7 +19,7 @@ describe('Client', () => {
       client.on('error', done);
   });
 
-  it('should handle more than 65535 requests in one connection', done => {
+  it('should handle more than 65535 requests in one connection', (t, done) => {
       should.exist(display);
       should.exist(display.screen);
       const total = 70000;

@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const x11 = require('../../lib');
 const { boot, sync } = require('./boot');
@@ -8,7 +9,7 @@ describe('xserver: windows', () => {
 
     let server, display, X, root;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             ({ server, display, X } = ctx);
@@ -32,7 +33,7 @@ describe('xserver: windows', () => {
         X.on('event', listener);
     }
 
-    it('MapWindow generates MapNotify then Expose for the full window', done => {
+    it('MapWindow generates MapNotify then Expose for the full window', (t, done) => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 10, 20, 50, 40, 0, 0, 0, 0,
             { eventMask: em.StructureNotify | em.Exposure });
@@ -57,7 +58,7 @@ describe('xserver: windows', () => {
         X.MapWindow(wid);
     });
 
-    it('CreateNotify goes to SubstructureNotify selectors on the parent', done => {
+    it('CreateNotify goes to SubstructureNotify selectors on the parent', (t, done) => {
         const parent = X.AllocID();
         X.CreateWindow(parent, root, 0, 0, 100, 100, 0, 0, 0, 0,
             { eventMask: em.SubstructureNotify });
@@ -75,7 +76,7 @@ describe('xserver: windows', () => {
         X.CreateWindow(child, parent, 5, 6, 30, 20, 2, 0, 0, 0);
     });
 
-    it('GetWindowAttributes reports map state and event masks', done => {
+    it('GetWindowAttributes reports map state and event masks', (t, done) => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, 10, 10, 0, 0, 0, 0,
             { eventMask: em.Exposure | em.KeyPress });
@@ -94,7 +95,7 @@ describe('xserver: windows', () => {
         });
     });
 
-    it('ConfigureWindow moves/resizes, notifies and exposes grown areas', done => {
+    it('ConfigureWindow moves/resizes, notifies and exposes grown areas', (t, done) => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, 50, 40, 0, 0, 0, 0,
             { eventMask: em.StructureNotify | em.Exposure });
@@ -124,7 +125,7 @@ describe('xserver: windows', () => {
         });
     });
 
-    it('resize preserves top-left content and paints background on new area', done => {
+    it('resize preserves top-left content and paints background on new area', (t, done) => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, 20, 20, 0, 0, 0, 0, { backgroundPixel: 0x00ff00 });
         const gc = X.AllocID();
@@ -140,7 +141,7 @@ describe('xserver: windows', () => {
         });
     });
 
-    it('QueryTree lists children bottom-to-top and follows restacking', done => {
+    it('QueryTree lists children bottom-to-top and follows restacking', (t, done) => {
         const a = X.AllocID();
         const b = X.AllocID();
         X.CreateWindow(a, root, 0, 0, 10, 10);
@@ -164,7 +165,7 @@ describe('xserver: windows', () => {
         });
     });
 
-    it('ConfigureWindow with sibling/stackMode stacks next to the sibling', done => {
+    it('ConfigureWindow with sibling/stackMode stacks next to the sibling', (t, done) => {
         const a = X.AllocID(), b = X.AllocID(), c = X.AllocID();
         X.CreateWindow(a, root, 0, 0, 10, 10);
         X.CreateWindow(b, root, 0, 0, 10, 10);
@@ -178,7 +179,7 @@ describe('xserver: windows', () => {
         });
     });
 
-    it('ReparentWindow emits ReparentNotify with the new position', done => {
+    it('ReparentWindow emits ReparentNotify with the new position', (t, done) => {
         const parent = X.AllocID();
         const child = X.AllocID();
         X.CreateWindow(parent, root, 0, 0, 100, 100);
@@ -198,7 +199,7 @@ describe('xserver: windows', () => {
         X.ReparentWindow(child, parent, 5, 6);
     });
 
-    it('UnmapWindow and DestroyWindow notify structure selectors', done => {
+    it('UnmapWindow and DestroyWindow notify structure selectors', (t, done) => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, 10, 10, 0, 0, 0, 0,
             { eventMask: em.StructureNotify });
@@ -221,7 +222,7 @@ describe('xserver: windows', () => {
         X.UnmapWindow(wid);
     });
 
-    it('DestroySubwindows destroys children but not the window itself', done => {
+    it('DestroySubwindows destroys children but not the window itself', (t, done) => {
         const parent = X.AllocID();
         const child = X.AllocID();
         X.CreateWindow(parent, root, 0, 0, 100, 100);
@@ -238,7 +239,7 @@ describe('xserver: windows', () => {
         });
     });
 
-    it('CirculateWindow raises the lowest child with CirculateNotify', done => {
+    it('CirculateWindow raises the lowest child with CirculateNotify', (t, done) => {
         const parent = X.AllocID();
         X.CreateWindow(parent, root, 0, 0, 100, 100, 0, 0, 0, 0,
             { eventMask: em.SubstructureNotify });
@@ -266,7 +267,7 @@ describe('xserver: windows', () => {
         X.CirculateWindow(parent, 0); // RaiseLowest
     });
 
-    it('MapSubwindows maps every unmapped child', done => {
+    it('MapSubwindows maps every unmapped child', (t, done) => {
         const parent = X.AllocID();
         const c1 = X.AllocID(), c2 = X.AllocID();
         X.CreateWindow(parent, root, 0, 0, 100, 100);
@@ -285,7 +286,7 @@ describe('xserver: windows', () => {
         });
     });
 
-    it('GetGeometry works for windows and pixmaps', done => {
+    it('GetGeometry works for windows and pixmaps', (t, done) => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 3, 4, 15, 16, 5);
         X.GetGeometry(wid, (err, g) => {

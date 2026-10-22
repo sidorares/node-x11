@@ -1,5 +1,6 @@
 // Unit tests for the glXChooseFBConfig-style selection rules (GLX 1.4 spec
 // §3.3.3) — pure filter+sort over decoded fbconfig objects, no server needed.
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const { chooseFBConfigs, glxConst: C } = require('../lib/ext/glx');
 

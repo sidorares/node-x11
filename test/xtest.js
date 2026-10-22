@@ -1,3 +1,4 @@
+const { describe, it, before, after, afterEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -7,7 +8,7 @@ describe('XTEST extension', () => {
     let display;
     let X;
     let xtest;
-    before(done => {
+    before((t, done) => {
         const client = x11.createClient((err, dpy) => {
             if (!err) {
                 display = dpy;
@@ -26,7 +27,7 @@ describe('XTEST extension', () => {
     });
 
     describe('GetVersion', () => {
-        it('should return version 2.2', done => {
+        it('should return version 2.2', (t, done) => {
             xtest.GetVersion(2, 2, (err, version) => {
                 version.should.eql([2, 2]);
                 done();
@@ -35,7 +36,7 @@ describe('XTEST extension', () => {
     });
 
     describe('CompareCursor', () => {
-        it('should return true comparing None with a window without cursor', done => {
+        it('should return true comparing None with a window without cursor', (t, done) => {
             const root = display.screen[0].root;
             const wid = X.AllocID();
             X.CreateWindow(wid, root, 0, 0, 10, 10);
@@ -47,7 +48,7 @@ describe('XTEST extension', () => {
             });
         });
 
-        it('should match the cursor set on a window and mismatch None', done => {
+        it('should match the cursor set on a window and mismatch None', (t, done) => {
             const root = display.screen[0].root;
             const fid = X.AllocID();
             X.OpenFont(fid, 'cursor');
@@ -73,7 +74,7 @@ describe('XTEST extension', () => {
     });
 
     describe('FakeInput', () => {
-        it('MotionNotify should move the pointer to the requested position', done => {
+        it('MotionNotify should move the pointer to the requested position', (t, done) => {
             const root = display.screen[0].root;
             X.QueryPointer(root, (err, before) => {
                 should.not.exist(err);
@@ -97,7 +98,7 @@ describe('XTEST extension', () => {
             xtest.GrabControl(false);
         });
 
-        it('should turn grab imperviousness on and off without error', done => {
+        it('should turn grab imperviousness on and off without error', (t, done) => {
             xtest.GrabControl(true);
             // sync round-trip: an error for GrabControl would arrive first
             X.GetInputFocus(err => {
@@ -111,7 +112,7 @@ describe('XTEST extension', () => {
         });
     });
 
-    after(done => {
+    after((t, done) => {
         X.terminate();
         X.on('end', done);
     });

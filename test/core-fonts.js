@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -7,7 +8,7 @@ describe('Font requests', () => {
   let display;
   let X;
 
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (err)
               return done(err);
@@ -18,14 +19,14 @@ describe('Font requests', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.terminate();
       X.on('end', done);
       X = null;
       display = null;
   });
 
-  it('OpenFont + QueryFont should return metrics for "fixed"', done => {
+  it('OpenFont + QueryFont should return metrics for "fixed"', (t, done) => {
       const fid = X.AllocID();
       X.OpenFont(fid, 'fixed');
       X.QueryFont(fid, (err, font) => {
@@ -39,7 +40,7 @@ describe('Font requests', () => {
       });
   });
 
-  it('QueryTextExtents should measure a string', done => {
+  it('QueryTextExtents should measure a string', (t, done) => {
       const fid = X.AllocID();
       X.OpenFont(fid, 'fixed');
       X.QueryTextExtents(fid, 'hello', (err, extents) => {
@@ -56,7 +57,7 @@ describe('Font requests', () => {
       });
   });
 
-  it('CloseFont should make font id invalid', done => {
+  it('CloseFont should make font id invalid', (t, done) => {
       const fid = X.AllocID();
       X.OpenFont(fid, 'fixed');
       X.CloseFont(fid);
@@ -68,7 +69,7 @@ describe('Font requests', () => {
       });
   });
 
-  it('ListFontsWithInfo should return same number of fonts as ListFonts', done => {
+  it('ListFontsWithInfo should return same number of fonts as ListFonts', (t, done) => {
       X.ListFonts('*', 10, (err, names) => {
           should.not.exist(err);
           names.length.should.be.above(0);
@@ -87,7 +88,7 @@ describe('Font requests', () => {
       });
   });
 
-  it('GetFontPath/SetFontPath roundtrip', done => {
+  it('GetFontPath/SetFontPath roundtrip', (t, done) => {
       X.GetFontPath((err, paths) => {
           should.not.exist(err);
           paths.should.be.an.Array();

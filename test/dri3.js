@@ -3,6 +3,7 @@
 // extension is driven with a fake client and a detached FrameBuffer, so no
 // server, no GPU and no real descriptors-over-socket are involved — those
 // live in test/dri3-live.js (needs a DRI3 server) and in the examples.
+const { describe, it, beforeEach } = require('node:test');
 const should = require('should');
 const fs = require('fs');
 const FrameBuffer = require('../lib/framebuffer');
@@ -58,7 +59,7 @@ describe('DRI3 extension (encoding)', () => {
     let h;
     let DRI3;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         h = fakeClient();
         requireDri3(h, ext => {
             DRI3 = ext;
@@ -73,7 +74,7 @@ describe('DRI3 extension (encoding)', () => {
         DRI3.fdCapable.should.equal(true);
     });
 
-    it('encodes QueryVersion per dri3proto', done => {
+    it('encodes QueryVersion per dri3proto', (t, done) => {
         DRI3.QueryVersion(1, 2, (err, vers) => {
             should.not.exist(err);
             vers.should.eql([1, 2]);
@@ -171,7 +172,7 @@ describe('DRI3 extension (encoding)', () => {
         fs.closeSync(fd1);
     });
 
-    it('rejects PixmapFromBuffers with 0 or more than 4 planes', done => {
+    it('rejects PixmapFromBuffers with 0 or more than 4 planes', (t, done) => {
         DRI3.PixmapFromBuffers(1, 2, { width: 1, height: 1, depth: 24, bpp: 32, planes: [] }, err => {
             should.exist(err);
             h.sent.length.should.equal(0);
@@ -179,7 +180,7 @@ describe('DRI3 extension (encoding)', () => {
         });
     });
 
-    it('encodes GetSupportedModifiers and parses 64-bit modifiers exactly', done => {
+    it('encodes GetSupportedModifiers and parses 64-bit modifiers exactly', (t, done) => {
         DRI3.GetSupportedModifiers(0x321, 24, 32, (err, mods) => {
             should.not.exist(err);
             mods.windowModifiers.should.eql([0n, 0x0100000000000001n]);
@@ -241,7 +242,7 @@ describe('DRI3 extension (encoding)', () => {
         fs.closeSync(fd);
     });
 
-    it('refuses the four requests whose replies carry descriptors', done => {
+    it('refuses the four requests whose replies carry descriptors', (t, done) => {
         const gated = [
             cb => DRI3.Open(1, 0, cb),
             cb => DRI3.BufferFromPixmap(1, cb),
@@ -263,7 +264,7 @@ describe('DRI3 extension (encoding)', () => {
         DRI3.fdReceiveCapable.should.equal(false);
     });
 
-    it('fails cleanly and consumes the descriptor when the connection cannot pass fds', done => {
+    it('fails cleanly and consumes the descriptor when the connection cannot pass fds', (t, done) => {
         const plain = fakeClient({}); // stream without sendFds
         requireDri3(plain, ext => {
             const fd = fs.openSync('/dev/null', 'r');
@@ -307,7 +308,7 @@ describe('DRI3 extension (replies carrying descriptors)', () => {
 
     const openNull = () => fs.openSync('/dev/null', 'r');
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         h = fakeClient(receivingStream());
         requireDri3(h, ext => {
             DRI3 = ext;
@@ -320,7 +321,7 @@ describe('DRI3 extension (replies carrying descriptors)', () => {
         DRI3.fdReceiveCapable.should.equal(true);
     });
 
-    it('encodes Open and hands back the device descriptor', done => {
+    it('encodes Open and hands back the device descriptor', (t, done) => {
         const fd = openNull();
         DRI3.Open(0x321, 0, (err, deviceFd) => {
             should.not.exist(err);
@@ -338,7 +339,7 @@ describe('DRI3 extension (replies carrying descriptors)', () => {
         respondWithFds(Buffer.alloc(24), [fd]);
     });
 
-    it('encodes BufferFromPixmap and parses the buffer description', done => {
+    it('encodes BufferFromPixmap and parses the buffer description', (t, done) => {
         const fd = openNull();
         DRI3.BufferFromPixmap(0x600001, (err, buffer) => {
             should.not.exist(err);
@@ -363,7 +364,7 @@ describe('DRI3 extension (replies carrying descriptors)', () => {
         respondWithFds(body, [fd]);
     });
 
-    it('encodes FDFromFence and hands back the fence descriptor', done => {
+    it('encodes FDFromFence and hands back the fence descriptor', (t, done) => {
         const fd = openNull();
         DRI3.FDFromFence(0x42, 0x99, (err, fenceFd) => {
             should.not.exist(err);
@@ -379,7 +380,7 @@ describe('DRI3 extension (replies carrying descriptors)', () => {
         respondWithFds(Buffer.alloc(24), [fd]);
     });
 
-    it('encodes BuffersFromPixmap and parses planes, strides and offsets', done => {
+    it('encodes BuffersFromPixmap and parses planes, strides and offsets', (t, done) => {
         const fd0 = openNull();
         const fd1 = openNull();
         DRI3.BuffersFromPixmap(0xAB, (err, buffers) => {
@@ -414,7 +415,7 @@ describe('DRI3 extension (replies carrying descriptors)', () => {
         respondWithFds(body, [fd0, fd1]);
     });
 
-    it('reports a reply whose descriptors did not all arrive, and closes what did', done => {
+    it('reports a reply whose descriptors did not all arrive, and closes what did', (t, done) => {
         const fd = openNull();
         DRI3.BuffersFromPixmap(1, err => {
             should.exist(err);

@@ -1,3 +1,4 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -23,7 +24,7 @@ describe('Present extension', () => {
     let gc;
     let bytesPP;
 
-    before(done => {
+    before((t, done) => {
         const client = x11.createClient((err, dpy) => {
             if (err)
                 return done(err);
@@ -43,7 +44,7 @@ describe('Present extension', () => {
         client.on('error', done);
     });
 
-    after(done => {
+    after((t, done) => {
         if (gc) X.FreeGC(gc);
         if (pixmap) X.FreePixmap(pixmap);
         if (wid) X.DestroyWindow(wid);
@@ -64,7 +65,7 @@ describe('Present extension', () => {
         present.minor.should.be.aboveOrEqual(0);
     });
 
-    it('QueryCapabilities should return a capability mask for the root window', done => {
+    it('QueryCapabilities should return a capability mask for the root window', (t, done) => {
         present.QueryCapabilities(root, (err, caps) => {
             should.not.exist(err);
             caps.should.be.a.Number();
@@ -75,8 +76,7 @@ describe('Present extension', () => {
         });
     });
 
-    it('PresentPixmap should copy pixmap contents onto a mapped window', function(done) {
-        this.timeout(5000);
+    it('PresentPixmap should copy pixmap contents onto a mapped window', { timeout: 5000 }, function(t, done) {
         wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, W, H, 0, 0, 0, 0, {
             backgroundPixel: black,
@@ -121,8 +121,7 @@ describe('Present extension', () => {
         X.on('event', listener);
     });
 
-    it('NotifyMSC with no event selection should not error', function(done) {
-        this.timeout(3000);
+    it('NotifyMSC with no event selection should not error', { timeout: 3000 }, function(t, done) {
         const errors = [];
         const onError = err => errors.push(err);
         X.on('error', onError);
@@ -139,7 +138,7 @@ describe('Present extension', () => {
         }, 100);
     });
 
-    it('SelectInput with an empty mask should be accepted', done => {
+    it('SelectInput with an empty mask should be accepted', (t, done) => {
         const errors = [];
         const onError = err => errors.push(err);
         X.on('error', onError);
@@ -153,8 +152,7 @@ describe('Present extension', () => {
         });
     });
 
-    it('SelectInput + NotifyMSC should deliver a PresentCompleteNotify GenericEvent', function(done) {
-        this.timeout(3000);
+    it('SelectInput + NotifyMSC should deliver a PresentCompleteNotify GenericEvent', { timeout: 3000 }, function(t, done) {
         const eid = X.AllocID();
         const serial = 12345;
         const listener = ev => {

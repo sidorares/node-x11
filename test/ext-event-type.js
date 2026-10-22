@@ -6,6 +6,7 @@
 // Hermetic: the client is stubbed, so this needs no X server.
 
 
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');

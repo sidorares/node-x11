@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -7,7 +8,7 @@ describe('Cursor requests', () => {
   let X;
   let root;
 
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (err)
               return done(err);
@@ -19,7 +20,7 @@ describe('Cursor requests', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.terminate();
       X.on('end', done);
       X = null;
@@ -39,7 +40,7 @@ describe('Cursor requests', () => {
       return cid;
   }
 
-  it('CreateGlyphCursor should create usable cursor', done => {
+  it('CreateGlyphCursor should create usable cursor', (t, done) => {
       const cid = createLeftPtrCursor();
       const wid = X.AllocID();
       X.CreateWindow(wid, root, 0, 0, 10, 10, 0, 0, 0, 0, { cursor: cid });
@@ -52,7 +53,7 @@ describe('Cursor requests', () => {
       });
   });
 
-  it('RecolorCursor should be accepted by server', done => {
+  it('RecolorCursor should be accepted by server', (t, done) => {
       const cid = createLeftPtrCursor();
       X.RecolorCursor(cid, red, white);
       X.GetInputFocus(err => {
@@ -62,7 +63,7 @@ describe('Cursor requests', () => {
       });
   });
 
-  it('FreeCursor should make cursor id invalid', done => {
+  it('FreeCursor should make cursor id invalid', (t, done) => {
       const cid = createLeftPtrCursor();
       X.FreeCursor(cid);
       X.removeAllListeners('error'); // drop the beforeEach done-listener
@@ -73,7 +74,7 @@ describe('Cursor requests', () => {
       X.RecolorCursor(cid, red, white);
   });
 
-  it('QueryBestSize should return non-zero cursor size', done => {
+  it('QueryBestSize should return non-zero cursor size', (t, done) => {
       X.QueryBestSize(0, root, 16, 16, (err, size) => {
           should.not.exist(err);
           size.width.should.be.above(0);

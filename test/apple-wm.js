@@ -9,6 +9,7 @@
 //       CARD16 ix, iy, iw, ih, ox, oy, ow, oh;
 //   } xAppleWMFrameHitTestReq;   /* sz = 28 */
 
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const appleWM = require('../lib/ext/apple-wm');
 

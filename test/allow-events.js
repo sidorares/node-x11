@@ -1,26 +1,26 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
 
 // This test was ported from X Test Suite @ http://cgit.freedesktop.org/xorg/test/xts/
 
-function warp_pointer(wid, x, y, cb) {
-    const self = this;
-    this.X.QueryPointer(wid, (err, old_pointer) => {
+function warp_pointer(X, wid, x, y, cb) {
+    X.QueryPointer(wid, (err, old_pointer) => {
         if (err) {
             return cb(err);
         }
 
-        self.X.WarpPointer(0,
-                           wid,
-                           0,
-                           0,
-                           0,
-                           0,
-                           x,
-                           y);
+        X.WarpPointer(0,
+                      wid,
+                      0,
+                      0,
+                      0,
+                      0,
+                      x,
+                      y);
 
-        self.X.QueryPointer(wid, (err, new_pointer) => {
+        X.QueryPointer(wid, (err, new_pointer) => {
             if (err) {
                 return cb(err);
             }
@@ -35,14 +35,13 @@ function warp_pointer(wid, x, y, cb) {
     });
 }
 
-function is_pointer_frozen(cb) {
-    const self = this;
-    warp_pointer.call(this, this.wid, 0, 0, err => {
+function is_pointer_frozen(X, wid, cb) {
+    warp_pointer(X, wid, 0, 0, err => {
         if (err) {
             return cb(err);
         }
 
-        warp_pointer.call(self, self.wid, 1, 1, (err, data) => {
+        warp_pointer(X, wid, 1, 1, (err, data) => {
             if (err) {
                 return cb(err);
             }
@@ -53,21 +52,22 @@ function is_pointer_frozen(cb) {
 }
 
 describe('AllowEvents', () => {
-    before(function(done) {
-        const self = this;
+    let X, screen, root, wid;
+
+    before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X = dpy.client;
-            self.screen = dpy.screen[0];
-            self.root = self.screen.root;
-            self.wid = self.X.AllocID();
-            self.X.CreateWindow(self.wid,
-                                self.root,
-                                0,
-                                0,
-                                self.screen.pixel_width,
-                                self.screen.pixel_height);
-            self.X.MapWindow(self.wid);
+            X = dpy.client;
+            screen = dpy.screen[0];
+            root = screen.root;
+            wid = X.AllocID();
+            X.CreateWindow(wid,
+                           root,
+                           0,
+                           0,
+                           screen.pixel_width,
+                           screen.pixel_height);
+            X.MapWindow(wid);
             done();
         });
 
@@ -76,10 +76,9 @@ describe('AllowEvents', () => {
         });
     });
 
-    it('if pointer is frozen by the client calling AllowEvents with AsyncPointer should resume the processing', function(done) {
-        const self = this;
-        this.X.GrabPointer(
-            this.wid,
+    it('if pointer is frozen by the client calling AllowEvents with AsyncPointer should resume the processing', function(t, done) {
+        X.GrabPointer(
+            wid,
             false,
             x11.eventMask.PointerMotion,
             0, // sync
@@ -89,11 +88,11 @@ describe('AllowEvents', () => {
             0
         );
 
-        is_pointer_frozen.call(this, (err, frozen) => {
+        is_pointer_frozen(X, wid, (err, frozen) => {
             should.not.exist(err);
             frozen.should.equal(true);
-            self.X.AllowEvents(0, 0);
-            is_pointer_frozen.call(self, (err, frozen) => {
+            X.AllowEvents(0, 0);
+            is_pointer_frozen(X, wid, (err, frozen) => {
                 should.not.exist(err);
                 frozen.should.equal(false);
                 done();
@@ -101,16 +100,16 @@ describe('AllowEvents', () => {
         });
     });
 
-    after(function(done) {
+    after(function(t, done) {
         // This test grabs the pointer and never released it, and its client
         // stayed open for the rest of the run — so every later suite's
         // pointer events went to this connection instead of theirs. Nothing
         // noticed until XI2 device events arrived, because a grab redirects
         // those and leaves raw events alone: raw motion kept working while
         // ordinary motion vanished, in this file's absence and not otherwise.
-        this.X.UngrabPointer(0);
-        this.X.DestroyWindow(this.wid);
-        this.X.terminate();
-        this.X.on('end', done);
+        X.UngrabPointer(0);
+        X.DestroyWindow(wid);
+        X.terminate();
+        X.on('end', done);
     });
 });

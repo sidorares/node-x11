@@ -1,3 +1,4 @@
+const { describe, it, beforeEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -5,7 +6,7 @@ const assert = require('assert');
 describe('Client', () => {
 
   let display;
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (!err) {
               display = dpy;
@@ -19,7 +20,7 @@ describe('Client', () => {
       client.on('error', done);
   });
 
-  it('calls first createClient parameter with display object', done => {
+  it('calls first createClient parameter with display object', (t, done) => {
       should.exist(display);
       should.exist(display.screen);
       should.exist(display.screen[0]);
@@ -28,7 +29,7 @@ describe('Client', () => {
       done();
   });
 
-  it('reports the byte order the connection speaks', done => {
+  it('reports the byte order the connection speaks', (t, done) => {
       // what the client declared in its hello, and therefore how every
       // request, reply, event and property value on it is encoded
       display.byte_order.should.be.oneOf([0, 1]);
@@ -38,7 +39,7 @@ describe('Client', () => {
       done();
   });
 
-  it('uses display variable from parameter if present ignoring anvironment $DISPLAY', done => {
+  it('uses display variable from parameter if present ignoring anvironment $DISPLAY', (t, done) => {
      const disp = process.env.DISPLAY;
      process.env.DISPLAY = 'BOGUS DISPLAY';
      const client = x11.createClient({ display : disp }, done);
@@ -46,7 +47,7 @@ describe('Client', () => {
      process.env.DISPLAY=disp;
   });
 
-  it('throws error if $DISPLAY is bogus', done => {
+  it('throws error if $DISPLAY is bogus', (t, done) => {
      try {
      assert.throws(() => {
         const client = x11.createClient({ display : 'BOGUS DISPLAY' }, (err, display) => {
@@ -60,7 +61,7 @@ describe('Client', () => {
     }
   });
 
-  it('reports a connection dropped during setup instead of hanging', done => {
+  it('reports a connection dropped during setup instead of hanging', (t, done) => {
     // a server that hangs up mid-setup — resetting after its last client
     // left, or refusing authorisation without a word — used to leave the
     // connect callback waiting forever
@@ -76,7 +77,7 @@ describe('Client', () => {
     setImmediate(() => stream.emit('close'));
   });
 
-  it('closes before it reports the connection closed', done => {
+  it('closes before it reports the connection closed', (t, done) => {
     // the callback used to fire when end() was called, not when the socket
     // was gone: an X server resets when its last client disconnects, so a
     // program that reconnects in that window loses the new connection
@@ -107,8 +108,7 @@ describe('Client', () => {
   // proxy needs the server's own socket to forward to.
   const realDisplay = process.env.DISPLAY && x11.parseDisplay?.(process.env.DISPLAY);
   const onLinuxUnix = process.platform === 'linux' && realDisplay && !realDisplay.host;
-  (onLinuxUnix ? it : it.skip)('waits out a listen queue that is full, as a blocking connect would', function (done) {
-    this.timeout(10000);
+  (onLinuxUnix ? it : it.skip)('waits out a listen queue that is full, as a blocking connect would', { timeout: 10000 }, function (t, done) {
     const fs = require('fs');
     const os = require('os');
     const net = require('net');
@@ -162,7 +162,7 @@ describe('Client', () => {
     });
   });
 
-  it('returns error when connecting to non existent display', done => {
+  it('returns error when connecting to non existent display', (t, done) => {
     let errorCbCalled = false;
     const client = x11.createClient({ display : ':44' }, (err, display) => {
         assert(err instanceof Error);
@@ -176,7 +176,7 @@ describe('Client', () => {
     });
   });
 
-  it('prints the Xauthority no-match diagnosis only when the server refuses', done => {
+  it('prints the Xauthority no-match diagnosis only when the server refuses', (t, done) => {
     // the warning used to fire on every connection, before the server had
     // answered, and was usually wrong about the outcome (react-x11#371). Here
     // the server does refuse, so the diagnosis must still arrive.

@@ -9,10 +9,18 @@
 // render on the GPU, export a dma-buf, pass the descriptor with
 // PixmapFromBuffer, read the pixels back out of the server-side pixmap —
 // then a Present of that pixmap through CompleteNotify/IdleNotify.
+const { describe, it, before, after } = require('node:test');
 const should = require('should');
 const x11 = require('../lib');
 
-describe('DRI3 extension (live server)', () => {
+let dri = null;
+try {
+    dri = require('x11-dri');
+} catch (e) {
+    // native companion not installed: the suite skips
+}
+
+describe('DRI3 extension (live server)', { skip: !dri && 'x11-dri is not installed' }, () => {
 
     const W = 32;
     const H = 32;
@@ -23,19 +31,12 @@ describe('DRI3 extension (live server)', () => {
     let depth;
     let DRI3;
     let Present;
-    let dri = null;
     let gpu = null;
     let surface = null;
     let gpuUsable = false;      // GPU context + server-side import both work
     const pixmaps = new Map();  // bo key -> pixmap XID (alive as long as the bo)
 
-    before(function(done) {
-        try {
-            dri = require('x11-dri');
-        } catch (e) {
-            this.skip(); // native companion not installed
-            return;
-        }
+    before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
             if (err)
                 return done(err);
@@ -56,7 +57,7 @@ describe('DRI3 extension (live server)', () => {
         client.on('error', done);
     });
 
-    after(done => {
+    after((t, done) => {
         if (X) {
             for (const pixmap of pixmaps.values())
                 X.FreePixmap(pixmap);
@@ -94,7 +95,7 @@ describe('DRI3 extension (live server)', () => {
         DRI3.fdCapable.should.equal(true, 'unix-socket connections are fd-capable by default');
     });
 
-    it('lists supported modifiers for the root window', done => {
+    it('lists supported modifiers for the root window', (t, done) => {
         DRI3.GetSupportedModifiers(root, depth, 32, (err, mods) => {
             should.not.exist(err);
             mods.windowModifiers.should.be.an.Array();
@@ -104,15 +105,18 @@ describe('DRI3 extension (live server)', () => {
         });
     });
 
-    it('imports a GPU-rendered dma-buf and the server sees the exact pixels', function(done) {
-        if (depth !== 24 && depth !== 32)
-            return this.skip();
+    it('imports a GPU-rendered dma-buf and the server sees the exact pixels', function(t, done) {
+        if (depth !== 24 && depth !== 32) {
+            t.skip();
+            return done();
+        }
         try {
             gpu = new dri.Gpu({ format: depth === 32 ? dri.FORMAT.ARGB8888 : dri.FORMAT.XRGB8888 });
             surface = gpu.createSurface(W, H);
             gpu.makeCurrent(surface);
         } catch (e) {
-            return this.skip(); // no render node / no GL stack on this machine
+            t.skip(); // no render node / no GL stack on this machine
+            return done();
         }
         const gl = gpu.gl;
         gl.viewport(0, 0, W, H);
@@ -141,10 +145,11 @@ describe('DRI3 extension (live server)', () => {
         });
     });
 
-    it('presents a dma-buf pixmap: CompleteNotify and IdleNotify arrive', function(done) {
-        if (!gpuUsable)
-            return this.skip();
-        this.timeout(8000);
+    it('presents a dma-buf pixmap: CompleteNotify and IdleNotify arrive', { timeout: 8000 }, function(t, done) {
+        if (!gpuUsable) {
+            t.skip();
+            return done();
+        }
         const gl = gpu.gl;
         const wid = X.AllocID();
         const eid = X.AllocID();

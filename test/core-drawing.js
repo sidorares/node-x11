@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -16,7 +17,7 @@ describe('Drawing requests', () => {
   let gc;
   let bytesPP;
 
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (err)
               return done(err);
@@ -38,7 +39,7 @@ describe('Drawing requests', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.FreeGC(gc);
       X.FreePixmap(pixmap);
       X.terminate();
@@ -71,7 +72,7 @@ describe('Drawing requests', () => {
       });
   }
 
-  it('PolySegment should draw line segments', done => {
+  it('PolySegment should draw line segments', (t, done) => {
       X.PolySegment(pixmap, gc, [0, 10, 19, 10, 5, 0, 5, 4]);
       readBack(data => {
           getPixel(data, 10, 10).should.equal(white >>> 0); // on segment 1
@@ -81,7 +82,7 @@ describe('Drawing requests', () => {
       });
   });
 
-  it('PolyRectangle should draw outlines only', done => {
+  it('PolyRectangle should draw outlines only', (t, done) => {
       X.PolyRectangle(pixmap, gc, [2, 2, 15, 15]);
       readBack(data => {
           getPixel(data, 2, 2).should.equal(white >>> 0);   // corner
@@ -91,7 +92,7 @@ describe('Drawing requests', () => {
       });
   });
 
-  it('PolyArc should draw an ellipse outline', done => {
+  it('PolyArc should draw an ellipse outline', (t, done) => {
       X.PolyArc(pixmap, gc, [2, 2, 16, 16, 0, 360 * 64]);
       readBack(data => {
           getPixel(data, 2, 10).should.equal(white >>> 0);  // leftmost point
@@ -101,7 +102,7 @@ describe('Drawing requests', () => {
       });
   });
 
-  it('FillPoly should fill a triangle', done => {
+  it('FillPoly should fill a triangle', (t, done) => {
       X.FillPoly(pixmap, gc, 2, 0, [0, 0, 19, 0, 10, 19]);
       readBack(data => {
           getPixel(data, 10, 5).should.equal(white >>> 0);  // inside
@@ -110,7 +111,7 @@ describe('Drawing requests', () => {
       });
   });
 
-  it('CopyPlane should reproduce src through one bit-plane', done => {
+  it('CopyPlane should reproduce src through one bit-plane', (t, done) => {
       X.PolyFillRectangle(pixmap, gc, [0, 0, W, H]); // all white
       const dst = X.AllocID();
       X.CreatePixmap(dst, root, depth, W, H);
@@ -128,7 +129,7 @@ describe('Drawing requests', () => {
       });
   });
 
-  it('ImageText8 should draw text pixels', done => {
+  it('ImageText8 should draw text pixels', (t, done) => {
       const fid = X.AllocID();
       X.OpenFont(fid, 'fixed');
       X.ChangeGC(gc, { font: fid });
@@ -140,7 +141,7 @@ describe('Drawing requests', () => {
       });
   });
 
-  it('ImageText16 should draw same pixels as ImageText8', done => {
+  it('ImageText16 should draw same pixels as ImageText8', (t, done) => {
       const fid = X.AllocID();
       X.OpenFont(fid, 'fixed');
       X.ChangeGC(gc, { font: fid });
@@ -160,7 +161,7 @@ describe('Drawing requests', () => {
       });
   });
 
-  it('PolyText16 should draw same pixels as PolyText8', done => {
+  it('PolyText16 should draw same pixels as PolyText8', (t, done) => {
       const fid = X.AllocID();
       X.OpenFont(fid, 'fixed');
       X.ChangeGC(gc, { font: fid });

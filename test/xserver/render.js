@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const { boot } = require('./boot');
 
@@ -9,7 +10,7 @@ describe('xserver: RENDER', () => {
 
     let server, display, X, root, render;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             ({ server, display, X } = ctx);
@@ -69,7 +70,7 @@ describe('xserver: RENDER', () => {
 
     describe('handshake', () => {
 
-        it('QueryVersion reports 0.11', done => {
+        it('QueryVersion reports 0.11', (t, done) => {
             render.QueryVersion(0, 11, (err, ver) => {
                 if (err) return done(err);
                 assert.deepStrictEqual(ver, [0, 11]);
@@ -84,7 +85,7 @@ describe('xserver: RENDER', () => {
             assert.ok(render.mono1, 'mono1');
         });
 
-        it('QueryPictFormats decodes the screens section', done => {
+        it('QueryPictFormats decodes the screens section', (t, done) => {
             render.QueryPictFormats((err, res) => {
                 if (err) return done(err);
                 assert.strictEqual(res.screens.length, 1);
@@ -109,7 +110,7 @@ describe('xserver: RENDER', () => {
             assert.strictEqual(render.findVisualFormat(0x12345), undefined);
         });
 
-        it('QueryFilters lists nearest/bilinear/convolution', done => {
+        it('QueryFilters lists nearest/bilinear/convolution', (t, done) => {
             render.QueryFilters((err, res) => {
                 if (err) return done(err);
                 const filters = res[1];
@@ -119,7 +120,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('QueryPictIndexValues answers with Match (no indexed formats)', done => {
+        it('QueryPictIndexValues answers with Match (no indexed formats)', (t, done) => {
             render.QueryPictIndexValues(render.rgb24, err => {
                 assert.strictEqual(err.error, 8); // BadMatch
                 done();
@@ -130,7 +131,7 @@ describe('xserver: RENDER', () => {
 
     describe('FillRectangles', () => {
 
-        it('Src fills exactly the requested rect', done => {
+        it('Src fills exactly the requested rect', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             render.FillRectangles(render.PictOp.Src, pic, [1, 0, 0, 1], [2, 3, 4, 5]);
             readBack(pixmap, data => {
@@ -144,7 +145,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('Over blends premultiplied color with the destination', done => {
+        it('Over blends premultiplied color with the destination', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             render.FillRectangles(render.PictOp.Src, pic, [1, 1, 1, 1], [0, 0, W, H]);
             // premultiplied half-transparent red over white
@@ -158,7 +159,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('Clear zeroes the rect regardless of color', done => {
+        it('Clear zeroes the rect regardless of color', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             render.FillRectangles(render.PictOp.Src, pic, [1, 1, 1, 1], [0, 0, W, H]);
             render.FillRectangles(render.PictOp.Clear, pic, [1, 1, 1, 1], [0, 0, 4, 4]);
@@ -172,7 +173,7 @@ describe('xserver: RENDER', () => {
 
     describe('Composite', () => {
 
-        it('solid fill source composites into the destination region', done => {
+        it('solid fill source composites into the destination region', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const solid = X.AllocID();
             render.CreateSolidFill(solid, 0, 1, 0, 1);
@@ -185,7 +186,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('a8 mask gates the source', done => {
+        it('a8 mask gates the source', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const mask = mkMask();
             render.FillRectangles(render.PictOp.Src, mask.pic, [0, 0, 0, 1], [4, 4, 4, 4]);
@@ -200,7 +201,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('depth-32 source keeps PutImage alpha (premultiplied Over)', done => {
+        it('depth-32 source keeps PutImage alpha (premultiplied Over)', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             render.FillRectangles(render.PictOp.Src, pic, [1, 1, 1, 1], [0, 0, W, H]);
             const src = X.AllocID();
@@ -225,7 +226,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('repeat Normal tiles the source', done => {
+        it('repeat Normal tiles the source', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const src = X.AllocID();
             X.CreatePixmap(src, root, 24, 2, 2);
@@ -247,7 +248,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('SetPictureTransform maps destination into source space', done => {
+        it('SetPictureTransform maps destination into source space', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const src = X.AllocID();
             X.CreatePixmap(src, root, 24, 8, 8);
@@ -267,7 +268,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('bilinear filter interpolates between texels', done => {
+        it('bilinear filter interpolates between texels', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const src = X.AllocID();
             X.CreatePixmap(src, root, 24, 2, 1);
@@ -295,7 +296,7 @@ describe('xserver: RENDER', () => {
 
     describe('gradients', () => {
 
-        it('linear gradient ramps between the stops', done => {
+        it('linear gradient ramps between the stops', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const grad = X.AllocID();
             render.LinearGradient(grad, [0, 0], [W, 0],
@@ -310,7 +311,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('radial gradient is bright at the center, dark at the rim', done => {
+        it('radial gradient is bright at the center, dark at the rim', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const grad = X.AllocID();
             render.RadialGradient(grad, [8, 8], [8, 8], 0, 8,
@@ -323,7 +324,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('conical gradient varies with the angle around the center', done => {
+        it('conical gradient varies with the angle around the center', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const grad = X.AllocID();
             render.ConicalGradient(grad, [8, 8], 0,
@@ -340,7 +341,7 @@ describe('xserver: RENDER', () => {
 
     describe('geometry', () => {
 
-        it('Triangles through an a8 mask fills with antialiased edges', done => {
+        it('Triangles through an a8 mask fills with antialiased edges', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const solid = X.AllocID();
             render.CreateSolidFill(solid, 1, 1, 1, 1);
@@ -356,7 +357,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('with no maskFormat, a picture draws Sharp edges, as X.Org does', done => {
+        it('with no maskFormat, a picture draws Sharp edges, as X.Org does', (t, done) => {
             // renderproto says a picture's poly-edge defaults to Smooth; the
             // X.Org server has always made it Sharp, so a shape with no
             // maskFormat is aliased there unless the destination asks
@@ -373,7 +374,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('with no maskFormat each shape composites by itself', done => {
+        it('with no maskFormat each shape composites by itself', (t, done) => {
             // half-white triangles that overlap: through one mask the
             // overlap is drawn once, with none and Smooth edges twice
             const { pixmap, pic } = mkCanvas();
@@ -394,7 +395,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('an operator a clear source acts with reaches the whole destination', done => {
+        it('an operator a clear source acts with reaches the whole destination', (t, done) => {
             // Src through the mask clears what the mask does not cover, all
             // of the picture, not just the triangle's box
             const { pixmap, pic } = mkCanvas();
@@ -410,7 +411,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('Trapezoids with vertical edges fills the exact rect', done => {
+        it('Trapezoids with vertical edges fills the exact rect', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const solid = X.AllocID();
             render.CreateSolidFill(solid, 1, 1, 1, 1);
@@ -428,7 +429,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('TriStrip covers the quad', done => {
+        it('TriStrip covers the quad', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const solid = X.AllocID();
             render.CreateSolidFill(solid, 1, 1, 1, 1);
@@ -443,7 +444,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('TriFan covers the quad', done => {
+        it('TriFan covers the quad', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const solid = X.AllocID();
             render.CreateSolidFill(solid, 1, 1, 1, 1);
@@ -458,7 +459,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('AddTraps accumulates coverage into an a8 picture', done => {
+        it('AddTraps accumulates coverage into an a8 picture', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const mask = mkMask();
             // spanfix rect [1..5) x [2..6): top l/r/y, bottom l/r/y
@@ -474,7 +475,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('AddTraps ignores the clip, and pictures that are not alpha-only', done => {
+        it('AddTraps ignores the clip, and pictures that are not alpha-only', (t, done) => {
             // as fb hands the picture to pixman_add_traps, which rasterizes
             // only into a1/a4/a8 images and sees no clip
             const { pixmap, pic } = mkCanvas();
@@ -518,7 +519,7 @@ describe('xserver: RENDER', () => {
                 [0, 0, 85196, -85196, 65535, -163840]);
         });
 
-        it('rejects an unknown maskFormat', done => {
+        it('rejects an unknown maskFormat', (t, done) => {
             const { pic } = mkCanvas();
             const solid = X.AllocID();
             render.CreateSolidFill(solid, 1, 1, 1, 1);
@@ -545,7 +546,7 @@ describe('xserver: RENDER', () => {
             }]);
         }
 
-        it('CompositeGlyphs8 draws added glyphs at the pen position', done => {
+        it('CompositeGlyphs8 draws added glyphs at the pen position', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const gs = X.AllocID();
             render.CreateGlyphSet(gs, render.a8);
@@ -564,7 +565,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('glyphset-switch elements and glyph advances apply', done => {
+        it('glyphset-switch elements and glyph advances apply', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const gs1 = X.AllocID();
             const gs2 = X.AllocID();
@@ -584,7 +585,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('CompositeGlyphs32 accepts wide ids', done => {
+        it('CompositeGlyphs32 accepts wide ids', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const gs = X.AllocID();
             render.CreateGlyphSet(gs, render.a8);
@@ -599,7 +600,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('ReferenceGlyphSet shares glyphs with the original set', done => {
+        it('ReferenceGlyphSet shares glyphs with the original set', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             const gs = X.AllocID();
             render.CreateGlyphSet(gs, render.a8);
@@ -616,7 +617,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('FreeGlyphs makes the glyph undefined (Glyph error)', done => {
+        it('FreeGlyphs makes the glyph undefined (Glyph error)', (t, done) => {
             const { pic } = mkCanvas();
             const gs = X.AllocID();
             render.CreateGlyphSet(gs, render.a8);
@@ -634,7 +635,7 @@ describe('xserver: RENDER', () => {
 
     describe('clip rectangles', () => {
 
-        it('SetPictureClipRectangles restricts rendering', done => {
+        it('SetPictureClipRectangles restricts rendering', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             render.SetPictureClipRectangles(pic, 0, 0, [1, 1, 4, 4]);
             render.FillRectangles(render.PictOp.Src, pic, [1, 1, 1, 1], [0, 0, W, H]);
@@ -646,7 +647,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('clip origin offsets the rectangles; clipMask None clears', done => {
+        it('clip origin offsets the rectangles; clipMask None clears', (t, done) => {
             const { pixmap, pic } = mkCanvas();
             render.SetPictureClipRectangles(pic, 8, 8, [0, 0, 2, 2]);
             render.FillRectangles(render.PictOp.Src, pic, [1, 1, 1, 1], [0, 0, W, H]);
@@ -663,7 +664,7 @@ describe('xserver: RENDER', () => {
 
     describe('cursors', () => {
 
-        it('CreateCursor and CreateAnimCursor from an rgba32 picture', done => {
+        it('CreateCursor and CreateAnimCursor from an rgba32 picture', (t, done) => {
             const src = X.AllocID();
             X.CreatePixmap(src, root, 32, 8, 8);
             const srcPic = X.AllocID();
@@ -682,7 +683,7 @@ describe('xserver: RENDER', () => {
 
     describe('core support for RENDER', () => {
 
-        it('depth-8 pixmap PutImage/GetImage round-trip', done => {
+        it('depth-8 pixmap PutImage/GetImage round-trip', (t, done) => {
             const pixmap = X.AllocID();
             X.CreatePixmap(pixmap, root, 8, W, 4);
             const gc = X.AllocID();
@@ -698,7 +699,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('depth-32 pixmap PutImage/GetImage keeps the alpha byte', done => {
+        it('depth-32 pixmap PutImage/GetImage keeps the alpha byte', (t, done) => {
             const pixmap = X.AllocID();
             X.CreatePixmap(pixmap, root, 32, 4, 4);
             const gc = X.AllocID();
@@ -721,7 +722,7 @@ describe('xserver: RENDER', () => {
         // 0xffff clamps, which used to be silent — every example in this repo
         // that wrote stops that way rendered fully opaque instead of
         // translucent, for years, with nothing to notice it by.
-        it('clamps out-of-range components and warns once', done => {
+        it('clamps out-of-range components and warns once', (t, done) => {
             const warnings = [];
             const realWarn = console.warn;
             console.warn = msg => warnings.push(String(msg));
@@ -786,7 +787,7 @@ describe('xserver: RENDER', () => {
 
     describe('errors', () => {
 
-        it('bad picture ids raise the Picture error', done => {
+        it('bad picture ids raise the Picture error', (t, done) => {
             render.FreePicture(0xbadf00d);
             X.once('error', err => {
                 assert.strictEqual(err.error, render.firstError + 1); // BadPicture
@@ -795,7 +796,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('CreatePicture with mismatched depth raises Match', done => {
+        it('CreatePicture with mismatched depth raises Match', (t, done) => {
             const pixmap = X.AllocID();
             X.CreatePixmap(pixmap, root, 24, 4, 4);
             const pic = X.AllocID();
@@ -806,7 +807,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('bad glyphset ids raise the GlyphSet error', done => {
+        it('bad glyphset ids raise the GlyphSet error', (t, done) => {
             render.FreeGlyphSet(0xbadbad);
             X.once('error', err => {
                 assert.strictEqual(err.error, render.firstError + 3); // BadGlyphSet
@@ -814,7 +815,7 @@ describe('xserver: RENDER', () => {
             });
         });
 
-        it('AddGlyphsFromPicture is unimplemented', done => {
+        it('AddGlyphsFromPicture is unimplemented', (t, done) => {
             const gs = X.AllocID();
             render.CreateGlyphSet(gs, render.a8);
             render.AddGlyphsFromPicture(gs, 0, []);

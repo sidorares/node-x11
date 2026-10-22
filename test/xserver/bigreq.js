@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const { boot } = require('./boot');
 
@@ -5,7 +6,7 @@ describe('xserver: BIG-REQUESTS', () => {
 
     let server, display, X, root;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             ({ server, display, X } = ctx);
@@ -19,7 +20,7 @@ describe('xserver: BIG-REQUESTS', () => {
         server = display = X = null;
     });
 
-    it('QueryExtension resolves and Enable reports the 4MB limit', done => {
+    it('QueryExtension resolves and Enable reports the 4MB limit', (t, done) => {
         X.QueryExtension('BIG-REQUESTS', (err, ext) => {
             if (err) return done(err);
             assert.strictEqual(ext.present, 1);
@@ -30,7 +31,7 @@ describe('xserver: BIG-REQUESTS', () => {
         });
     });
 
-    it('a PutImage larger than the core 256KB limit round-trips', done => {
+    it('a PutImage larger than the core 256KB limit round-trips', (t, done) => {
         const W = 300, H = 300;
         const data = Buffer.alloc(W * H * 4);
         for (let i = 0; i < W * H; i++)
@@ -56,7 +57,7 @@ describe('xserver: BIG-REQUESTS', () => {
         });
     });
 
-    it('XC-MISC works via the client extension module', done => {
+    it('XC-MISC works via the client extension module', (t, done) => {
         X.require('xc-misc', (err, xcmisc) => {
             if (err) return done(err);
             assert.strictEqual(xcmisc.major, 1);

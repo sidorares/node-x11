@@ -1,3 +1,4 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -5,66 +6,63 @@ const sinon = require('sinon');
 const async = require('async');
 
 describe('Atoms and atom names cache', () => {
-    before(function(done) {
-        const self = this;
+    let X, flushSpy;
+
+    before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X = dpy.client;
-            self.spy = sinon.spy(self.X.pack_stream, 'flush');
+            X = dpy.client;
+            flushSpy = sinon.spy(X.pack_stream, 'flush');
             done();
         });
 
         client.on('error', done);
     });
 
-    it('should be used directly when requesting std atoms with InternAtom', function(done) {
-        const self = this;
-        this.X.InternAtom(true, 'WM_NAME', (err, atom) => {
+    it('should be used directly when requesting std atoms with InternAtom', function(t, done) {
+        X.InternAtom(true, 'WM_NAME', (err, atom) => {
             should.not.exist(err);
-            atom.should.equal(self.X.atoms.WM_NAME);
-            sinon.assert.notCalled(self.spy);
+            atom.should.equal(X.atoms.WM_NAME);
+            sinon.assert.notCalled(flushSpy);
             done();
         });
     });
 
-    it('should be used directly when requesting atom names with GetAtomName', function(done) {
-        const self = this;
-        const spy = sinon.spy(this.X.GetAtomName[1]);
-        this.X.GetAtomName(52, (err, atom_name) => {
+    it('should be used directly when requesting atom names with GetAtomName', function(t, done) {
+        const spy = sinon.spy(X.GetAtomName[1]);
+        X.GetAtomName(52, (err, atom_name) => {
             should.not.exist(err);
             atom_name.should.equal('UNDERLINE_THICKNESS');
-            sinon.assert.notCalled(self.spy);
+            sinon.assert.notCalled(flushSpy);
             done();
         });
     });
 
-    it('should be used after the first request for non-std atoms', function(done) {
-        const self = this;
-        this.X.InternAtom(false, 'My testing atom', (err, atom) => {
+    it('should be used after the first request for non-std atoms', function(t, done) {
+        X.InternAtom(false, 'My testing atom', (err, atom) => {
             should.not.exist(err);
-            sinon.assert.calledOnce(self.spy);
+            sinon.assert.calledOnce(flushSpy);
             async.parallel(
                 [
                     cb => {
-                        self.X.InternAtom(true, 'My testing atom', cb);
+                        X.InternAtom(true, 'My testing atom', cb);
                     },
                     cb => {
-                        self.X.GetAtomName(atom, cb);
+                        X.GetAtomName(atom, cb);
                     }
                 ],
                 (err, results) => {
                     should.not.exist(err);
                     results[0].should.equal(atom);
                     results[1].should.equal('My testing atom');
-                    sinon.assert.calledOnce(self.spy);
+                    sinon.assert.calledOnce(flushSpy);
                     done();
                 }
             );
         });
     });
 
-    xit('should be used after the first request for non-std atom_names', function(done) {
-        const self = this;
+    it.skip('should be used after the first request for non-std atom_names', function(t, done) {
         let my_name;
         /*
          * First get an atom defined in the server greater than 68 (WM_TRANSIENT_FOR) and less than 100
@@ -74,11 +72,11 @@ describe('Atoms and atom names cache', () => {
         async.until(
             () => my_name || my_atom > 99,
             cb => {
-                if (self.X.atom_names[my_atom]) {
+                if (X.atom_names[my_atom]) {
                     return cb();
                 }
 
-                self.X.GetAtomName(my_atom, (err, name) => {
+                X.GetAtomName(my_atom, (err, name) => {
                     should.not.exist(err);
                     if (name && name !== '') {
                         my_name = name;
@@ -92,21 +90,21 @@ describe('Atoms and atom names cache', () => {
             err => {
                 should.not.exist(err);
                 should.exist(my_name);
-                self.spy.resetHistory();
-                self.X.InternAtom(true, my_name, (err, atom) => {
+                flushSpy.resetHistory();
+                X.InternAtom(true, my_name, (err, atom) => {
                     should.not.exist(err);
                     my_atom.should.equal(atom);
-                    sinon.assert.notCalled(self.spy);
-                    Object.keys(self.X.pending_atoms).should.be.empty;
+                    sinon.assert.notCalled(flushSpy);
+                    Object.keys(X.pending_atoms).should.be.empty;
                     done();
                 });
             }
         );
     });
 
-    after(function(done) {
-        this.X.pack_stream.flush.restore();
-        this.X.terminate();
-        this.X.on('end', done);
+    after(function(t, done) {
+        X.pack_stream.flush.restore();
+        X.terminate();
+        X.on('end', done);
     });
 });

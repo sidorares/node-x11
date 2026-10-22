@@ -1,3 +1,4 @@
+const { describe, it, before } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -7,7 +8,7 @@ const path = require('path');
 describe('Client', () => {
 
   let display;
-  before(done => {
+  before((t, done) => {
       const client = x11.createClient({ debug: false }, (err, dpy) => {
           should.not.exist(err);
           display = dpy;
@@ -15,7 +16,7 @@ describe('Client', () => {
       });
   });
 
-  it('should emit error which is instance of Error with sequence number corresponding to source request', done => {
+  it('should emit error which is instance of Error with sequence number corresponding to source request', (t, done) => {
     let times = 0;
     //id, parentId, x, y, width, height, borderWidth, depth, _class, visual, values
     display.client.CreateWindow(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {});
@@ -38,10 +39,10 @@ describe('Client', () => {
   // #226: an unclaimed X error with no 'error' listener makes the emit throw
   // from inside the packet parser; the parser must re-arm regardless, or the
   // connection silently drops every later packet. Needs a child process:
-  // the throw surfaces as an uncaughtException, which mocha would otherwise
+  // the throw surfaces as an uncaughtException, which the runner would otherwise
   // attribute to this test — swallowing it in-process is exactly the
   // test-runner behavior that turns the dead parser into a silent hang.
-  it('re-arms the packet parser when the error emit throws (no listener)', done => {
+  it('re-arms the packet parser when the error emit throws (no listener)', (t, done) => {
     const script = `
       const x11 = require(${JSON.stringify(path.join(__dirname, '..', 'lib'))});
       process.on('uncaughtException', () => {});

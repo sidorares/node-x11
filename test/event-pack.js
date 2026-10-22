@@ -1,3 +1,4 @@
+const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const x11 = require('../lib');
 const { unpackEvent, packers, eventTypes } = require('../lib/generated/core-events');
@@ -328,18 +329,18 @@ describe('packEvent', () => {
 });
 
 describe('SendEvent with an event object', function() {
+    let X, root, wid, atom;
 
-    before(function(done) {
-        const self = this;
+    before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
             assert.ifError(err);
-            self.X = dpy.client;
-            self.root = dpy.screen[0].root;
-            self.wid = self.X.AllocID();
-            self.X.CreateWindow(self.wid, self.root, 0, 0, 1, 1);
-            self.X.InternAtom(false, 'X11_TEST_PACK', (err, atom) => {
+            X = dpy.client;
+            root = dpy.screen[0].root;
+            wid = X.AllocID();
+            X.CreateWindow(wid, root, 0, 0, 1, 1);
+            X.InternAtom(false, 'X11_TEST_PACK', (err, interned) => {
                 assert.ifError(err);
-                self.atom = atom;
+                atom = interned;
                 done();
             });
         });
@@ -347,9 +348,9 @@ describe('SendEvent with an event object', function() {
     });
 
     after(function() {
-        if (this.X) {
-            this.X.DestroyWindow(this.wid);
-            this.X.terminate();
+        if (X) {
+            X.DestroyWindow(wid);
+            X.terminate();
         }
     });
 
@@ -363,61 +364,58 @@ describe('SendEvent with an event object', function() {
         });
     }
 
-    it('delivers a ClientMessage built from an object', function(done) {
-        const self = this;
-        expect(this.X, 'ClientMessage', ev => {
-            assert.strictEqual(ev.wid, self.wid);
-            assert.strictEqual(ev.message_type, self.atom);
+    it('delivers a ClientMessage built from an object', function(t, done) {
+        expect(X, 'ClientMessage', ev => {
+            assert.strictEqual(ev.wid, wid);
+            assert.strictEqual(ev.message_type, atom);
             assert.strictEqual(ev.format, 32);
             assert.deepStrictEqual(ev.data, [1, 2, 3, 0, 0]);
             done();
         });
-        this.X.SendEvent(this.wid, 0, 0, {
+        X.SendEvent(wid, 0, 0, {
             name: 'ClientMessage',
             format: 32,
-            wid: this.wid,
-            message_type: this.atom,
+            wid: wid,
+            message_type: atom,
             data: [1, 2, 3]
         });
     });
 
-    it('delivers a SelectionNotify built from an object', function(done) {
-        const self = this;
-        expect(this.X, 'SelectionNotify', ev => {
-            assert.strictEqual(ev.requestor, self.wid);
-            assert.strictEqual(ev.selection, self.atom);
-            assert.strictEqual(ev.target, self.atom);
+    it('delivers a SelectionNotify built from an object', function(t, done) {
+        expect(X, 'SelectionNotify', ev => {
+            assert.strictEqual(ev.requestor, wid);
+            assert.strictEqual(ev.selection, atom);
+            assert.strictEqual(ev.target, atom);
             assert.strictEqual(ev.property, 0);
             assert.strictEqual(ev.time, 0x11223344);
             done();
         });
-        this.X.SendEvent(this.wid, 0, 0, {
+        X.SendEvent(wid, 0, 0, {
             name: 'SelectionNotify',
             time: 0x11223344,
-            requestor: this.wid,
-            selection: this.atom,
-            target: this.atom,
+            requestor: wid,
+            selection: atom,
+            target: atom,
             property: 0
         });
     });
 
-    it('delivers a synthetic ConfigureNotify to a StructureNotify selection', function(done) {
-        const self = this;
-        this.X.ChangeWindowAttributes(this.wid, { eventMask: x11.eventMask.StructureNotify });
-        expect(this.X, 'ConfigureNotify', ev => {
-            assert.strictEqual(ev.wid, self.wid);
-            assert.strictEqual(ev.wid1, self.wid);
+    it('delivers a synthetic ConfigureNotify to a StructureNotify selection', function(t, done) {
+        X.ChangeWindowAttributes(wid, { eventMask: x11.eventMask.StructureNotify });
+        expect(X, 'ConfigureNotify', ev => {
+            assert.strictEqual(ev.wid, wid);
+            assert.strictEqual(ev.wid1, wid);
             assert.strictEqual(ev.x, 100);
             assert.strictEqual(ev.y, -20);
             assert.strictEqual(ev.width, 640);
             assert.strictEqual(ev.height, 480);
-            self.X.ChangeWindowAttributes(self.wid, { eventMask: 0 });
+            X.ChangeWindowAttributes(wid, { eventMask: 0 });
             done();
         });
-        this.X.SendEvent(this.wid, 0, x11.eventMask.StructureNotify, {
+        X.SendEvent(wid, 0, x11.eventMask.StructureNotify, {
             name: 'ConfigureNotify',
-            wid: this.wid,
-            wid1: this.wid,
+            wid: wid,
+            wid1: wid,
             aboveSibling: 0,
             x: 100, y: -20, width: 640, height: 480,
             borderWidth: 0,
@@ -425,43 +423,41 @@ describe('SendEvent with an event object', function() {
         });
     });
 
-    it('still accepts the raw 32 bytes of a received event', function(done) {
-        const self = this;
-        this.X.once('event', first => {
+    it('still accepts the raw 32 bytes of a received event', function(t, done) {
+        X.once('event', first => {
             assert.strictEqual(first.name, 'ClientMessage');
-            expect(self.X, 'ClientMessage', ev => {
+            expect(X, 'ClientMessage', ev => {
                 assert.deepStrictEqual(ev.data, first.data);
                 done();
             });
-            self.X.SendEvent(self.wid, 0, 0, first.rawData);
+            X.SendEvent(wid, 0, 0, first.rawData);
         });
-        this.X.SendEvent(this.wid, 0, 0, {
-            name: 'ClientMessage', format: 8, wid: this.wid,
-            message_type: this.atom, data: [9, 8, 7]
+        X.SendEvent(wid, 0, 0, {
+            name: 'ClientMessage', format: 8, wid: wid,
+            message_type: atom, data: [9, 8, 7]
         });
     });
 
     it('rejects a buffer that is not 32 bytes', function() {
-        assert.throws(() => this.X.SendEvent(this.wid, 0, 0, Buffer.alloc(40)),
+        assert.throws(() => X.SendEvent(wid, 0, 0, Buffer.alloc(40)),
             /must be exactly 32 bytes/);
     });
 
-    it('leaves the connection usable after a rejected event', function(done) {
+    it('leaves the connection usable after a rejected event', function(t, done) {
         // A request that throws while packing never reaches the wire, so the
         // sequence number must not advance — otherwise every later reply is
         // matched to the wrong callback and the connection silently stops
         // answering.
-        const self = this;
-        const before = this.X.seq_num;
-        assert.throws(() => this.X.SendEvent(this.wid, 0, 0, Buffer.alloc(40)));
-        assert.throws(() => this.X.SendClientMessage(this.wid, this.wid, this.atom, 12, []));
-        assert.throws(() => this.X.SendEvent(this.wid, 0, 0, { name: 'NoSuchEvent' }));
-        assert.strictEqual(this.X.seq_num, before, 'sequence number advanced for unsent requests');
+        const before = X.seq_num;
+        assert.throws(() => X.SendEvent(wid, 0, 0, Buffer.alloc(40)));
+        assert.throws(() => X.SendClientMessage(wid, wid, atom, 12, []));
+        assert.throws(() => X.SendEvent(wid, 0, 0, { name: 'NoSuchEvent' }));
+        assert.strictEqual(X.seq_num, before, 'sequence number advanced for unsent requests');
 
-        this.X.InternAtom(false, 'X11_TEST_PACK_AFTER_THROW', (err, atom) => {
+        X.InternAtom(false, 'X11_TEST_PACK_AFTER_THROW', (err, atom) => {
             assert.ifError(err);
             assert.ok(atom > 0);
-            self.X.GetGeometry(self.wid, (err, geom) => {
+            X.GetGeometry(wid, (err, geom) => {
                 assert.ifError(err);
                 assert.strictEqual(geom.width, 1);
                 done();
@@ -470,60 +466,57 @@ describe('SendEvent with an event object', function() {
     });
 
     describe('SendClientMessage', () => {
-        it('sends with an explicit empty mask, the way WM_PROTOCOLS does', function(done) {
-            const self = this;
-            expect(this.X, 'ClientMessage', ev => {
-                assert.strictEqual(ev.wid, self.wid);
-                assert.strictEqual(ev.message_type, self.atom);
-                assert.deepStrictEqual(ev.data, [self.atom, 0, 0, 0, 0]);
+        it('sends with an explicit empty mask, the way WM_PROTOCOLS does', function(t, done) {
+            expect(X, 'ClientMessage', ev => {
+                assert.strictEqual(ev.wid, wid);
+                assert.strictEqual(ev.message_type, atom);
+                assert.deepStrictEqual(ev.data, [atom, 0, 0, 0, 0]);
                 done();
             });
-            this.X.SendClientMessage(this.wid, this.wid, this.atom, 32, [this.atom], 0);
+            X.SendClientMessage(wid, wid, atom, 32, [atom], 0);
         });
 
-        it('defaults the mask to SubstructureRedirect|SubstructureNotify', function(done) {
-            const self = this;
+        it('defaults the mask to SubstructureRedirect|SubstructureNotify', function(t, done) {
             // What EWMH root-window messages use; select those bits on our own
             // window so the default is observable.
-            this.X.ChangeWindowAttributes(this.wid, {
+            X.ChangeWindowAttributes(wid, {
                 eventMask: x11.eventMask.SubstructureNotify | x11.eventMask.SubstructureRedirect
             });
-            expect(this.X, 'ClientMessage', ev => {
+            expect(X, 'ClientMessage', ev => {
                 assert.strictEqual(ev.format, 32);
                 assert.deepStrictEqual(ev.data, [1, 2, 0, 0, 0]);
-                self.X.ChangeWindowAttributes(self.wid, { eventMask: 0 });
+                X.ChangeWindowAttributes(wid, { eventMask: 0 });
                 done();
             });
-            this.X.SendClientMessage(this.wid, this.wid, this.atom, 32, [1, 2]);
+            X.SendClientMessage(wid, wid, atom, 32, [1, 2]);
         });
 
-        it('takes a trailing callback in place of the mask', function(done) {
-            const self = this;
+        it('takes a trailing callback in place of the mask', function(t, done) {
             let pending = 2;
             const finish = () => {
                 if (--pending === 0) {
-                    self.X.ChangeWindowAttributes(self.wid, { eventMask: 0 });
+                    X.ChangeWindowAttributes(wid, { eventMask: 0 });
                     done();
                 }
             };
-            this.X.ChangeWindowAttributes(this.wid, {
+            X.ChangeWindowAttributes(wid, {
                 eventMask: x11.eventMask.SubstructureNotify | x11.eventMask.SubstructureRedirect
             });
-            expect(this.X, 'ClientMessage', ev => {
+            expect(X, 'ClientMessage', ev => {
                 assert.strictEqual(ev.format, 8);
                 assert.strictEqual(ev.data[0], 1);
                 finish();
             });
             // no mask argument: the callback is recognised in its place, and
             // the request is still checked (issue #85) rather than silent
-            this.X.SendClientMessage(this.wid, this.wid, this.atom, 8, [1], err => {
+            X.SendClientMessage(wid, wid, atom, 8, [1], err => {
                 assert.ifError(err);
                 finish();
             });
         });
 
         it('reports a bad format instead of letting the server BadValue it', function() {
-            assert.throws(() => this.X.SendClientMessage(this.wid, this.wid, this.atom, 12, []),
+            assert.throws(() => X.SendClientMessage(wid, wid, atom, 12, []),
                 /format must be 8, 16 or 32/);
         });
     });

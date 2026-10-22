@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const x11 = require('../../lib');
 const { boot, sync } = require('./boot');
@@ -11,7 +12,7 @@ describe('xserver: drawing', () => {
 
     let server, display, X, root, pixmap, gc;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             ({ server, display, X } = ctx);
@@ -42,7 +43,7 @@ describe('xserver: drawing', () => {
         return data.readUInt32LE((y * W + x) * 4);
     }
 
-    it('PolyFillRectangle fills exactly the requested rect', done => {
+    it('PolyFillRectangle fills exactly the requested rect', (t, done) => {
         X.PolyFillRectangle(pixmap, gc, [2, 3, 4, 5]);
         readBack(pixmap, data => {
             for (let y = 0; y < H; y++)
@@ -55,7 +56,7 @@ describe('xserver: drawing', () => {
         });
     });
 
-    it('PolyLine draws both endpoints and the diagonal', done => {
+    it('PolyLine draws both endpoints and the diagonal', (t, done) => {
         X.PolyLine(0, pixmap, gc, [0, 0, 9, 9]);
         readBack(pixmap, data => {
             assert.strictEqual(px(data, 0, 0), WHITE);
@@ -66,7 +67,7 @@ describe('xserver: drawing', () => {
         });
     });
 
-    it('PutImage/GetImage round-trip preserves every pixel', done => {
+    it('PutImage/GetImage round-trip preserves every pixel', (t, done) => {
         const iw = 6, ih = 4;
         const data = Buffer.alloc(iw * ih * 4);
         for (let i = 0; i < iw * ih; i++)
@@ -79,7 +80,7 @@ describe('xserver: drawing', () => {
         });
     });
 
-    it('GetImage applies the plane mask', done => {
+    it('GetImage applies the plane mask', (t, done) => {
         X.ChangeGC(gc, { foreground: 0x123456 });
         X.PolyFillRectangle(pixmap, gc, [0, 0, 1, 1]);
         X.GetImage(2, pixmap, 0, 0, 1, 1, 0xff0000, (err, img) => {
@@ -89,7 +90,7 @@ describe('xserver: drawing', () => {
         });
     });
 
-    it('CopyArea copies pixels and reports NoExposure', done => {
+    it('CopyArea copies pixels and reports NoExposure', (t, done) => {
         X.PolyFillRectangle(pixmap, gc, [0, 0, 5, 5]);
         const dst = X.AllocID();
         X.CreatePixmap(dst, root, 24, W, H);
@@ -110,7 +111,7 @@ describe('xserver: drawing', () => {
         X.CopyArea(pixmap, dst, dgc, 0, 0, 10, 10, 5, 5);
     });
 
-    it('CopyArea with out-of-bounds source reports GraphicsExposure', done => {
+    it('CopyArea with out-of-bounds source reports GraphicsExposure', (t, done) => {
         const dst = X.AllocID();
         X.CreatePixmap(dst, root, 24, W, H);
         X.on('event', ev => {
@@ -123,7 +124,7 @@ describe('xserver: drawing', () => {
         X.CopyArea(pixmap, dst, gc, 10, 10, 0, 0, W, H);
     });
 
-    it('ImageText8 inks inside the 8x8 cell and nowhere else', done => {
+    it('ImageText8 inks inside the 8x8 cell and nowhere else', (t, done) => {
         X.ChangeGC(gc, { background: BLACK });
         X.ImageText8(pixmap, gc, 2, 15, 'X');
         readBack(pixmap, data => {
@@ -142,7 +143,7 @@ describe('xserver: drawing', () => {
         });
     });
 
-    it('PolyText8 honours per-item deltas', done => {
+    it('PolyText8 honours per-item deltas', (t, done) => {
         X.PolyText8(pixmap, gc, 1, 10, ['ab']);
         readBack(pixmap, data8 => {
             let count = 0;
@@ -154,7 +155,7 @@ describe('xserver: drawing', () => {
         });
     });
 
-    it('ClearArea repaints the background pixel and can send Expose', done => {
+    it('ClearArea repaints the background pixel and can send Expose', (t, done) => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, W, H, 0, 0, 0, 0,
             { backgroundPixel: 0x00ff00, eventMask: em.Exposure });
@@ -179,7 +180,7 @@ describe('xserver: drawing', () => {
         X.ClearArea(wid, 5, 5, 4, 4, 1);
     });
 
-    it('SetClipRectangles clips subsequent drawing', done => {
+    it('SetClipRectangles clips subsequent drawing', (t, done) => {
         X.SetClipRectangles(gc, 0, 0, 0, [2, 2, 3, 3]);
         X.PolyFillRectangle(pixmap, gc, [0, 0, W, H]);
         readBack(pixmap, data => {
@@ -190,7 +191,7 @@ describe('xserver: drawing', () => {
         });
     });
 
-    it('GC function xor combines with destination', done => {
+    it('GC function xor combines with destination', (t, done) => {
         X.ChangeGC(gc, { foreground: 0x0000ff });
         X.PolyFillRectangle(pixmap, gc, [0, 0, 1, 1]);
         X.ChangeGC(gc, { function: 6, foreground: 0x0000f0 }); // GXxor
@@ -202,7 +203,7 @@ describe('xserver: drawing', () => {
         });
     });
 
-    it('drawing on a mapped window emits damage in root coordinates', done => {
+    it('drawing on a mapped window emits damage in root coordinates', (t, done) => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 30, 40, 10, 10);
         X.MapWindow(wid);
@@ -221,7 +222,7 @@ describe('xserver: drawing', () => {
         });
     });
 
-    it('compose() paints mapped windows into the root raster', done => {
+    it('compose() paints mapped windows into the root raster', (t, done) => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 30, 40, 10, 10, 0, 0, 0, 0,
             { backgroundPixel: 0xff8800 });

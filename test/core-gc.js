@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -12,7 +13,7 @@ describe('GC requests', () => {
   let pixmap;
   let bytesPP;
 
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (err)
               return done(err);
@@ -30,7 +31,7 @@ describe('GC requests', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.FreePixmap(pixmap);
       X.terminate();
       X.on('end', done);
@@ -46,7 +47,7 @@ describe('GC requests', () => {
       return value >>> 0;
   }
 
-  it('CopyGC should copy selected components', done => {
+  it('CopyGC should copy selected components', (t, done) => {
       const gcWhite = X.AllocID();
       const gcDst = X.AllocID();
       X.CreateGC(gcWhite, pixmap, { foreground: white });
@@ -62,7 +63,7 @@ describe('GC requests', () => {
       });
   });
 
-  it('SetClipRectangles should restrict fills to clip area', done => {
+  it('SetClipRectangles should restrict fills to clip area', (t, done) => {
       const gc = X.AllocID();
       X.CreateGC(gc, pixmap, { foreground: black });
       X.PolyFillRectangle(pixmap, gc, [0, 0, 20, 20]); // all black
@@ -78,7 +79,7 @@ describe('GC requests', () => {
       });
   });
 
-  it('SetDashes should be accepted by server', done => {
+  it('SetDashes should be accepted by server', (t, done) => {
       const gc = X.AllocID();
       X.CreateGC(gc, pixmap, { lineStyle: 1 }); // OnOffDash
       X.SetDashes(gc, 0, [3, 2]);
@@ -90,7 +91,7 @@ describe('GC requests', () => {
       });
   });
 
-  it('FreeGC should make gc id invalid', done => {
+  it('FreeGC should make gc id invalid', (t, done) => {
       const gc = X.AllocID();
       X.CreateGC(gc, pixmap, {});
       X.FreeGC(gc);

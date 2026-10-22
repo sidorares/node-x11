@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('assert');
 const x11 = require('../../lib');
 const { boot } = require('./boot');
@@ -8,7 +9,7 @@ describe('xserver: atoms and properties', () => {
 
     let server, display, X, root, wid;
 
-    beforeEach(done => {
+    beforeEach((t, done) => {
         boot((err, ctx) => {
             if (err) return done(err);
             ({ server, display, X } = ctx);
@@ -25,7 +26,7 @@ describe('xserver: atoms and properties', () => {
         server = display = X = null;
     });
 
-    it('InternAtom/GetAtomName round-trip for a fresh atom', done => {
+    it('InternAtom/GetAtomName round-trip for a fresh atom', (t, done) => {
         const name = 'XSRV_PROP_SUITE_ATOM_A';
         X.InternAtom(false, name, (err, atom) => {
             if (err) return done(err);
@@ -47,7 +48,7 @@ describe('xserver: atoms and properties', () => {
         assert.strictEqual(server.atomsByName.get('WM_NAME'), 39);
     });
 
-    it('ChangeProperty replace + GetProperty round-trips (format 8)', done => {
+    it('ChangeProperty replace + GetProperty round-trips (format 8)', (t, done) => {
         const value = 'hello property';
         X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, value);
         X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 100, (err, prop) => {
@@ -59,7 +60,7 @@ describe('xserver: atoms and properties', () => {
         });
     });
 
-    it('append and prepend modes honour existing data', done => {
+    it('append and prepend modes honour existing data', (t, done) => {
         X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, 'mid');
         X.ChangeProperty(2, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, '-end');   // append
         X.ChangeProperty(1, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, 'start-'); // prepend
@@ -70,7 +71,7 @@ describe('xserver: atoms and properties', () => {
         });
     });
 
-    it('round-trips format 32 data', done => {
+    it('round-trips format 32 data', (t, done) => {
         const values = [0x12345678, 0xdeadbeef, 7];
         const data = Buffer.alloc(12);
         values.forEach((v, i) => data.writeUInt32LE(v >>> 0, i * 4));
@@ -84,7 +85,7 @@ describe('xserver: atoms and properties', () => {
         });
     });
 
-    it('partial GetProperty honours longOffset/longLength and bytesAfter', done => {
+    it('partial GetProperty honours longOffset/longLength and bytesAfter', (t, done) => {
         X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, 'ABCDEFGHIJ');
         X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 1, 1, (err, prop) => {
             if (err) return done(err);
@@ -94,7 +95,7 @@ describe('xserver: atoms and properties', () => {
         });
     });
 
-    it('GetProperty with a type mismatch returns type+bytesAfter, no data', done => {
+    it('GetProperty with a type mismatch returns type+bytesAfter, no data', (t, done) => {
         X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, 'abc');
         X.GetProperty(0, wid, X.atoms.WM_NAME, X.atoms.ATOM, 0, 100, (err, prop) => {
             if (err) return done(err);
@@ -105,7 +106,7 @@ describe('xserver: atoms and properties', () => {
         });
     });
 
-    it('GetProperty with delete flag removes and notifies', done => {
+    it('GetProperty with delete flag removes and notifies', (t, done) => {
         X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, 'gone');
         X.GetProperty(1, wid, X.atoms.WM_NAME, X.atoms.STRING, 0, 100, (err, prop) => {
             if (err) return done(err);
@@ -124,7 +125,7 @@ describe('xserver: atoms and properties', () => {
         });
     });
 
-    it('PropertyNotify (NewValue) fires on ChangeProperty', done => {
+    it('PropertyNotify (NewValue) fires on ChangeProperty', (t, done) => {
         X.on('event', ev => {
             if (ev.name !== 'PropertyNotify')
                 return;
@@ -137,7 +138,7 @@ describe('xserver: atoms and properties', () => {
         X.ChangeProperty(0, wid, X.atoms.WM_ICON_NAME, X.atoms.STRING, 8, 'x');
     });
 
-    it('ListProperties returns the set atoms, DeleteProperty removes them', done => {
+    it('ListProperties returns the set atoms, DeleteProperty removes them', (t, done) => {
         X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, 'a');
         X.ChangeProperty(0, wid, X.atoms.WM_CLASS, X.atoms.STRING, 8, 'b');
         X.ListProperties(wid, (err, atoms) => {
@@ -153,7 +154,7 @@ describe('xserver: atoms and properties', () => {
         });
     });
 
-    it('RotateProperties rotates values between properties', done => {
+    it('RotateProperties rotates values between properties', (t, done) => {
         X.ChangeProperty(0, wid, X.atoms.WM_NAME, X.atoms.STRING, 8, 'one');
         X.ChangeProperty(0, wid, X.atoms.WM_ICON_NAME, X.atoms.STRING, 8, 'two');
         X.RotateProperties(wid, 1, [X.atoms.WM_NAME, X.atoms.WM_ICON_NAME]);

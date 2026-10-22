@@ -1,5 +1,6 @@
 // Pluggable DISPLAY protocol registry + parseDisplay + options.stream.
 // These tests run against an in-process fake server: no real X server needed.
+const { describe, it } = require('node:test');
 const x11 = require('../lib');
 const assert = require('assert');
 const { EventEmitter } = require('events');
@@ -148,7 +149,7 @@ function serveHandshake(serverSide, onHello) {
 }
 
 describe('registerDisplayProtocol', () => {
-  it('connects through a registered custom protocol', done => {
+  it('connects through a registered custom protocol', (t, done) => {
     const { clientSide, serverSide } = fakeStreamPair();
     let seenParams = null;
     let hello = null;
@@ -184,7 +185,7 @@ describe('registerDisplayProtocol', () => {
     client.on('error', done);
   });
 
-  it('honours options.auth for custom transports', done => {
+  it('honours options.auth for custom transports', (t, done) => {
     const { clientSide, serverSide } = fakeStreamPair();
     x11.registerDisplayProtocol('fakeauth', () => {
       serveHandshake(serverSide, hello => {
@@ -213,7 +214,7 @@ describe('registerDisplayProtocol', () => {
 });
 
 describe('options.stream', () => {
-  it('uses an injected duplex stream directly', done => {
+  it('uses an injected duplex stream directly', (t, done) => {
     const { clientSide, serverSide } = fakeStreamPair();
     serveHandshake(serverSide);
     const client = x11.createClient(

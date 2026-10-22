@@ -1,15 +1,17 @@
+const { describe, it, before, after } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
 describe('Generic Event extension', () => {
-    before(function(done) {
-        const self = this;
+    let X, ge;
+
+    before(function(t, done) {
         const client = x11.createClient((err, dpy) => {
             should.not.exist(err);
-            self.X = dpy.client;
-            self.X.require('ge', (err, ext) => {
+            X = dpy.client;
+            X.require('ge', (err, ext) => {
                 should.not.exist(err);
-                self.ge = ext;
+                ge = ext;
                 done();
             });
         });
@@ -18,22 +20,21 @@ describe('Generic Event extension', () => {
     });
 
     it('QueryVersion should report at least 1.0', function() {
-        this.ge.major.should.be.aboveOrEqual(1);
-        this.ge.minor.should.be.aboveOrEqual(0);
+        ge.major.should.be.aboveOrEqual(1);
+        ge.minor.should.be.aboveOrEqual(0);
     });
 
-    it('explicit QueryVersion round-trip should agree with negotiated version', function(done) {
-        const self = this;
-        this.ge.QueryVersion(1, 0, (err, vers) => {
+    it('explicit QueryVersion round-trip should agree with negotiated version', function(t, done) {
+        ge.QueryVersion(1, 0, (err, vers) => {
             should.not.exist(err);
-            vers[0].should.equal(self.ge.major);
-            vers[1].should.equal(self.ge.minor);
+            vers[0].should.equal(ge.major);
+            vers[1].should.equal(ge.minor);
             done();
         });
     });
 
-    after(function(done) {
-        this.X.terminate();
-        this.X.on('end', done);
+    after(function(t, done) {
+        X.terminate();
+        X.on('end', done);
     });
 });

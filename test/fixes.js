@@ -1,3 +1,4 @@
+const { describe, it, before, after, beforeEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 
@@ -9,7 +10,7 @@ describe('XFIXES extension', () => {
     let root;
     let xErrors;
 
-    before(done => {
+    before((t, done) => {
         const client = x11.createClient((err, dpy) => {
             if (err)
                 return done(err);
@@ -27,7 +28,7 @@ describe('XFIXES extension', () => {
         client.on('error', done);
     });
 
-    after(done => {
+    after((t, done) => {
         X.terminate();
         X.on('end', done);
         X = null;
@@ -76,7 +77,7 @@ describe('XFIXES extension', () => {
         F.major.should.be.aboveOrEqual(5);
     });
 
-    it('SetRegion replaces the contents of a region', done => {
+    it('SetRegion replaces the contents of a region', (t, done) => {
         const region = createRegion([{ x: 0, y: 0, width: 100, height: 100 }]);
         F.SetRegion(region, [{ x: 1, y: 2, width: 3, height: 4 }]);
         F.FetchRegion(region, (err, reg) => {
@@ -88,7 +89,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('CopyRegion duplicates a region', done => {
+    it('CopyRegion duplicates a region', (t, done) => {
         const src = createRegion([{ x: 7, y: 8, width: 9, height: 10 }]);
         const dst = createRegion([]);
         F.CopyRegion(src, dst);
@@ -101,7 +102,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('IntersectRegion computes the overlap', done => {
+    it('IntersectRegion computes the overlap', (t, done) => {
         const r1 = createRegion([{ x: 0, y: 0, width: 10, height: 10 }]);
         const r2 = createRegion([{ x: 5, y: 5, width: 10, height: 10 }]);
         const dst = createRegion([]);
@@ -114,7 +115,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('SubtractRegion computes the difference', done => {
+    it('SubtractRegion computes the difference', (t, done) => {
         const r1 = createRegion([{ x: 0, y: 0, width: 10, height: 10 }]);
         const r2 = createRegion([{ x: 0, y: 5, width: 10, height: 10 }]);
         const dst = createRegion([]);
@@ -127,7 +128,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('InvertRegion inverts within bounds', done => {
+    it('InvertRegion inverts within bounds', (t, done) => {
         const src = createRegion([{ x: 0, y: 0, width: 10, height: 20 }]);
         const dst = createRegion([]);
         F.InvertRegion(src, { x: 0, y: 0, width: 20, height: 20 }, dst);
@@ -140,7 +141,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('ExpandRegion grows every rectangle', done => {
+    it('ExpandRegion grows every rectangle', (t, done) => {
         const region = createRegion([{ x: 10, y: 10, width: 5, height: 5 }]);
         F.ExpandRegion(region, region, 1, 2, 3, 4);
         F.FetchRegion(region, (err, reg) => {
@@ -151,7 +152,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('RegionExtents reduces a region to its bounding box', done => {
+    it('RegionExtents reduces a region to its bounding box', (t, done) => {
         const src = createRegion([
             { x: 0, y: 0, width: 5, height: 5 },
             { x: 20, y: 20, width: 5, height: 5 }
@@ -167,7 +168,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('CreateRegionFromBitmap picks up the set bits of a depth-1 pixmap', done => {
+    it('CreateRegionFromBitmap picks up the set bits of a depth-1 pixmap', (t, done) => {
         const pix = X.AllocID();
         X.CreatePixmap(pix, root, 1, 16, 16);
         const gc = X.AllocID();
@@ -187,7 +188,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('SetGCClipRegion / CreateRegionFromGC round-trip', done => {
+    it('SetGCClipRegion / CreateRegionFromGC round-trip', (t, done) => {
         const gc = X.AllocID();
         X.CreateGC(gc, root);
         const clip = createRegion([{ x: 2, y: 3, width: 4, height: 5 }]);
@@ -205,7 +206,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('SetWindowShapeRegion / CreateRegionFromWindow round-trip', done => {
+    it('SetWindowShapeRegion / CreateRegionFromWindow round-trip', (t, done) => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, 32, 32);
         const shape = createRegion([{ x: 0, y: 0, width: 8, height: 8 }]);
@@ -223,7 +224,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('SetPictureClipRegion / CreateRegionFromPicture round-trip', done => {
+    it('SetPictureClipRegion / CreateRegionFromPicture round-trip', (t, done) => {
         X.require('render', (err, Render) => {
             should.not.exist(err);
             const wid = X.AllocID();
@@ -246,7 +247,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('SetCursorName / GetCursorName round-trip', done => {
+    it('SetCursorName / GetCursorName round-trip', (t, done) => {
         const cid = createGlyphCursor(68);
         F.SetCursorName(cid, 'node-x11-test-cursor');
         F.GetCursorName(cid, (err, res) => {
@@ -258,7 +259,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('GetCursorImage returns the current cursor image', done => {
+    it('GetCursorImage returns the current cursor image', (t, done) => {
         F.GetCursorImage((err, img) => {
             should.not.exist(err);
             img.width.should.be.above(0);
@@ -268,7 +269,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('GetCursorImageAndName reports the displayed cursor name; CursorNotify fires', done => {
+    it('GetCursorImageAndName reports the displayed cursor name; CursorNotify fires', (t, done) => {
         const cid = createGlyphCursor(58);
         F.SetCursorName(cid, 'node-x11-displayed-cursor');
         let sawCursorNotify = false;
@@ -296,7 +297,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('ChangeCursor and ChangeCursorByName update cursor contents', done => {
+    it('ChangeCursor and ChangeCursorByName update cursor contents', (t, done) => {
         const named = createGlyphCursor(68);
         const src1 = createGlyphCursor(58);
         const src2 = createGlyphCursor(130);
@@ -307,20 +308,20 @@ describe('XFIXES extension', () => {
         assertNoErrors(done);
     });
 
-    it('HideCursor / ShowCursor are accepted', done => {
+    it('HideCursor / ShowCursor are accepted', (t, done) => {
         F.HideCursor(root);
         F.ShowCursor(root);
         assertNoErrors(done);
     });
 
-    it('CreatePointerBarrier / DeletePointerBarrier are accepted', done => {
+    it('CreatePointerBarrier / DeletePointerBarrier are accepted', (t, done) => {
         const barrier = X.AllocID();
         F.CreatePointerBarrier(barrier, root, 20, 0, 20, 100, F.BarrierDirections.PositiveX);
         F.DeletePointerBarrier(barrier);
         assertNoErrors(done);
     });
 
-    it('SelectSelectionInput delivers SelectionNotify on SetSelectionOwner', done => {
+    it('SelectSelectionInput delivers SelectionNotify on SetSelectionOwner', (t, done) => {
         const wid = X.AllocID();
         X.CreateWindow(wid, root, 0, 0, 1, 1);
         X.InternAtom(false, 'NODE_X11_FIXES_TEST_SELECTION', (err, selAtom) => {
@@ -345,7 +346,7 @@ describe('XFIXES extension', () => {
         });
     });
 
-    it('ChangeSaveSet accepts a window of another client', done => {
+    it('ChangeSaveSet accepts a window of another client', (t, done) => {
         const client2 = x11.createClient((err, dpy2) => {
             should.not.exist(err);
             const X2 = dpy2.client;

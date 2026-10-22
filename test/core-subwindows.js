@@ -1,3 +1,4 @@
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const x11 = require('../lib');
 const should = require('should');
 const assert = require('assert');
@@ -8,7 +9,7 @@ describe('Window subtree requests', () => {
   let X;
   let parent;
 
-  beforeEach(done => {
+  beforeEach((t, done) => {
       const client = x11.createClient((err, dpy) => {
           if (err)
               return done(err);
@@ -22,7 +23,7 @@ describe('Window subtree requests', () => {
       client.on('error', done);
   });
 
-  afterEach(done => {
+  afterEach((t, done) => {
       X.DestroyWindow(parent);
       X.terminate();
       X.on('end', done);
@@ -40,7 +41,7 @@ describe('Window subtree requests', () => {
       return wids;
   }
 
-  it('MapSubwindows should make children viewable', done => {
+  it('MapSubwindows should make children viewable', (t, done) => {
       const children = createChildren(2);
       X.MapSubwindows(parent);
       X.GetWindowAttributes(children[1], (err, attrs) => {
@@ -50,7 +51,7 @@ describe('Window subtree requests', () => {
       });
   });
 
-  it('UnmapSubwindows should unmap children', done => {
+  it('UnmapSubwindows should unmap children', (t, done) => {
       const children = createChildren(2);
       X.MapSubwindows(parent);
       X.UnmapSubwindows(parent);
@@ -61,7 +62,7 @@ describe('Window subtree requests', () => {
       });
   });
 
-  it('DestroySubwindows should remove all children', done => {
+  it('DestroySubwindows should remove all children', (t, done) => {
       createChildren(3);
       X.DestroySubwindows(parent);
       X.QueryTree(parent, (err, tree) => {
@@ -71,7 +72,7 @@ describe('Window subtree requests', () => {
       });
   });
 
-  it('CirculateWindow RaiseLowest should raise lowest occluded child', done => {
+  it('CirculateWindow RaiseLowest should raise lowest occluded child', (t, done) => {
       // overlapping children: QueryTree returns bottom-to-top stacking order
       const children = createChildren(2);
       X.MapSubwindows(parent);
