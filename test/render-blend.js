@@ -147,6 +147,46 @@ describe('RENDER blend operators against the real server', () => {
         assert.ok(near <= want.length / 100, `${name}: ${near} channels one away from the server's`);
     }
 
+    // pixman's HSL modes through a mask scaled green by the mask twice and
+    // blue not at all, a typo in pixman-combine-float.c's
+    // MAKE_NON_SEPARABLE_PDF_COMBINERS. Debian bookworm's pixman, which CI's
+    // Xvfb runs, has it, and XQuartz's 0.46.4 does not, drawing what the JS
+    // server does. Over a transparent backdrop an HSL mode through a mask is
+    // the masked source alone, so the typo shows as a blue the mask left
+    // whole; where it does, the masked scenes leave the HSL modes out.
+    let hslMaskTypo = null;
+    async function hasHslMaskTypo() {
+        if (hslMaskTypo !== null)
+            return hslMaskTypo;
+        const src = Buffer.alloc(N * N * 4);
+        for (let i = 0; i < N * N; i++)
+            src.writeUInt32LE(0xffc8c8c8, i * 4);
+        const mask = Buffer.alloc(N * N, 128);
+        const out = await scene(real, 32, Buffer.alloc(N * N * 4), (ctx, pic) => {
+            const s = picture(ctx, 32, src);
+            const m = picture(ctx, 8, mask);
+            ctx.R.Composite(ctx.R.PictOp.HSLColor, s.pic, m.pic, pic, 0, 0, 0, 0, 0, 0, N, N);
+        });
+        const [b, g, r] = out;
+        // 200 through a mask of 128 is 100, and through it twice 50
+        const is = (v, want) => Math.abs(v - want) <= 1;
+        if (is(r, 100) && is(g, 100) && is(b, 100))
+            hslMaskTypo = false;
+        else if (is(r, 100) && is(g, 50) && is(b, 200))
+            hslMaskTypo = true;
+        else
+            assert.fail(`HSLColor of 200 through a mask of 128 over nothing came to ${r},${g},${b}`);
+        return hslMaskTypo;
+    }
+
+    // a masked scene of `op` is left out where the server's pixman has the typo
+    async function skipsMasked(t, name, op) {
+        if (op < real.R.PictOp.HSLHue || !(await hasHslMaskTypo()))
+            return false;
+        t.diagnostic(`${name} through a mask left out: the server's pixman masks green twice and blue not at all`);
+        return true;
+    }
+
     it('Composite, onto rgba32 and rgb24', async t => {
         if (!supported)
             return t.skip('the server has no RENDER 0.11');
@@ -169,6 +209,8 @@ describe('RENDER blend operators against the real server', () => {
         if (!supported)
             return t.skip('the server has no RENDER 0.11');
         for (const [name, op] of BLENDS()) {
+            if (await skipsMasked(t, name, op))
+                continue;
             const rnd = mulberry32(op + 100);
             for (let k = 0; k < ROUNDS; k++) {
                 const src = randomPixels(rnd, 0.3);
@@ -208,6 +250,9 @@ describe('RENDER blend operators against the real server', () => {
                 for (let i = 0; i < 6; i++)
                     tris.push(Math.trunc(rnd() * N * 65536) / 65536, Math.trunc(rnd() * N * 65536) / 65536);
                 const c = colour(0);
+                // a triangle's coverage is a mask, to pixman
+                if (await skipsMasked(t, name, op))
+                    continue;
                 await compare(`${name} Triangles`, op, 32, backdrop, (ctx, pic) => {
                     const solid = ctx.X.AllocID();
                     ctx.R.CreateSolidFill(solid, ...c);
