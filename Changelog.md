@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.4.0](https://github.com/sidorares/node-x11/compare/v4.3.3...v4.4.0) (2026-11-09)
+
+
+### Features
+
+* **xserver:** composite RENDER 0.11's blend operators as pixman does ([#318](https://github.com/sidorares/node-x11/issues/318)) ([55e2ea9](https://github.com/sidorares/node-x11/commit/55e2ea9b131685d83544b2b7df8325b636188bd6))
+
 ## [4.3.3](https://github.com/sidorares/node-x11/compare/v4.3.2...v4.3.3) (2026-10-22)
 
 
