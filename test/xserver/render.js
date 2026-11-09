@@ -785,6 +785,166 @@ describe('xserver: RENDER', () => {
         });
     });
 
+    describe('blend operators', () => {
+
+        // [source, backdrop], premultiplied 0xAARRGGBB: opaque over opaque,
+        // translucent over opaque, opaque over translucent, both translucent
+        const PAIRS = [
+            [0xff3366cc, 0xffcc6633],
+            [0x80402010, 0xff80c0f0],
+            [0xffe0a060, 0x80203040],
+            [0x60301808, 0xa0506070]
+        ];
+        // What Xvfb (pixman 0.46.4) drew for each pair, composited onto an
+        // rgba32 picture. pixman runs ColorDodge, ColorBurn, SoftLight and the
+        // HSL modes in single-precision floats, where one in a few thousand
+        // pixels can come out one away from this server's doubles
+        // (test/render-blend.js); none of these does.
+        const GOLDEN = {
+            Multiply: [0xff292929, 0xff607887, 0xff8c6e48, 0xc4534e4d],
+            Screen: [0xffd6a3d6, 0xffa0c8f1, 0xffe4b288, 0xc4716f74],
+            Overlay: [0xffad5252, 0xff80b0ea, 0xffa88c60, 0xc4625d64],
+            Darken: [0xff336633, 0xff808088, 0xff908060, 0xc462544e],
+            Lighten: [0xffcc66cc, 0xff80c0f0, 0xffe0a070, 0xc4626973],
+            ColorDodge: [0xffffaaff, 0xffc0e0f8, 0xfff0d097, 0xc4807577],
+            ColorBurn: [0xff000000, 0xff4061bc, 0xff82502f, 0xc4444549],
+            HardLight: [0xff5252ad, 0xff809096, 0xffd89460, 0xc4625750],
+            SoftLight: [0xffb45a59, 0xff80b4eb, 0xffa88768, 0xc4626268],
+            Difference: [0xff990099, 0xff40a0e0, 0xffc07040, 0xc4445a6e],
+            Exclusion: [0xffad7aad, 0xff80b0e2, 0xffc89470, 0xc4626671],
+            HSLHue: [0xff5083e9, 0xffb6b0b5, 0xffaa7a4a, 0xc46c6665],
+            HSLSaturation: [0xffcc6633, 0xff84bfec, 0xff838383, 0xc45c6a7b],
+            HSLColor: [0xff5083e9, 0xffb1b1b9, 0xffb77736, 0xc472645e],
+            HSLLuminosity: [0xffaf4916, 0xff4e8fbf, 0xffb9a999, 0xc4515862]
+        };
+
+        // a picture of `depth` (32 or 24), one row of `pixels`
+        function row(pixels, depth = 32) {
+            const pixmap = X.AllocID();
+            X.CreatePixmap(pixmap, root, depth, pixels.length, 1);
+            const gc = X.AllocID();
+            X.CreateGC(gc, pixmap);
+            const bytes = Buffer.alloc(pixels.length * 4);
+            pixels.forEach((p, i) => bytes.writeUInt32LE(p >>> 0, i * 4));
+            X.PutImage(2, pixmap, gc, pixels.length, 1, 0, 0, 0, depth, bytes);
+            X.FreeGC(gc);
+            const pic = X.AllocID();
+            render.CreatePicture(pic, pixmap, depth === 32 ? render.rgba32 : render.rgb24);
+            return { pixmap, pic, n: pixels.length };
+        }
+
+        function readRow({ pixmap, n }, cb) {
+            X.GetImage(2, pixmap, 0, 0, n, 1, 0xffffffff, (err, img) => {
+                if (err) throw err;
+                const out = [];
+                for (let i = 0; i < n; i++)
+                    out.push(img.data.readUInt32LE(i * 4));
+                cb(out);
+            });
+        }
+
+        const hex = list => list.map(p => '0x' + (p >>> 0).toString(16).padStart(8, '0'));
+        // the colour of a premultiplied 0xAARRGGBB as [r, g, b, a] in 0..1,
+        // which is what a solid takes
+        const colourOf = p => [(p >>> 16) & 0xff, (p >>> 8) & 0xff, p & 0xff, p >>> 24].map(v => v / 255);
+
+        for (const [name, want] of Object.entries(GOLDEN)) {
+            it(`${name} composites each pair as pixman does`, (t, done) => {
+                const src = row(PAIRS.map(p => p[0]));
+                const dst = row(PAIRS.map(p => p[1]));
+                render.Composite(render.PictOp[name], src.pic, 0, dst.pic, 0, 0, 0, 0, 0, 0, 4, 1);
+                readRow(dst, got => {
+                    assert.deepStrictEqual(hex(got), hex(want));
+                    done();
+                });
+            });
+        }
+
+        it('a transparent source leaves the backdrop as it was, whatever the mode', (t, done) => {
+            const backdrop = PAIRS.map(p => p[1]);
+            const dsts = Object.keys(GOLDEN).map(name => {
+                const src = row([0, 0, 0, 0]);
+                const dst = row(backdrop);
+                render.Composite(render.PictOp[name], src.pic, 0, dst.pic, 0, 0, 0, 0, 0, 0, 4, 1);
+                return dst;
+            });
+            let left = dsts.length;
+            for (const dst of dsts) {
+                readRow(dst, got => {
+                    assert.deepStrictEqual(hex(got), hex(backdrop));
+                    if (--left === 0)
+                        done();
+                });
+            }
+        });
+
+        it('onto rgb24 the backdrop is opaque', (t, done) => {
+            // pair 0 is opaque over opaque, so its colour is the same at depth 24
+            const names = Object.keys(GOLDEN);
+            let left = names.length;
+            for (const name of names) {
+                const src = row([PAIRS[0][0]]);
+                const dst = row([PAIRS[0][1]], 24);
+                render.Composite(render.PictOp[name], src.pic, 0, dst.pic, 0, 0, 0, 0, 0, 0, 1, 1);
+                readRow(dst, got => {
+                    assert.strictEqual((got[0] & 0xffffff).toString(16), (GOLDEN[name][0] & 0xffffff).toString(16), name);
+                    if (--left === 0)
+                        done();
+                });
+            }
+        });
+
+        it('FillRectangles, Triangles and glyphs blend as Composite does', (t, done) => {
+            const gs = X.AllocID();
+            render.CreateGlyphSet(gs, render.a8);
+            render.AddGlyphs(gs, [{
+                id: 65, width: 4, height: 1, x: 0, y: 1, offX: 0, offY: 0, image: Buffer.alloc(4, 255)
+            }]);
+            const names = Object.keys(GOLDEN);
+            const pending = [];
+            for (const name of names) {
+                const op = render.PictOp[name];
+                const [s, d] = PAIRS[1];
+                const solid = X.AllocID();
+                render.CreateSolidFill(solid, ...colourOf(s));
+                const filled = row([d, d, d, d]);
+                render.FillRectangles(op, filled.pic, colourOf(s), [0, 0, 4, 1]);
+                const shaped = row([d, d, d, d]);
+                // a triangle over all of the row, so every pixel is covered
+                render.Triangles(op, solid, 0, 0, shaped.pic, render.a8, [-10, -10, 100, -10, -10, 100]);
+                const typed = row([d, d, d, d]);
+                render.CompositeGlyphs8(op, solid, typed.pic, 0, gs, 0, 0, [[0, 1, 'A']]);
+                for (const dst of [filled, shaped, typed])
+                    pending.push([name, dst]);
+            }
+            let left = pending.length;
+            for (const [name, dst] of pending) {
+                readRow(dst, got => {
+                    const want = GOLDEN[name][1];
+                    assert.deepStrictEqual(hex(got), hex([want, want, want, want]), name);
+                    if (--left === 0)
+                        done();
+                });
+            }
+        });
+
+        it('a Disjoint operator, and one past HSLLuminosity, raise BadPictOp', (t, done) => {
+            const src = row([PAIRS[0][0]]);
+            const dst = row([PAIRS[0][1]]);
+            render.Composite(render.PictOp.DisjointOver, src.pic, 0, dst.pic, 0, 0, 0, 0, 0, 0, 1, 1);
+            X.once('error', err => {
+                assert.strictEqual(err.error, render.firstError + 2); // BadPictOp
+                assert.strictEqual(err.badParam, render.PictOp.DisjointOver);
+                render.Composite(render.PictOp.BlendMaximum + 1, src.pic, 0, dst.pic, 0, 0, 0, 0, 0, 0, 1, 1);
+                X.once('error', err2 => {
+                    assert.strictEqual(err2.error, render.firstError + 2);
+                    assert.strictEqual(err2.badParam, render.PictOp.BlendMaximum + 1);
+                    done();
+                });
+            });
+        });
+    });
+
     describe('errors', () => {
 
         it('bad picture ids raise the Picture error', (t, done) => {

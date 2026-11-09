@@ -318,7 +318,9 @@ What else decides the pixels:
   scale every pixel outside the shapes too. That is fb's rule (Xvfb,
   XQuartz, and the triangle requests everywhere); glamor's `Trapezoids`
   composites over the trapezoids' bounds whatever the operator. The JS
-  server follows fb.
+  server follows fb, but for the blend modes: fb composites them over the
+  whole destination, which a transparent source leaves as it was, and the
+  JS server over the extents, which comes to the same pixels.
 - **The source** is registered to the first point: for `Trapezoids` the
   left line's first point, for the triangle requests the first triangle's
   first point, rounded down to whole pixels; `srcX`/`srcY` are relative to
@@ -385,7 +387,12 @@ does not name a defined ...").
 - Enums attached to the extension object:
   - `Render.PictOp` — compositing operators: the PictOpClear..Saturate range
     (0..13), Disjoint\* (0x10..0x1b), Conjoint\* (0x20..0x2b) and the 0.11
-    blend modes Multiply..HSLLuminosity (0x30..0x3e).
+    blend modes Multiply..HSLLuminosity (0x30..0x3e). The blend modes are
+    the PDF ones CSS's `mix-blend-mode` and canvas's
+    `globalCompositeOperation` name, and a server whose `QueryVersion`
+    answers below 0.11 raises `BadPictOp` for them. The JS server composites
+    them as pixman does (`lib/xserver/DESIGN.md`) and still raises
+    `BadPictOp` for the Disjoint and Conjoint operators.
   - `Render.PolyEdge = {Sharp: 0, Smooth: 1}`,
     `Render.PolyMode = {Precise: 0, Imprecise: 1}`
   - `Render.PictType = {Indexed: 0, Direct: 1}`

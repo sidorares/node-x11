@@ -183,7 +183,10 @@ fb's `fbTrapezoids`/`fbTriangles`/`fbShapes`/`fbAddTraps` and pixman's
   though renderproto says Smooth;
 - the mask spans the shapes' extents, or the whole destination for an
   operator a transparent source changes the destination with (Clear, Src,
-  In, InReverse, Out, AtopReverse, Saturate);
+  In, InReverse, Out, AtopReverse, Saturate). pixman's table stops at
+  Saturate, so it takes the whole destination for a blend operator too;
+  this server takes the extents, since a transparent source leaves the
+  destination as it was through every one of them;
 - only the part of the mask on the destination is allocated, as a
   `window`, and the shapes are still clipped against the whole: pixman's
   edge step makes a mask cut at a shape's top differ, now and then, from
@@ -196,6 +199,29 @@ pixman's integer one, so it agrees exactly where the arithmetic is exact
 (Add, Src and In of an opaque source, Over of an opaque one) and can be a
 level off for translucent sources. `test/render-precise.js` checks all of
 it against a real server on random geometry.
+
+### Blend operators
+
+RENDER 0.11's Multiply..HSLLuminosity (0x30..0x3e) are the PDF blend modes,
+and they are not Porter-Duff: what a pixel comes to depends on both colours,
+so `blendFactors` cannot describe them, and none of the specialised spans
+takes one. `compositeSpan` hands them to a loop of their own
+(`compositeSpanBlend`), and `FillRectangles` and the glyph requests to
+`extensions/render-blend.js` a pixel at a time.
+
+`render-blend.js` is pixman's arithmetic, both halves of it, because the
+last bit depends on which half a mode is in. pixman composites ColorDodge,
+ColorBurn, SoftLight and the HSL modes in floats (its wide path, for an
+operator that divides) and truncates the result to 8 bits; the others stay
+in 8-bit integers, Multiply as three rounded products added and the rest as
+one sum rounded once. The integer ones match pixman to the bit; the float
+ones are within one, a few channels in ten thousand, since pixman's floats
+are single precision. `test/render-blend.js` compares both against a real
+server on random pixels, and `test/xserver/render.js` holds goldens Xvfb
+drew.
+
+QueryVersion answers 0.11, and these are what 0.11 added. The Disjoint and
+Conjoint operators of 0.2 still raise `BadPictOp`.
 
 ## Raster contract (`raster.js`)
 
