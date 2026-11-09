@@ -3,17 +3,27 @@ name: Release Please
 on:
   push:
     branches: [master]
+  # Publishes a release that is tagged and never reached npm: run it from the
+  # Actions tab with the tag, as v4.4.0 had to be.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The release tag to publish, such as v4.4.0
+        required: true
+        type: string
 
 permissions: {}
 
 jobs:
   release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v5
         id: release
@@ -22,17 +32,39 @@ jobs:
   # npm's registry trusts this exact repo + workflow file (configured in the
   # package's Trusted Publisher settings on npmjs.com) and mints short-lived
   # credentials from the id-token below. Requires npm >= 11.5.1.
+  #
+  # What is published is the release's tag, not the commit whose push started
+  # the run. Those differ when a push lands just before the release PR is
+  # merged: its run gets to release-please after the merge, creates the
+  # release, and the commit it checked out still has the version before.
+  # v4.4.0 was tagged that way while the run tried to publish 4.3.3 again, and
+  # the release commit's own run, finding the release made, published nothing.
   publish:
     needs: release-please
-    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+    if: >-
+      !cancelled() && (
+        (github.event_name == 'push' && needs.release-please.outputs.release_created == 'true') ||
+        github.event_name == 'workflow_dispatch'
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
+    env:
+      TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || needs.release-please.outputs.tag_name }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
       - uses: actions/setup-node@v7
         with:
           node-version: 26.x
           registry-url: https://registry.npmjs.org
+      - name: The package is the tag's version
+        run: |
+          version="v$(node -p "require('./package.json').version")"
+          if [ "$version" != "$TAG" ]; then
+            echo "::error::$TAG holds package.json $version"
+            exit 1
+          fi
       - run: npm publish
